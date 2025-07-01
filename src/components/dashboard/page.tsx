@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { LoadingScreen } from "@/components/loading-screen";
 import { TeamCombobox } from "@/components/team-combobox";
-import Link from "next/link"; // Import the Link component
+import { MigrationBanner } from "@/components/migration-banner";
 
 import { columns as spaColumns } from "./spa-columns";
 import { columns as msColumns } from "./ms-columns";
@@ -105,17 +105,7 @@ export function DashboardPage() {
           ))}
         </div>
 
-        {/* --- NEW BANNER ADDED HERE --- */}
-        <div className="bg-primary text-primary-foreground p-6 rounded-lg mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div>
-            <h3 className="font-bold text-lg">Still need to migrate? 🤔</h3>
-            <p className="text-sm text-primary-foreground/80">Our new documentation makes it simple.</p>
-          </div>
-          <Button asChild variant="secondary">
-            <Link href="#">Read the Docs</Link>
-          </Button>
-        </div>
-        {/* --- END OF NEW BANNER --- */}
+        <MigrationBanner />
 
         <div className="grid gap-4 md:grid-cols-2 mb-6 items-end">
           <div>
