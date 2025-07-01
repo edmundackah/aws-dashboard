@@ -1,4 +1,3 @@
-// components/dashboard/spa-columns.tsx
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
