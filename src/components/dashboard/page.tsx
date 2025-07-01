@@ -47,7 +47,8 @@ export function DashboardPage() {
   const { allTeams, filteredSpaData, filteredMsData, teamStats } = useMemo(() => {
     const teams = [...new Set([...spaData.map(item => item.subgroupName), ...msData.map(item => item.subgroupName)])].sort();
 
-    const filterByGlobal = (data: any[]) => {
+    // Corrected function to be generic, preserving the specific array type
+    const filterByGlobal = <T extends Spa | Microservice>(data: T[]): T[] => {
       if (!globalFilter) return data;
       const searchStr = globalFilter.toLowerCase();
       return data.filter(item =>
@@ -79,6 +80,12 @@ export function DashboardPage() {
     };
   }, [spaData, msData, teamFilter, globalFilter]);
 
+  const summaryCards = [
+    { title: "SPAs Migrated", value: spaData.length },
+    { title: "Microservices Migrated", value: msData.length },
+    { title: "Teams Migrating", value: allTeams.length },
+  ];
+
   if (isLoading) {
     return <LoadingScreen />;
   }
@@ -88,9 +95,14 @@ export function DashboardPage() {
       <Header lastUpdated={lastUpdated} />
       <main className="container mx-auto py-8">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
-          <SummaryCard title="SPAs Migrated" value={spaData.length} />
-          <SummaryCard title="Microservices Migrated" value={msData.length} />
-          <SummaryCard title="Teams Migrating" value={allTeams.length} />
+          {summaryCards.map((card, index) => (
+            <SummaryCard
+              key={card.title}
+              title={card.title}
+              value={card.value}
+              index={index}
+            />
+          ))}
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 mb-6 items-end">

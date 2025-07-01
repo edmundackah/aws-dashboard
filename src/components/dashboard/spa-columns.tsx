@@ -1,12 +1,12 @@
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
+import { ColumnDef, Column } from "@tanstack/react-table";
 import { Spa } from "@/app/data/schema";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown, CheckCircle2, XCircle, ExternalLink } from "lucide-react";
 import Link from "next/link";
 
-const SortableHeader = ({ column, children }: { column: any; children: React.ReactNode }) => (
+const SortableHeader = <TData,>({ column, children }: { column: Column<TData, unknown>; children: React.ReactNode }) => (
   <Button
     variant="ghost"
     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}

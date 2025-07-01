@@ -29,7 +29,7 @@ export function AnimatedNumber({ target }: { target: number }) {
       // If target is 0, set it immediately
       setCurrent(0);
     }
-  }, [target]);
+  }, [current, target]);
 
   return <>{current}</>;
 }
