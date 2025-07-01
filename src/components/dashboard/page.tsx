@@ -10,13 +10,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { TeamCombobox } from "@/components/team-combobox";
 import { MigrationBanner } from "@/components/migration-banner";
+import { ExportButton } from "@/components/export-button";
 
 import { columns as spaColumns } from "./spa-columns";
 import { columns as msColumns } from "./ms-columns";
 import { columns as teamStatsColumns } from "./team-stats-columns";
 import { DataTable } from "./data-table";
 
-// The component now expects the fetched data as a prop
+// Define the interface for the props this component will receive
 interface DashboardPageProps {
   data: {
     spaData: Spa[];
@@ -25,11 +26,13 @@ interface DashboardPageProps {
   };
 }
 
+// Ensure the component accepts and destructures the props correctly
 export function DashboardPage({ data }: DashboardPageProps) {
   const { spaData, msData, lastUpdate } = data;
 
   const [globalFilter, setGlobalFilter] = useState("");
   const [teamFilter, setTeamFilter] = useState("all");
+  const [activeTab, setActiveTab] = useState("ms");
 
   const { allTeams, filteredSpaData, filteredMsData, teamStats } = useMemo(() => {
     const teams = [...new Set([...spaData.map(item => item.subgroupName), ...msData.map(item => item.subgroupName)])].sort();
@@ -89,12 +92,13 @@ export function DashboardPage({ data }: DashboardPageProps) {
 
         <MigrationBanner />
 
-        <div className="grid gap-4 md:grid-cols-2 mb-6 items-end">
+        <div className="flex flex-col md:flex-row md:items-end gap-4 mb-6">
           <div>
             <label htmlFor="team-select" className="text-sm font-medium mb-2 block">Filter by Team:</label>
             <TeamCombobox teams={allTeams} value={teamFilter} onChange={setTeamFilter} />
           </div>
-          <div>
+
+          <div className="flex-grow">
             <label htmlFor="global-search" className="text-sm font-medium mb-2 block">Global Search:</label>
             <div className="flex gap-2">
               <Input
@@ -110,11 +114,17 @@ export function DashboardPage({ data }: DashboardPageProps) {
               >
                 Clear
               </Button>
+              <ExportButton
+                activeTab={activeTab}
+                spaData={filteredSpaData}
+                msData={filteredMsData}
+                teamStats={teamStats}
+              />
             </div>
           </div>
         </div>
 
-        <Tabs defaultValue="ms" className="w-full">
+        <Tabs defaultValue="ms" className="w-full" onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="spa">SPAs</TabsTrigger>
             <TabsTrigger value="ms">Microservices</TabsTrigger>
