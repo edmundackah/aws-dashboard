@@ -94,12 +94,10 @@ export function DashboardPage({ data }: DashboardPageProps) {
 
         <div className="flex flex-col md:flex-row md:items-end gap-4 mb-6">
           <div>
-            <label htmlFor="team-select" className="text-sm font-medium mb-2 block">Filter by Team:</label>
             <TeamCombobox teams={allTeams} value={teamFilter} onChange={setTeamFilter} />
           </div>
 
           <div className="flex-grow">
-            <label htmlFor="global-search" className="text-sm font-medium mb-2 block">Global Search:</label>
             <div className="flex gap-2">
               <Input
                 id="global-search"
