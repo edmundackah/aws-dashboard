@@ -1,4 +1,3 @@
-// components/dashboard/ms-columns.tsx
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"

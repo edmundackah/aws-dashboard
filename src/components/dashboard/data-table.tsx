@@ -1,4 +1,3 @@
-// components/dashboard/data-table.tsx
 "use client";
 
 import {
@@ -20,7 +19,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
+
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -43,13 +52,72 @@ export function DataTable<TData, TValue>({
     state: {
       sorting,
     },
-    // Set initial page size
     initialState: {
       pagination: {
         pageSize: 10,
       },
     },
   });
+
+  // --- LOGIC FOR DYNAMIC PAGINATION LINKS ---
+  const { pageIndex } = table.getState().pagination;
+  const pageCount = table.getPageCount();
+
+  const renderPaginationItems = () => {
+    const items = [];
+    // Show first page
+    items.push(
+      <PaginationItem key={0}>
+        <PaginationLink
+          onClick={() => table.setPageIndex(0)}
+          isActive={pageIndex === 0}
+        >
+          1
+        </PaginationLink>
+      </PaginationItem>
+    );
+
+    // Show ellipsis if needed
+    if (pageIndex > 2) {
+      items.push(<PaginationItem key="start-ellipsis"><PaginationEllipsis /></PaginationItem>);
+    }
+
+    // Show pages around the current page
+    for (let i = Math.max(1, pageIndex - 1); i < Math.min(pageCount - 1, pageIndex + 2); i++) {
+      items.push(
+        <PaginationItem key={i}>
+          <PaginationLink
+            onClick={() => table.setPageIndex(i)}
+            isActive={pageIndex === i}
+          >
+            {i + 1}
+          </PaginationLink>
+        </PaginationItem>
+      )
+    }
+
+    // Show ellipsis if needed
+    if (pageIndex < pageCount - 3) {
+      items.push(<PaginationItem key="end-ellipsis"><PaginationEllipsis /></PaginationItem>);
+    }
+
+    // Show last page if there's more than one page
+    if (pageCount > 1) {
+      items.push(
+        <PaginationItem key={pageCount - 1}>
+          <PaginationLink
+            onClick={() => table.setPageIndex(pageCount - 1)}
+            isActive={pageIndex === pageCount - 1}
+          >
+            {pageCount}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    }
+
+    return items;
+  };
+
 
   return (
     <div>
@@ -58,18 +126,16 @@ export function DataTable<TData, TValue>({
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                    </TableHead>
-                  );
-                })}
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id}>
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                  </TableHead>
+                ))}
               </TableRow>
             ))}
           </TableHeader>
@@ -100,27 +166,29 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <span className="text-sm text-muted-foreground">
-            Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
-        </span>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
-          Previous
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
-          Next
-        </Button>
+
+      <div className="py-4">
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                onClick={() => table.previousPage()}
+                className={!table.getCanPreviousPage() ? "pointer-events-none opacity-50" : "cursor-pointer"}
+              />
+            </PaginationItem>
+
+            {renderPaginationItems()}
+
+            <PaginationItem>
+              <PaginationNext
+                onClick={() => table.nextPage()}
+                className={!table.getCanNextPage() ? "pointer-events-none opacity-50" : "cursor-pointer"}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
       </div>
+
     </div>
   );
 }
