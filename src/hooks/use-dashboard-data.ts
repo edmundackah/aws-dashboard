@@ -19,9 +19,10 @@ export function useDashboardData() {
     const fetchData = async () => {
       setIsLoading(true);
       setError(null);
+
       try {
-        await new Promise(resolve => setTimeout(resolve, 750)); // Simulate delay
-        const response = await axios.get('http://localhost:8085/dashboard_data.json');
+        await new Promise(resolve => setTimeout(resolve, 750));
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}`);
         setData(response.data);
       } catch (err) {
         const errorMessage = "There was a problem fetching the dashboard data.";

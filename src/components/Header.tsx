@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { ThemeToggle } from "./theme-toggle"; // Import the toggle
+import { ThemeToggle } from "./theme-toggle";
 
 interface HeaderProps {
   lastUpdated: string;
@@ -16,7 +16,7 @@ export function Header({ lastUpdated }: HeaderProps) {
       <div className="container mx-auto flex items-center justify-between gap-4 py-4">
         <div className="flex items-center gap-3">
           <Image
-            src="https://img.icons8.com/win10/512/amazon-web-services.png"
+            src={`${process.env.NEXT_PUBLIC_AWS_ICON_URL}`}
             alt="AWS Icon"
             width={32}
             height={32}
