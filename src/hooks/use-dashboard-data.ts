@@ -1,0 +1,39 @@
+"use client";
+
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Spa, Microservice } from '@/app/data/schema';
+
+interface DashboardData {
+  spaData: Spa[];
+  msData: Microservice[];
+  lastUpdate: string;
+}
+
+export function useDashboardData() {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        await new Promise(resolve => setTimeout(resolve, 750)); // Simulate delay
+        const response = await axios.get('http://localhost:8085/dashboard_data.json');
+        setData(response.data);
+      } catch (err) {
+        const errorMessage = "There was a problem fetching the dashboard data.";
+        console.error(errorMessage, err);
+        setError(errorMessage);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  return { data, isLoading, error };
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Header } from "@/components/Header";
 import { SummaryCard } from "@/components/SummaryCard";
 import { Spa, Microservice, TeamStat } from "@/app/data/schema";
@@ -8,7 +8,6 @@ import { Spa, Microservice, TeamStat } from "@/app/data/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { LoadingScreen } from "@/components/loading-screen";
 import { TeamCombobox } from "@/components/team-combobox";
 import { MigrationBanner } from "@/components/migration-banner";
 
@@ -17,33 +16,20 @@ import { columns as msColumns } from "./ms-columns";
 import { columns as teamStatsColumns } from "./team-stats-columns";
 import { DataTable } from "./data-table";
 
-export function DashboardPage() {
-  const [spaData, setSpaData] = useState<Spa[]>([]);
-  const [msData, setMsData] = useState<Microservice[]>([]);
-  const [lastUpdated, setLastUpdated] = useState<string>("");
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+// The component now expects the fetched data as a prop
+interface DashboardPageProps {
+  data: {
+    spaData: Spa[];
+    msData: Microservice[];
+    lastUpdate: string;
+  };
+}
+
+export function DashboardPage({ data }: DashboardPageProps) {
+  const { spaData, msData, lastUpdate } = data;
 
   const [globalFilter, setGlobalFilter] = useState("");
   const [teamFilter, setTeamFilter] = useState("all");
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        await new Promise(resolve => setTimeout(resolve, 750));
-        const response = await fetch('http://localhost:8084/dashboard_data.json');
-        const data = await response.json();
-        setSpaData(data.spaData);
-        setMsData(data.msData);
-        setLastUpdated(data.lastUpdate);
-      } catch (error) {
-        console.error("Failed to fetch dashboard data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
 
   const { allTeams, filteredSpaData, filteredMsData, teamStats } = useMemo(() => {
     const teams = [...new Set([...spaData.map(item => item.subgroupName), ...msData.map(item => item.subgroupName)])].sort();
@@ -86,13 +72,9 @@ export function DashboardPage() {
     { title: "Teams Migrating", value: allTeams.length },
   ];
 
-  if (isLoading) {
-    return <LoadingScreen />;
-  }
-
   return (
     <>
-      <Header lastUpdated={lastUpdated} />
+      <Header lastUpdated={lastUpdate} />
       <main className="container mx-auto py-8">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
           {summaryCards.map((card, index) => (
@@ -132,7 +114,7 @@ export function DashboardPage() {
           </div>
         </div>
 
-        <Tabs defaultValue="spa" className="w-full">
+        <Tabs defaultValue="ms" className="w-full">
           <TabsList>
             <TabsTrigger value="spa">SPAs</TabsTrigger>
             <TabsTrigger value="ms">Microservices</TabsTrigger>
