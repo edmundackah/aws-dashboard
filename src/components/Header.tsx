@@ -1,5 +1,5 @@
-// components/Header.tsx
 import Image from "next/image";
+import { ThemeToggle } from "./theme-toggle"; // Import the toggle
 
 interface HeaderProps {
   lastUpdated: string;
@@ -13,7 +13,7 @@ export function Header({ lastUpdated }: HeaderProps) {
 
   return (
     <header className="border-b">
-      <div className="container mx-auto flex flex-col items-center justify-between gap-2 py-4 sm:flex-row">
+      <div className="container mx-auto flex items-center justify-between gap-4 py-4">
         <div className="flex items-center gap-3">
           <Image
             src="https://img.icons8.com/win10/512/amazon-web-services.png"
@@ -22,13 +22,16 @@ export function Header({ lastUpdated }: HeaderProps) {
             height={32}
             className="h-8 w-8"
           />
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
             AWS Migration Tracker
           </h1>
         </div>
-        <p className="text-sm font-medium text-muted-foreground">
-          Last Updated: {formattedDate}
-        </p>
+        <div className="flex items-center gap-4">
+          <p className="hidden sm:block text-sm font-medium text-muted-foreground">
+            Last Updated: {formattedDate}
+          </p>
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   );

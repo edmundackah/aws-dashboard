@@ -19,8 +19,8 @@ export default function RootLayout({ children }: Readonly<{
     <body className={cn("min-h-screen bg-background font-sans antialiased", inter.className)}>
     <ThemeProvider
       attribute="class"
-      defaultTheme="light"
-      enableSystem={false}
+      defaultTheme="system"
+      enableSystem
       disableTransitionOnChange
     >
       {children}
