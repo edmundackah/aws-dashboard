@@ -8,8 +8,8 @@ import { Spa, Microservice, TeamStat } from "@/app/data/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LoadingScreen } from "@/components/loading-screen";
+import { TeamCombobox } from "@/components/team-combobox"; // Import the new Combobox
 
 import { columns as spaColumns } from "./spa-columns";
 import { columns as msColumns } from "./ms-columns";
@@ -47,7 +47,6 @@ export function DashboardPage() {
   const { allTeams, filteredSpaData, filteredMsData, teamStats } = useMemo(() => {
     const teams = [...new Set([...spaData.map(item => item.subgroupName), ...msData.map(item => item.subgroupName)])].sort();
 
-    // Corrected function to be generic, preserving the specific array type
     const filterByGlobal = <T extends Spa | Microservice>(data: T[]): T[] => {
       if (!globalFilter) return data;
       const searchStr = globalFilter.toLowerCase();
@@ -58,8 +57,8 @@ export function DashboardPage() {
       );
     };
 
-    const fSpaData = spaData.filter(item => teamFilter === 'all' || item.subgroupName === teamFilter);
-    const fMsData = msData.filter(item => teamFilter === 'all' || item.subgroupName === teamFilter);
+    const fSpaData = spaData.filter(item => teamFilter === 'all' || item.subgroupName.toLowerCase() === teamFilter.toLowerCase());
+    const fMsData = msData.filter(item => teamFilter === 'all' || item.subgroupName.toLowerCase() === teamFilter.toLowerCase());
 
     const stats: { [key: string]: TeamStat } = {};
     teams.forEach(team => {
@@ -108,17 +107,7 @@ export function DashboardPage() {
         <div className="grid gap-4 md:grid-cols-2 mb-6 items-end">
           <div>
             <label htmlFor="team-select" className="text-sm font-medium mb-2 block">Filter by Team:</label>
-            <Select value={teamFilter} onValueChange={setTeamFilter}>
-              <SelectTrigger id="team-select" className="w-full md:w-[250px]">
-                <SelectValue placeholder="Select a team" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Teams</SelectItem>
-                {allTeams.map(team => (
-                  <SelectItem key={team} value={team}>{team}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <TeamCombobox teams={allTeams} value={teamFilter} onChange={setTeamFilter} />
           </div>
           <div>
             <label htmlFor="global-search" className="text-sm font-medium mb-2 block">Global Search:</label>

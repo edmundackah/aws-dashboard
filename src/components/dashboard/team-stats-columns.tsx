@@ -19,7 +19,7 @@ const SortableHeader = <TData,>({ column, children }: { column: Column<TData, un
 export const columns: ColumnDef<TeamStat>[] = [
   {
     accessorKey: "teamName",
-    header: ({ column }) => <SortableHeader column={column}>Team Name</SortableHeader>,
+    header: ({ column }) => <SortableHeader column={column}>Team</SortableHeader>,
   },
   {
     accessorKey: "spaCount",
