@@ -1,0 +1,14 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/dashboard_data.json"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*"
+    },
+    "bodyFileName": "dashboard_data.json"
+  }
+}
