@@ -5,6 +5,8 @@ import Link from "next/link";
 import {Button} from "./ui/button";
 
 export function MigrationBanner() {
+  const docsUrl: string = process.env.NEXT_PUBLIC_DOCS_URL || "#";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -17,7 +19,7 @@ export function MigrationBanner() {
           <p className="text-sm text-primary-foreground/80">Our new documentation makes it simple.</p>
         </div>
         <Button asChild variant="secondary">
-          <Link href="#">Read the Docs</Link>
+          <Link href={docsUrl}>Read the Docs</Link>
         </Button>
       </div>
     </motion.div>

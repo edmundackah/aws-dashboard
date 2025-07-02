@@ -21,7 +21,7 @@ export function useDashboardData() {
       setError(null);
 
       try {
-        await new Promise(resolve => setTimeout(resolve, 750));
+        await new Promise(resolve => setTimeout(resolve, 150));
         const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}`);
         setData(response.data);
       } catch (err) {
