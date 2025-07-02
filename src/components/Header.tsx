@@ -16,7 +16,7 @@ export function Header({ lastUpdated }: HeaderProps) {
       <div className="container mx-auto flex items-center justify-between gap-4 py-4">
         <div className="flex items-center gap-3">
           <Image
-            src={`${process.env.NEXT_PUBLIC_AWS_ICON_URL}`}
+            src="https://img.icons8.com/win10/512/amazon-web-services.png"
             alt="AWS Icon"
             width={32}
             height={32}

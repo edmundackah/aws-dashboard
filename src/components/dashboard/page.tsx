@@ -101,7 +101,7 @@ export function DashboardPage({ data }: DashboardPageProps) {
             <div className="flex gap-2">
               <Input
                 id="global-search"
-                placeholder="Search all projects, teams, etc..."
+                placeholder="Search all Projects, Teams, URLs etc..."
                 value={globalFilter}
                 onChange={(e) => setGlobalFilter(e.target.value)}
                 className="flex-grow"

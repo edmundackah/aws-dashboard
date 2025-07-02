@@ -6,7 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "lint": "next lint",
-    "serve": "next build && next export",
+    "serve": "npm run build && npx serve out",
     "start": "next start",
     "build:dev": "cross-env NODE_ENV=dev npm run serve"
   },
