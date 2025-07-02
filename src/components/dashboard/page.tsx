@@ -1,23 +1,52 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Header } from "@/components/Header";
-import { SummaryCard } from "@/components/SummaryCard";
-import { Spa, Microservice, TeamStat } from "@/app/data/schema";
+import {Suspense, useMemo, useState} from "react";
+import {AnimatePresence, motion, Variants} from "framer-motion";
+import {Header} from "@/components/Header";
+import {SummaryCard} from "@/components/SummaryCard";
+import {Microservice, Spa, TeamStat} from "@/app/data/schema";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { TeamCombobox } from "@/components/team-combobox";
-import { MigrationBanner } from "@/components/migration-banner";
-import { ExportButton } from "@/components/export-button";
+import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
+import {DataTable} from "./data-table";
+import {Input} from "@/components/ui/input";
+import {Button} from "@/components/ui/button";
+import {Skeleton} from "@/components/ui/skeleton";
+import {TeamCombobox} from "@/components/team-combobox";
+import {MigrationBanner} from "@/components/migration-banner";
+import {ExportButton} from "@/components/export-button";
 
-import { columns as spaColumns } from "./spa-columns";
-import { columns as msColumns } from "./ms-columns";
-import { columns as teamStatsColumns } from "./team-stats-columns";
-import { DataTable } from "./data-table";
+import {columns as spaColumns} from "./spa-columns";
+import {columns as msColumns} from "./ms-columns";
+import {columns as teamStatsColumns} from "./team-stats-columns";
 
-// Define the interface for the props this component will receive
+const TableSkeleton = () => (
+  <div className="space-y-2 pt-4">
+    <Skeleton className="h-10 w-full" />
+    <Skeleton className="h-12 w-full" />
+    <Skeleton className="h-12 w-full" />
+    <Skeleton className="h-12 w-full" />
+  </div>
+);
+
+const tabOrder = ["spa", "ms", "teams"];
+
+const slideVariants: Variants = {
+  initial: (direction: number) => ({
+    x: direction > 0 ? "100%" : "-100%",
+    opacity: 0,
+  }),
+  animate: {
+    x: 0,
+    opacity: 1,
+    transition: { type: "spring", stiffness: 300, damping: 30 },
+  },
+  exit: (direction: number) => ({
+    x: direction > 0 ? "-100%" : "100%",
+    opacity: 0,
+    transition: { type: "spring", stiffness: 300, damping: 30 },
+  }),
+};
+
 interface DashboardPageProps {
   data: {
     spaData: Spa[];
@@ -26,13 +55,20 @@ interface DashboardPageProps {
   };
 }
 
-// Ensure the component accepts and destructures the props correctly
 export function DashboardPage({ data }: DashboardPageProps) {
   const { spaData, msData, lastUpdate } = data;
 
   const [globalFilter, setGlobalFilter] = useState("");
   const [teamFilter, setTeamFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("ms");
+  const [direction, setDirection] = useState(0);
+
+  const handleTabChange = (newTab: string) => {
+    const oldIndex = tabOrder.indexOf(activeTab);
+    const newIndex = tabOrder.indexOf(newTab);
+    setDirection(newIndex > oldIndex ? 1 : -1);
+    setActiveTab(newTab);
+  };
 
   const { allTeams, filteredSpaData, filteredMsData, teamStats } = useMemo(() => {
     const teams = [...new Set([...spaData.map(item => item.subgroupName), ...msData.map(item => item.subgroupName)])].sort();
@@ -122,21 +158,43 @@ export function DashboardPage({ data }: DashboardPageProps) {
           </div>
         </div>
 
-        <Tabs defaultValue="ms" className="w-full" onValueChange={setActiveTab}>
+        <Tabs defaultValue="ms" className="w-full" onValueChange={handleTabChange}>
           <TabsList>
             <TabsTrigger value="spa">SPAs</TabsTrigger>
             <TabsTrigger value="ms">Microservices</TabsTrigger>
             <TabsTrigger value="teams">Teams</TabsTrigger>
           </TabsList>
-          <TabsContent value="spa">
-            <DataTable columns={spaColumns} data={filteredSpaData} />
-          </TabsContent>
-          <TabsContent value="ms">
-            <DataTable columns={msColumns} data={filteredMsData} />
-          </TabsContent>
-          <TabsContent value="teams">
-            <DataTable columns={teamStatsColumns} data={teamStats} />
-          </TabsContent>
+          <div className="relative overflow-hidden pt-4 h-[600px]"> {/* Set a fixed height for the container */}
+            <AnimatePresence initial={false} custom={direction}>
+              <motion.div
+                key={activeTab}
+                variants={slideVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                custom={direction}
+                className="absolute w-full"
+              >
+                <Suspense fallback={<TableSkeleton />}>
+                  {activeTab === 'spa' && (
+                    <TabsContent value="spa" forceMount>
+                      <DataTable columns={spaColumns} data={filteredSpaData} />
+                    </TabsContent>
+                  )}
+                  {activeTab === 'ms' && (
+                    <TabsContent value="ms" forceMount>
+                      <DataTable columns={msColumns} data={filteredMsData} />
+                    </TabsContent>
+                  )}
+                  {activeTab === 'teams' && (
+                    <TabsContent value="teams" forceMount>
+                      <DataTable columns={teamStatsColumns} data={teamStats} />
+                    </TabsContent>
+                  )}
+                </Suspense>
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </Tabs>
       </main>
     </>

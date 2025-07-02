@@ -1,5 +1,5 @@
 // app/data/schema.ts
-import { z } from "zod";
+import {z} from "zod";
 
 // Schema for SPA data
 export const spaSchema = z.object({

@@ -1,8 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
+import {motion} from "framer-motion";
 import Link from "next/link";
-import { Button } from "./ui/button";
+import {Button} from "./ui/button";
 
 export function MigrationBanner() {
   return (

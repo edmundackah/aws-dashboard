@@ -1,7 +1,7 @@
 // components/animated-number.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import {useEffect, useState} from "react";
 
 export function AnimatedNumber({ target }: { target: number }) {
   const [current, setCurrent] = useState(0);

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { ThemeToggle } from "./theme-toggle";
+import {ThemeToggle} from "./theme-toggle";
 
 interface HeaderProps {
   lastUpdated: string;

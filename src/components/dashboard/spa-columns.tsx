@@ -1,9 +1,9 @@
 "use client";
 
-import { ColumnDef, Column } from "@tanstack/react-table";
-import { Spa } from "@/app/data/schema";
-import { Button } from "@/components/ui/button";
-import { ArrowUpDown, CheckCircle2, XCircle, ExternalLink } from "lucide-react";
+import {Column, ColumnDef} from "@tanstack/react-table";
+import {Spa} from "@/app/data/schema";
+import {Button} from "@/components/ui/button";
+import {ArrowUpDown, CheckCircle2, ExternalLink, XCircle} from "lucide-react";
 import Link from "next/link";
 
 const SortableHeader = <TData,>({ column, children }: { column: Column<TData, unknown>; children: React.ReactNode }) => (

@@ -1,19 +1,7 @@
 // components/dashboard/team-stats-modal.tsx
-import {
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Spa, Microservice } from "@/app/data/schema";
+import {DialogContent, DialogDescription, DialogHeader, DialogTitle,} from "@/components/ui/dialog";
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/components/ui/table";
+import {Microservice, Spa} from "@/app/data/schema";
 
 interface TeamStatsModalProps {
   spaData: Spa[];

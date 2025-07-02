@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import {useEffect, useState} from 'react';
 import axios from 'axios';
-import { Spa, Microservice } from '@/app/data/schema';
+import {Microservice, Spa} from '@/app/data/schema';
 
 interface DashboardData {
   spaData: Spa[];
