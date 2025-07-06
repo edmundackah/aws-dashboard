@@ -1,6 +1,7 @@
 import type {NextConfig} from "next";
 
 const nextConfig: NextConfig = {
+  // basePath: '/devops/aws/migration',
   // output: 'export',
   images: {
     remotePatterns: [
