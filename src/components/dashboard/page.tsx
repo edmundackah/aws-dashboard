@@ -6,7 +6,7 @@ import { Header } from "@/components/Header";
 import { SummaryCard } from "@/components/SummaryCard";
 import { Spa, Microservice, TeamStat } from "@/app/data/schema";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,22 +28,27 @@ const TableSkeleton = () => (
   </div>
 );
 
+// Defines the order of tabs to calculate the animation direction
 const tabOrder = ["spa", "ms", "teams"];
 
+// Defines the animation variants for the horizontal sliding effect
 const slideVariants: Variants = {
   initial: (direction: number) => ({
     x: direction > 0 ? "100%" : "-100%",
     opacity: 0,
+    position: 'absolute',
   }),
   animate: {
     x: 0,
     opacity: 1,
-    transition: { type: "spring", stiffness: 300, damping: 30 },
+    position: 'relative',
+    transition: { type: "spring", stiffness: 260, damping: 30 },
   },
   exit: (direction: number) => ({
     x: direction > 0 ? "-100%" : "100%",
     opacity: 0,
-    transition: { type: "spring", stiffness: 300, damping: 30 },
+    position: 'absolute',
+    transition: { type: "spring", stiffness: 260, damping: 30 },
   }),
 };
 
@@ -139,7 +144,7 @@ export function DashboardPage({ data }: DashboardPageProps) {
             <div className="flex gap-2">
               <Input
                 id="global-search"
-                placeholder="Search all Projects, Teams, URLs etc..."
+                placeholder="Search all projects, teams, etc..."
                 value={globalFilter}
                 onChange={(e) => setGlobalFilter(e.target.value)}
                 className="flex-grow"
@@ -166,7 +171,8 @@ export function DashboardPage({ data }: DashboardPageProps) {
             <TabsTrigger value="ms">Microservices</TabsTrigger>
             <TabsTrigger value="teams">Teams</TabsTrigger>
           </TabsList>
-          <div className="relative pt-4">
+          {/* This container prevents layout shifts during animation */}
+          <div className="relative min-h-[600px] overflow-hidden pt-4">
             <AnimatePresence initial={false} custom={direction}>
               <motion.div
                 key={activeTab}
@@ -179,19 +185,13 @@ export function DashboardPage({ data }: DashboardPageProps) {
               >
                 <Suspense fallback={<TableSkeleton />}>
                   {activeTab === 'spa' && (
-                    <TabsContent value="spa" forceMount>
-                      <DataTable columns={spaColumns} data={filteredSpaData} />
-                    </TabsContent>
+                    <DataTable columns={spaColumns} data={filteredSpaData} />
                   )}
                   {activeTab === 'ms' && (
-                    <TabsContent value="ms" forceMount>
-                      <DataTable columns={msColumns} data={filteredMsData} />
-                    </TabsContent>
+                    <DataTable columns={msColumns} data={filteredMsData} />
                   )}
                   {activeTab === 'teams' && (
-                    <TabsContent value="teams" forceMount>
-                      <DataTable columns={teamStatsColumns} data={teamStats} />
-                    </TabsContent>
+                    <DataTable columns={teamStatsColumns} data={teamStats} />
                   )}
                 </Suspense>
               </motion.div>

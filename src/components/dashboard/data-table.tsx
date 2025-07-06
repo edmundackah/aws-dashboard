@@ -9,9 +9,25 @@ import {
   SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import {useState} from "react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import {
   Pagination,
@@ -28,6 +44,29 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
 }
+
+// Helper function to generate the pagination range
+const getPaginationRange = (pageCount: number, pageIndex: number): (number | string)[] => {
+  const range: (number | string)[] = [];
+  const delta = 2; // Number of pages to show around the current page
+  const left = pageIndex - delta;
+  const right = pageIndex + delta + 1;
+  let last: number | undefined;
+
+  for (let i = 0; i < pageCount; i++) {
+    if (i === 0 || i === pageCount - 1 || (i >= left && i < right)) {
+      if (last !== undefined && i - last === 2) {
+        range.push(last + 1);
+      } else if (last !== undefined && i - last > 2) {
+        range.push('...');
+      }
+      range.push(i);
+      last = i;
+    }
+  }
+  return range;
+};
+
 
 export function DataTable<TData, TValue>({
                                            columns,
@@ -52,68 +91,10 @@ export function DataTable<TData, TValue>({
     },
   });
 
-  const { pageIndex } = table.getState().pagination;
-  const pageCount = table.getPageCount();
-
-  const renderPaginationItems = () => {
-    const items = [];
-    // Show first page
-    items.push(
-      <PaginationItem key={0}>
-        <PaginationLink
-          onClick={() => table.setPageIndex(0)}
-          isActive={pageIndex === 0}
-        >
-          1
-        </PaginationLink>
-      </PaginationItem>
-    );
-
-    // Show ellipsis if needed
-    if (pageIndex > 2) {
-      items.push(<PaginationItem key="start-ellipsis"><PaginationEllipsis /></PaginationItem>);
-    }
-
-    // Show pages around the current page
-    for (let i = Math.max(1, pageIndex - 1); i < Math.min(pageCount - 1, pageIndex + 2); i++) {
-      items.push(
-        <PaginationItem key={i}>
-          <PaginationLink
-            onClick={() => table.setPageIndex(i)}
-            isActive={pageIndex === i}
-          >
-            {i + 1}
-          </PaginationLink>
-        </PaginationItem>
-      )
-    }
-
-    // Show ellipsis if needed
-    if (pageIndex < pageCount - 3) {
-      items.push(<PaginationItem key="end-ellipsis"><PaginationEllipsis /></PaginationItem>);
-    }
-
-    // Show last page if there's more than one page
-    if (pageCount > 1) {
-      items.push(
-        <PaginationItem key={pageCount - 1}>
-          <PaginationLink
-            onClick={() => table.setPageIndex(pageCount - 1)}
-            isActive={pageIndex === pageCount - 1}
-          >
-            {pageCount}
-          </PaginationLink>
-        </PaginationItem>
-      );
-    }
-
-    return items;
-  };
-
 
   return (
     <div>
-      <div className="rounded-md border">
+      <div className="rounded-md border bg-card">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -132,35 +113,67 @@ export function DataTable<TData, TValue>({
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
+            <AnimatePresence>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <motion.tr
+                    key={row.id}
+                    layout
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    data-state={row.getIsSelected() && "selected"}
+                    className="hover:bg-muted/50"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </motion.tr>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    No results.
+                  </TableCell>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
+              )}
+            </AnimatePresence>
           </TableBody>
         </Table>
       </div>
 
-      <div className="py-4">
-        <Pagination>
+      <div className="flex items-center justify-between py-4">
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-medium">Rows per page</p>
+          <Select
+            value={`${table.getState().pagination.pageSize}`}
+            onValueChange={(value) => {
+              table.setPageSize(Number(value))
+            }}
+          >
+            <SelectTrigger className="h-8 w-[80px]">
+              <SelectValue placeholder={table.getState().pagination.pageSize} />
+            </SelectTrigger>
+            <SelectContent side="top">
+              {[10, 15, 20, 30, 40, 50, 100].map((pageSize) => (
+                <SelectItem key={pageSize} value={`${pageSize}`}>
+                  {pageSize}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <Pagination className="mx-0 w-auto">
           <PaginationContent>
             <PaginationItem>
               <PaginationPrevious
@@ -169,7 +182,22 @@ export function DataTable<TData, TValue>({
               />
             </PaginationItem>
 
-            {renderPaginationItems()}
+            {/* Refactored pagination logic using .map */}
+            {getPaginationRange(table.getPageCount(), table.getState().pagination.pageIndex).map((page, index) => {
+              if (typeof page === 'string') {
+                return <PaginationItem key={`ellipsis-${index}`}><PaginationEllipsis /></PaginationItem>;
+              }
+              return (
+                <PaginationItem key={page}>
+                  <PaginationLink
+                    onClick={() => table.setPageIndex(page)}
+                    isActive={table.getState().pagination.pageIndex === page}
+                  >
+                    {page + 1}
+                  </PaginationLink>
+                </PaginationItem>
+              );
+            })}
 
             <PaginationItem>
               <PaginationNext
@@ -179,6 +207,11 @@ export function DataTable<TData, TValue>({
             </PaginationItem>
           </PaginationContent>
         </Pagination>
+
+        <div className="flex w-[100px] items-center justify-center text-sm font-medium">
+          Page {table.getState().pagination.pageIndex + 1} of{" "}
+          {table.getPageCount()}
+        </div>
       </div>
 
     </div>
