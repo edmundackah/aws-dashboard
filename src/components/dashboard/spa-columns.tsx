@@ -33,7 +33,7 @@ export const columns: ColumnDef<Spa>[] = [
         href={row.original.homepage}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-blue-600 hover:underline flex items-center gap-1"
+        className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
       >
         {row.original.homepage}
         <ExternalLink className="h-4 w-4" />
