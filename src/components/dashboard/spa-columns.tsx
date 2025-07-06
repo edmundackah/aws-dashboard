@@ -1,10 +1,9 @@
 "use client";
 
-import {Column, ColumnDef} from "@tanstack/react-table";
-import {Spa} from "@/app/data/schema";
-import {Button} from "@/components/ui/button";
-import {ArrowUpDown, CheckCircle2, ExternalLink, XCircle} from "lucide-react";
-import Link from "next/link";
+import { ColumnDef, Column } from "@tanstack/react-table";
+import { Spa } from "@/app/data/schema";
+import { Button } from "@/components/ui/button";
+import { ArrowUpDown, CheckCircle2, XCircle, ExternalLink } from "lucide-react";
 
 const SortableHeader = <TData,>({ column, children }: { column: Column<TData, unknown>; children: React.ReactNode }) => (
   <Button
@@ -30,10 +29,15 @@ export const columns: ColumnDef<Spa>[] = [
     accessorKey: "homepage",
     header: "Homepage",
     cell: ({ row }) => (
-      <Link href={row.original.homepage} target="_blank" className="text-blue-600 hover:underline flex items-center gap-1">
+      <a
+        href={row.original.homepage}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-600 hover:underline flex items-center gap-1"
+      >
         {row.original.homepage}
         <ExternalLink className="h-4 w-4" />
-      </Link>
+      </a>
     )
   },
   {
@@ -65,7 +69,7 @@ export const columns: ColumnDef<Spa>[] = [
     header: "Link",
     cell: ({ row }) => (
       <Button variant="outline" size="sm" asChild>
-        <Link href={row.original.projectLink} target="_blank">View Project</Link>
+        <a href={row.original.projectLink} target="_blank" rel="noopener noreferrer">View Project</a>
       </Button>
     )
   }
