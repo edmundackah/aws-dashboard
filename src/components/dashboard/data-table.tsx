@@ -9,25 +9,11 @@ import {
   SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import {useState} from "react";
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/components/ui/table";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from "@/components/ui/select";
 
 import {
   Pagination,
@@ -48,7 +34,7 @@ interface DataTableProps<TData, TValue> {
 // Helper function to generate the pagination range
 const getPaginationRange = (pageCount: number, pageIndex: number): (number | string)[] => {
   const range: (number | string)[] = [];
-  const delta = 2; // Number of pages to show around the current page
+  const delta = 2;
   const left = pageIndex - delta;
   const right = pageIndex + delta + 1;
   let last: number | undefined;
@@ -113,40 +99,33 @@ export function DataTable<TData, TValue>({
             ))}
           </TableHeader>
           <TableBody>
-            <AnimatePresence>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <motion.tr
-                    key={row.id}
-                    layout
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    data-state={row.getIsSelected() && "selected"}
-                    className="hover:bg-muted/50"
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    ))}
-                  </motion.tr>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-24 text-center"
-                  >
-                    No results.
-                  </TableCell>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                  className="hover:bg-muted/50"
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  ))}
                 </TableRow>
-              )}
-            </AnimatePresence>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  No results.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
@@ -182,7 +161,6 @@ export function DataTable<TData, TValue>({
               />
             </PaginationItem>
 
-            {/* Refactored pagination logic using .map */}
             {getPaginationRange(table.getPageCount(), table.getState().pagination.pageIndex).map((page, index) => {
               if (typeof page === 'string') {
                 return <PaginationItem key={`ellipsis-${index}`}><PaginationEllipsis /></PaginationItem>;
@@ -213,7 +191,6 @@ export function DataTable<TData, TValue>({
           {table.getPageCount()}
         </div>
       </div>
-
     </div>
   );
 }
