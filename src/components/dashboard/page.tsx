@@ -1,23 +1,23 @@
 "use client";
 
-import {Suspense, useMemo, useState} from "react";
-import {AnimatePresence, motion, Variants} from "framer-motion";
-import {Header} from "@/components/Header";
-import {SummaryCard} from "@/components/SummaryCard";
-import {Microservice, Spa, TeamStat} from "@/app/data/schema";
+import { useState, useMemo, Suspense } from "react";
+import { motion, AnimatePresence, Variants } from "framer-motion";
+import { Header } from "@/components/Header";
+import { SummaryCard } from "@/components/SummaryCard";
+import { Spa, Microservice, TeamStat } from "@/app/data/schema";
 
-import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
-import {DataTable} from "./data-table";
-import {Input} from "@/components/ui/input";
-import {Button} from "@/components/ui/button";
-import {Skeleton} from "@/components/ui/skeleton";
-import {TeamCombobox} from "@/components/team-combobox";
-import {MigrationBanner} from "@/components/migration-banner";
-import {ExportButton} from "@/components/export-button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { TeamCombobox } from "@/components/team-combobox";
+import { MigrationBanner } from "@/components/migration-banner";
+import { ExportButton } from "@/components/export-button";
 
-import {columns as spaColumns} from "./spa-columns";
-import {columns as msColumns} from "./ms-columns";
-import {columns as teamStatsColumns} from "./team-stats-columns";
+import { columns as spaColumns } from "./spa-columns";
+import { columns as msColumns } from "./ms-columns";
+import { columns as teamStatsColumns } from "./team-stats-columns";
+import {DataTable} from "@/components/dashboard/data-table";
 
 const TableSkeleton = () => (
   <div className="space-y-2 pt-4">
@@ -130,10 +130,12 @@ export function DashboardPage({ data }: DashboardPageProps) {
 
         <div className="flex flex-col md:flex-row md:items-end gap-4 mb-6">
           <div>
+            <label htmlFor="team-select" className="text-sm font-medium mb-2 block">Filter by Team:</label>
             <TeamCombobox teams={allTeams} value={teamFilter} onChange={setTeamFilter} />
           </div>
 
           <div className="flex-grow">
+            <label htmlFor="global-search" className="text-sm font-medium mb-2 block">Global Search:</label>
             <div className="flex gap-2">
               <Input
                 id="global-search"
@@ -164,7 +166,7 @@ export function DashboardPage({ data }: DashboardPageProps) {
             <TabsTrigger value="ms">Microservices</TabsTrigger>
             <TabsTrigger value="teams">Teams</TabsTrigger>
           </TabsList>
-          <div className="relative overflow-hidden pt-4 h-[600px]"> {/* Set a fixed height for the container */}
+          <div className="relative pt-4">
             <AnimatePresence initial={false} custom={direction}>
               <motion.div
                 key={activeTab}
@@ -173,7 +175,7 @@ export function DashboardPage({ data }: DashboardPageProps) {
                 animate="animate"
                 exit="exit"
                 custom={direction}
-                className="absolute w-full"
+                className="w-full"
               >
                 <Suspense fallback={<TableSkeleton />}>
                   {activeTab === 'spa' && (

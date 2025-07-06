@@ -52,7 +52,6 @@ export function DataTable<TData, TValue>({
     },
   });
 
-  // --- LOGIC FOR DYNAMIC PAGINATION LINKS ---
   const { pageIndex } = table.getState().pagination;
   const pageCount = table.getPageCount();
 
