@@ -1,4 +1,3 @@
-import Image from "next/image";
 import {ThemeToggle} from "./theme-toggle";
 
 interface HeaderProps {
@@ -15,13 +14,6 @@ export function Header({ lastUpdated }: HeaderProps) {
     <header className="border-b">
       <div className="container mx-auto flex items-center justify-between gap-4 py-4">
         <div className="flex items-center gap-3">
-          <Image
-            src="https://img.icons8.com/win10/512/amazon-web-services.png"
-            alt="AWS Icon"
-            width={32}
-            height={32}
-            className="h-8 w-8"
-          />
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
             AWS Migration Tracker
           </h1>
