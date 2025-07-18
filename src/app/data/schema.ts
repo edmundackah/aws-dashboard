@@ -1,7 +1,6 @@
-// app/data/schema.ts
-import {z} from "zod";
+import { z } from "zod";
 
-// Schema for SPA data
+// Add an optional 'status' field
 export const spaSchema = z.object({
   projectName: z.string(),
   homepage: z.string().url(),
@@ -13,9 +12,10 @@ export const spaSchema = z.object({
     nft: z.boolean(),
   }),
   projectLink: z.string().url(),
+  status: z.string().optional(),
 });
 
-// Schema for Microservice data
+// Add an optional 'status' field
 export const msSchema = z.object({
   projectName: z.string(),
   subgroupName: z.string(),
@@ -28,13 +28,16 @@ export const msSchema = z.object({
     nft: z.boolean(),
   }),
   projectLink: z.string().url(),
+  status: z.string().optional(),
 });
 
-// New schema for the Team Stats table
+// Update the TeamStat schema with new columns
 export const teamStatSchema = z.object({
   teamName: z.string(),
-  spaCount: z.number(),
-  msCount: z.number(),
+  migratedSpaCount: z.number(),
+  outstandingSpaCount: z.number(),
+  migratedMsCount: z.number(),
+  outstandingMsCount: z.number(),
 });
 
 export type Spa = z.infer<typeof spaSchema>;

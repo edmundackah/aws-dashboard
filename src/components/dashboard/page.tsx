@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TeamCombobox } from "@/components/team-combobox";
 import { MigrationBanner } from "@/components/migration-banner";
 import { ExportButton } from "@/components/export-button";
@@ -28,10 +29,8 @@ const TableSkeleton = () => (
   </div>
 );
 
-// Defines the order of tabs to calculate the animation direction
 const tabOrder = ["spa", "ms", "teams"];
 
-// Defines the animation variants for the horizontal sliding effect
 const slideVariants: Variants = {
   initial: (direction: number) => ({
     x: direction > 0 ? "100%" : "-100%",
@@ -65,6 +64,7 @@ export function DashboardPage({ data }: DashboardPageProps) {
 
   const [globalFilter, setGlobalFilter] = useState("");
   const [teamFilter, setTeamFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("migrated");
   const [activeTab, setActiveTab] = useState("ms");
   const [direction, setDirection] = useState(0);
 
@@ -76,7 +76,8 @@ export function DashboardPage({ data }: DashboardPageProps) {
   };
 
   const { allTeams, filteredSpaData, filteredMsData, teamStats } = useMemo(() => {
-    const teams = [...new Set([...spaData.map(item => item.subgroupName), ...msData.map(item => item.subgroupName)])].sort();
+    const allServices = [...spaData, ...msData];
+    const teams = [...new Set(allServices.map(item => item.subgroupName))].sort();
 
     const filterByGlobal = <T extends Spa | Microservice>(data: T[]): T[] => {
       if (!globalFilter) return data;
@@ -88,32 +89,56 @@ export function DashboardPage({ data }: DashboardPageProps) {
       );
     };
 
-    const fSpaData = spaData.filter(item => teamFilter === 'all' || item.subgroupName.toLowerCase() === teamFilter.toLowerCase());
-    const fMsData = msData.filter(item => teamFilter === 'all' || item.subgroupName.toLowerCase() === teamFilter.toLowerCase());
+    const statusFilteredSpas = spaData.filter(item => {
+      if (statusFilter === 'all') return true;
+      return item.status?.toLowerCase().replace('_', '') === statusFilter.replace('_', '');
+    });
 
-    const stats: { [key: string]: TeamStat } = {};
+    const statusFilteredMs = msData.filter(item => {
+      if (statusFilter === 'all') return true;
+      return item.status?.toLowerCase().replace('_', '') === statusFilter.replace('_', '');
+    });
+
+    const fSpaData = statusFilteredSpas.filter(item => teamFilter === 'all' || item.subgroupName.toLowerCase() === teamFilter.toLowerCase());
+    const fMsData = statusFilteredMs.filter(item => teamFilter === 'all' || item.subgroupName.toLowerCase() === teamFilter.toLowerCase());
+
+    const calculatedTeamStats: TeamStat[] = [];
     teams.forEach(team => {
-      stats[team] = { teamName: team, spaCount: 0, msCount: 0 };
+      const teamSpas = spaData.filter(spa => spa.subgroupName === team);
+      const teamMs = msData.filter(ms => ms.subgroupName === team);
+
+      calculatedTeamStats.push({
+        teamName: team,
+        migratedSpaCount: teamSpas.filter(s => s.status === 'MIGRATED').length,
+        outstandingSpaCount: teamSpas.filter(s => s.status !== 'MIGRATED').length,
+        migratedMsCount: teamMs.filter(m => m.status === 'MIGRATED').length,
+        outstandingMsCount: teamMs.filter(m => m.status !== 'MIGRATED').length,
+      });
     });
-    spaData.forEach(spa => {
-      if (stats[spa.subgroupName]) stats[spa.subgroupName].spaCount++;
-    });
-    msData.forEach(ms => {
-      if (stats[ms.subgroupName]) stats[ms.subgroupName].msCount++;
+
+    const filteredTeamStats = calculatedTeamStats.filter(team => {
+      if (statusFilter === 'all') return true;
+      if (statusFilter === 'migrated') {
+        return team.outstandingSpaCount === 0 && team.outstandingMsCount === 0;
+      }
+      if (statusFilter === 'not_migrated') {
+        return team.migratedSpaCount === 0 && team.migratedMsCount === 0;
+      }
+      return true;
     });
 
     return {
       allTeams: teams,
       filteredSpaData: filterByGlobal(fSpaData),
       filteredMsData: filterByGlobal(fMsData),
-      teamStats: Object.values(stats),
+      teamStats: filteredTeamStats,
     };
-  }, [spaData, msData, teamFilter, globalFilter]);
+  }, [spaData, msData, teamFilter, globalFilter, statusFilter]);
 
   const summaryCards = [
-    { title: "SPAs Migrated", value: spaData.length },
-    { title: "Microservices Migrated", value: msData.length },
-    { title: "Teams Migrating", value: allTeams.length },
+    { title: "Total SPAs", value: spaData.length },
+    { title: "Total Microservices", value: msData.length },
+    { title: "Total Teams", value: allTeams.length },
   ];
 
   return (
@@ -138,18 +163,38 @@ export function DashboardPage({ data }: DashboardPageProps) {
             <TeamCombobox teams={allTeams} value={teamFilter} onChange={setTeamFilter} />
           </div>
 
+          <div>
+            <Select
+              value={statusFilter}
+              onValueChange={setStatusFilter}
+            >
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Show All</SelectItem>
+                <SelectItem value="migrated">Migrated</SelectItem>
+                <SelectItem value="not_migrated">Not Migrated</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="flex-grow">
             <div className="flex gap-2">
               <Input
                 id="global-search"
-                placeholder="Search all projects, teams, etc..."
+                placeholder="Search..."
                 value={globalFilter}
                 onChange={(e) => setGlobalFilter(e.target.value)}
                 className="flex-grow"
               />
               <Button
                 variant="outline"
-                onClick={() => {setGlobalFilter(""); setTeamFilter("all")}}
+                onClick={() => {
+                  setGlobalFilter("");
+                  setTeamFilter("all");
+                  setStatusFilter("all");
+                }}
               >
                 Clear
               </Button>
@@ -169,7 +214,6 @@ export function DashboardPage({ data }: DashboardPageProps) {
             <TabsTrigger value="ms">Microservices</TabsTrigger>
             <TabsTrigger value="teams">Teams</TabsTrigger>
           </TabsList>
-          {/* This container prevents layout shifts during animation */}
           <div className="relative min-h-[600px] overflow-hidden pt-4">
             <AnimatePresence initial={false} custom={direction}>
               <motion.div

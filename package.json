@@ -11,6 +11,9 @@
     "build:dev": "cross-env NODE_ENV=dev npm run serve"
   },
   "dependencies": {
+    "@opentelemetry/api-logs": "^0.57.2",
+    "@opentelemetry/instrumentation": "^0.57.2",
+    "@opentelemetry/sdk-logs": "^0.57.2",
     "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-popover": "^1.1.14",
     "@radix-ui/react-select": "^2.2.5",
@@ -19,6 +22,7 @@
     "@radix-ui/react-tooltip": "^1.2.7",
     "@tanstack/react-table": "^8.21.3",
     "@types/papaparse": "^5.3.16",
+    "@vercel/otel": "^1.13.0",
     "axios": "^1.10.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -33,6 +37,10 @@
     "sonner": "^2.0.5",
     "tailwind-merge": "^3.3.1",
     "zod": "^3.25.67"
+  },
+  "optionalDependencies": {
+    "@parcel/css": "^1.15.0",
+    "lightningcss-linux-x64-gnu": "1.30.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

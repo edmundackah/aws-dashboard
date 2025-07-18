@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import {Column, ColumnDef} from "@tanstack/react-table";
-import {Microservice} from "@/app/data/schema";
-import {Button} from "@/components/ui/button";
-import {ArrowUpDown, CheckCircle2, XCircle} from "lucide-react";
-import Link from "next/link";
+import { ColumnDef, Column } from "@tanstack/react-table";
+import { Microservice } from "@/app/data/schema";
+import { Button } from "@/components/ui/button";
+import { ArrowUpDown, CheckCircle2, XCircle } from "lucide-react";
+import {StatusBadge} from "@/components/status-badge";
 
 const SortableHeader = <TData,>({ column, children }: { column: Column<TData, unknown>; children: React.ReactNode }) => (
   <Button
@@ -25,6 +25,15 @@ export const columns: ColumnDef<Microservice>[] = [
   {
     accessorKey: "projectName",
     header: ({ column }) => <SortableHeader column={column}>Project</SortableHeader>,
+    cell: ({ row }) => (
+      <div className="flex items-center gap-2">
+        <span>{row.original.projectName}</span>
+        <StatusBadge
+          status={row.original.status}
+          tooltipContent="This service has not been migrated yet."
+        />
+      </div>
+    ),
   },
   {
     accessorKey: "subgroupName",
@@ -61,10 +70,16 @@ export const columns: ColumnDef<Microservice>[] = [
   {
     id: "actions",
     header: "Link",
-    cell: ({ row }) => (
-      <Button variant="outline" size="sm" asChild>
-        <Link href={row.original.projectLink} target="_blank">View Project</Link>
-      </Button>
-    )
+    cell: ({ row }) => {
+      const { projectLink } = row.original;
+      if (!projectLink) {
+        return null;
+      }
+      return (
+        <Button variant="outline" size="sm" asChild>
+          <a href={projectLink} target="_blank" rel="noopener noreferrer">View Project</a>
+        </Button>
+      )
+    }
   }
 ]
