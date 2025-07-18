@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, Suspense } from "react";
+import dynamic from "next/dynamic";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import { Header } from "@/components/Header";
 import { SummaryCard } from "@/components/SummaryCard";
@@ -18,7 +19,10 @@ import { ExportButton } from "@/components/export-button";
 import { columns as spaColumns } from "./spa-columns";
 import { columns as msColumns } from "./ms-columns";
 import { columns as teamStatsColumns } from "./team-stats-columns";
-import {DataTable} from "@/components/dashboard/data-table";
+
+const DataTable = dynamic(() => import("./data-table").then(mod => mod.DataTable), {
+  ssr: false,
+});
 
 const TableSkeleton = () => (
   <div className="space-y-2 pt-4">
@@ -168,13 +172,13 @@ export function DashboardPage({ data }: DashboardPageProps) {
               value={statusFilter}
               onValueChange={setStatusFilter}
             >
-              <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px] font-medium">
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Show All</SelectItem>
-                <SelectItem value="migrated">Migrated</SelectItem>
-                <SelectItem value="not_migrated">Not Migrated</SelectItem>
+                <SelectItem value="migrated">Migrated Only</SelectItem>
+                <SelectItem value="not_migrated">Not Migrated Only</SelectItem>
               </SelectContent>
             </Select>
           </div>
