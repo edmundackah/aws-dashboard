@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
-import dynamic from "next/dynamic";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import { Header } from "@/components/Header";
 import { SummaryCard } from "@/components/SummaryCard";
@@ -10,28 +9,15 @@ import { Spa, Microservice, TeamStat } from "@/app/data/schema";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TeamCombobox } from "@/components/team-combobox";
 import { MigrationBanner } from "@/components/migration-banner";
 import { ExportButton } from "@/components/export-button";
+import { DataTable } from "./data-table"; // Use a standard, non-dynamic import
 
 import { columns as spaColumns } from "./spa-columns";
 import { columns as msColumns } from "./ms-columns";
 import { columns as teamStatsColumns } from "./team-stats-columns";
-
-const DataTable = dynamic(() => import("./data-table").then(mod => mod.DataTable), {
-  ssr: false,
-});
-
-const TableSkeleton = () => (
-  <div className="space-y-2 pt-4">
-    <Skeleton className="h-10 w-full" />
-    <Skeleton className="h-12 w-full" />
-    <Skeleton className="h-12 w-full" />
-    <Skeleton className="h-12 w-full" />
-  </div>
-);
 
 const tabOrder = ["spa", "ms", "teams"];
 
@@ -68,7 +54,7 @@ export function DashboardPage({ data }: DashboardPageProps) {
 
   const [globalFilter, setGlobalFilter] = useState("");
   const [teamFilter, setTeamFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("migrated");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("ms");
   const [direction, setDirection] = useState(0);
 
@@ -229,17 +215,16 @@ export function DashboardPage({ data }: DashboardPageProps) {
                 custom={direction}
                 className="w-full"
               >
-                <Suspense fallback={<TableSkeleton />}>
-                  {activeTab === 'spa' && (
-                    <DataTable columns={spaColumns} data={filteredSpaData} />
-                  )}
-                  {activeTab === 'ms' && (
-                    <DataTable columns={msColumns} data={filteredMsData} />
-                  )}
-                  {activeTab === 'teams' && (
-                    <DataTable columns={teamStatsColumns} data={teamStats} />
-                  )}
-                </Suspense>
+                {/* Removed Suspense wrapper as it's not needed for a static import */}
+                {activeTab === 'spa' && (
+                  <DataTable columns={spaColumns} data={filteredSpaData} />
+                )}
+                {activeTab === 'ms' && (
+                  <DataTable columns={msColumns} data={filteredMsData} />
+                )}
+                {activeTab === 'teams' && (
+                  <DataTable columns={teamStatsColumns} data={teamStats} />
+                )}
               </motion.div>
             </AnimatePresence>
           </div>
