@@ -1,23 +1,33 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, Suspense } from "react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import { Header } from "@/components/Header";
-import { SummaryCard } from "@/components/SummaryCard";
+import { SummaryCard } from "@/components/summary-card";
 import { Spa, Microservice, TeamStat } from "@/app/data/schema";
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TeamCombobox } from "@/components/team-combobox";
 import { MigrationBanner } from "@/components/migration-banner";
 import { ExportButton } from "@/components/export-button";
-import { DataTable } from "./data-table"; // Use a standard, non-dynamic import
 
 import { columns as spaColumns } from "./spa-columns";
 import { columns as msColumns } from "./ms-columns";
 import { columns as teamStatsColumns } from "./team-stats-columns";
+import {DataTable} from "@/components/dashboard/data-table";
+
+const TableSkeleton = () => (
+  <div className="space-y-2 pt-4">
+    <Skeleton className="h-10 w-full" />
+    <Skeleton className="h-12 w-full" />
+    <Skeleton className="h-12 w-full" />
+    <Skeleton className="h-12 w-full" />
+  </div>
+);
 
 const tabOrder = ["spa", "ms", "teams"];
 
@@ -65,7 +75,7 @@ export function DashboardPage({ data }: DashboardPageProps) {
     setActiveTab(newTab);
   };
 
-  const { allTeams, filteredSpaData, filteredMsData, teamStats } = useMemo(() => {
+  const { allTeams, filteredSpaData, filteredMsData, teamStats, summaryStats } = useMemo(() => {
     const allServices = [...spaData, ...msData];
     const teams = [...new Set(allServices.map(item => item.subgroupName))].sort();
 
@@ -117,18 +127,47 @@ export function DashboardPage({ data }: DashboardPageProps) {
       return true;
     });
 
+    const spaMigrated = spaData.filter(s => s.status === 'MIGRATED').length;
+    const spaOutstanding = spaData.length - spaMigrated;
+
+    const msMigrated = msData.filter(m => m.status === 'MIGRATED').length;
+    const msOutstanding = msData.length - msMigrated;
+
+    const teamsNotStarted = calculatedTeamStats.filter(
+      team => team.migratedSpaCount === 0 && team.migratedMsCount === 0
+    ).length;
+    const teamsStarted = calculatedTeamStats.length - teamsNotStarted;
+
     return {
       allTeams: teams,
       filteredSpaData: filterByGlobal(fSpaData),
       filteredMsData: filterByGlobal(fMsData),
       teamStats: filteredTeamStats,
+      summaryStats: {
+        spa: { migrated: spaMigrated, outstanding: spaOutstanding },
+        ms: { migrated: msMigrated, outstanding: msOutstanding },
+        teams: { migrated: teamsStarted, outstanding: teamsNotStarted },
+      },
     };
   }, [spaData, msData, teamFilter, globalFilter, statusFilter]);
 
   const summaryCards = [
-    { title: "Total SPAs", value: spaData.length },
-    { title: "Total Microservices", value: msData.length },
-    { title: "Total Teams", value: allTeams.length },
+    {
+      title: "SPAs",
+      migrated: summaryStats.spa.migrated,
+      outstanding: summaryStats.spa.outstanding,
+    },
+    {
+      title: "Microservices",
+      migrated: summaryStats.ms.migrated,
+      outstanding: summaryStats.ms.outstanding,
+    },
+    {
+      title: "Team Progress",
+      migrated: summaryStats.teams.migrated,
+      outstanding: summaryStats.teams.outstanding,
+      migratedLabel: "Teams Started",
+    },
   ];
 
   return (
@@ -140,7 +179,9 @@ export function DashboardPage({ data }: DashboardPageProps) {
             <SummaryCard
               key={card.title}
               title={card.title}
-              value={card.value}
+              migrated={card.migrated}
+              outstanding={card.outstanding}
+              migratedLabel={card.migratedLabel}
               index={index}
             />
           ))}
@@ -163,8 +204,8 @@ export function DashboardPage({ data }: DashboardPageProps) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Show All</SelectItem>
-                <SelectItem value="migrated">Migrated Only</SelectItem>
-                <SelectItem value="not_migrated">Not Migrated Only</SelectItem>
+                <SelectItem value="migrated">Migrated</SelectItem>
+                <SelectItem value="not_migrated">Not Migrated</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -215,16 +256,17 @@ export function DashboardPage({ data }: DashboardPageProps) {
                 custom={direction}
                 className="w-full"
               >
-                {/* Removed Suspense wrapper as it's not needed for a static import */}
-                {activeTab === 'spa' && (
-                  <DataTable columns={spaColumns} data={filteredSpaData} />
-                )}
-                {activeTab === 'ms' && (
-                  <DataTable columns={msColumns} data={filteredMsData} />
-                )}
-                {activeTab === 'teams' && (
-                  <DataTable columns={teamStatsColumns} data={teamStats} />
-                )}
+                <Suspense fallback={<TableSkeleton />}>
+                  {activeTab === 'spa' && (
+                    <DataTable columns={spaColumns} data={filteredSpaData} />
+                  )}
+                  {activeTab === 'ms' && (
+                    <DataTable columns={msColumns} data={filteredMsData} />
+                  )}
+                  {activeTab === 'teams' && (
+                    <DataTable columns={teamStatsColumns} data={teamStats} />
+                  )}
+                </Suspense>
               </motion.div>
             </AnimatePresence>
           </div>

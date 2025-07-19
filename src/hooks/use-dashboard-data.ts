@@ -34,10 +34,14 @@ export function useDashboardData() {
       try {
         await new Promise(resolve => setTimeout(resolve, 250));
 
+        console.log("Fetching data");
+
         const [mainResponse, summaryResponse] = await Promise.all([
           axios.get(`${process.env.NEXT_PUBLIC_API_URL}`),
           axios.get<ServiceSummaryItem[]>(`${process.env.NEXT_PUBLIC_SUMMARY_API_URL}`)
         ]);
+
+        console.log("This log better appear in Grafana");
 
         const mainData = mainResponse.data;
         const summaryData = summaryResponse.data;

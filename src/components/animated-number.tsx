@@ -1,7 +1,6 @@
-// components/animated-number.tsx
 "use client";
 
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 
 export function AnimatedNumber({ target }: { target: number }) {
   const [current, setCurrent] = useState(0);
@@ -9,12 +8,10 @@ export function AnimatedNumber({ target }: { target: number }) {
   useEffect(() => {
     if (current === target) return;
 
-    // Start the animation only when the target is greater than 0
     if (target > 0) {
       const interval = setInterval(() => {
         setCurrent((prev) => {
           if (prev < target) {
-            // Increment faster for larger numbers
             const increment = Math.ceil((target - prev) / 10);
             return prev + increment;
           } else {
@@ -22,14 +19,13 @@ export function AnimatedNumber({ target }: { target: number }) {
             return target;
           }
         });
-      }, 40); // Adjust speed of animation here
+      }, 40);
 
       return () => clearInterval(interval);
     } else {
-      // If target is 0, set it immediately
       setCurrent(0);
     }
-  }, [current, target]);
+  }, [target, current]); // Add 'current' to dependency array for correctness
 
-  return <>{current}</>;
+  return <>{current.toLocaleString()}</>;
 }
