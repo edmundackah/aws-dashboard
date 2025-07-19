@@ -9,11 +9,24 @@ import {
   SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import {useState} from "react";
+import { useState } from "react";
 
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import {
   Pagination,
@@ -104,7 +117,7 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="hover:bg-muted/50"
+                  className="even:bg-muted/50 hover:bg-muted"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
