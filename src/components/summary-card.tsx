@@ -1,13 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { AnimatedNumber } from "./animated-number";
+import {motion} from "framer-motion";
+import {Card, CardContent, CardHeader, CardTitle,} from "@/components/ui/card";
+import {AnimatedNumber} from "./animated-number";
 
 interface SummaryCardProps {
   title: string;

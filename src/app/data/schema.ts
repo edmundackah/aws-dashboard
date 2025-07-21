@@ -1,4 +1,4 @@
-import { z } from "zod";
+import {z} from "zod";
 
 // Add an optional 'status' field
 export const spaSchema = z.object({

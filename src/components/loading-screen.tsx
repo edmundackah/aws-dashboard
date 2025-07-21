@@ -3,8 +3,11 @@ import {Loader2} from "lucide-react";
 
 export function LoadingScreen() {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-      <Loader2 className="h-16 w-16 animate-spin" />
+    <div className="flex items-center justify-center min-h-screen w-full">
+      <div className="flex flex-col items-center gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-muted-foreground">Loading dashboard data...</p>
+      </div>
     </div>
   );
 }

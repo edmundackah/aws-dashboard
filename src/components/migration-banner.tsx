@@ -1,27 +1,28 @@
 "use client";
 
-import {motion} from "framer-motion";
+import { Button } from "./ui/button";
+import { Rocket } from "lucide-react";
 import Link from "next/link";
-import {Button} from "./ui/button";
 
 export function MigrationBanner() {
   const docsUrl: string = process.env.NEXT_PUBLIC_DOCS_URL || "#";
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.3 }} // Delay to appear after the cards
-    >
-      <div className="bg-primary text-primary-foreground p-6 rounded-lg mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div>
-          <h3 className="font-bold text-lg">Still need to migrate? 🤔</h3>
-          <p className="text-sm text-primary-foreground/80">Our new documentation makes it simple.</p>
+    <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 flex items-center justify-between">
+      <div className="flex items-center gap-4">
+        <div className="bg-primary/20 p-2 rounded-full">
+          <Rocket className="h-6 w-6 text-primary" />
         </div>
-        <Button asChild variant="secondary">
-          <Link href={docsUrl}>Read the Docs</Link>
-        </Button>
+        <div>
+          <h3 className="font-bold text-base text-primary">Still need to migrate? 🤔</h3>
+          <p className="text-sm text-primary/80">Our comprehensive documentation makes it simple.</p>
+        </div>
       </div>
-    </motion.div>
+      <Button asChild>
+        <Link href={docsUrl} target="_blank" rel="noopener noreferrer">
+          Learn More
+        </Link>
+      </Button>
+    </div>
   );
 }

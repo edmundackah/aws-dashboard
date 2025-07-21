@@ -102,7 +102,7 @@
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
+  --sidebar: oklch(0.269 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
   --sidebar-primary-foreground: oklch(0.985 0 0);
@@ -113,6 +113,16 @@
 }
 
 @layer base {
+
+  :root {
+    --chart-spa: 221.2 83.2% 53.3%;
+    --chart-ms: 173.5 98.2% 31.2%;
+  }
+
+  .dark {
+    --chart-spa: 217.2 91.2% 59.8%;
+    --chart-ms: 173.5 98.2% 38.2%;
+  }
   * {
     @apply border-border outline-ring/50;
   }

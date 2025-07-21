@@ -1,31 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
+import { animate } from "framer-motion";
 
-export function AnimatedNumber({ target }: { target: number }) {
-  const [current, setCurrent] = useState(0);
+interface AnimatedNumberProps {
+  value: number;
+}
+
+export const AnimatedNumber = ({ value }: AnimatedNumberProps) => {
+  const nodeRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
-    if (current === target) return;
+    const node = nodeRef.current;
+    if (!node) return;
 
-    if (target > 0) {
-      const interval = setInterval(() => {
-        setCurrent((prev) => {
-          if (prev < target) {
-            const increment = Math.ceil((target - prev) / 10);
-            return prev + increment;
-          } else {
-            clearInterval(interval);
-            return target;
-          }
-        });
-      }, 40);
+    const controls = animate(0, value, {
+      duration: 1,
+      onUpdate(value) {
+        node.textContent = Math.round(value).toLocaleString();
+      },
+    });
 
-      return () => clearInterval(interval);
-    } else {
-      setCurrent(0);
-    }
-  }, [target, current]); // Add 'current' to dependency array for correctness
+    return () => controls.stop();
+  }, [value]);
 
-  return <>{current.toLocaleString()}</>;
-}
+  return <span ref={nodeRef} />;
+};
