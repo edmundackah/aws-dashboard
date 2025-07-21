@@ -69,7 +69,7 @@ export const DashboardPageClient = ({
               <div className="text-2xl font-bold">
                 <AnimatedNumber value={totalSpas} />
               </div>
-              <p className="text-xs text-muted-foreground">Across all teams</p>
+              <p className="text-sm text-muted-foreground">Across all teams</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -87,7 +87,7 @@ export const DashboardPageClient = ({
               <div className="text-2xl font-bold">
                 <AnimatedNumber value={migratedSpas} />
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 {spaMigrationPercentage.toFixed(2)}% completed
               </p>
             </CardContent>
@@ -107,7 +107,7 @@ export const DashboardPageClient = ({
               <div className="text-2xl font-bold">
                 <AnimatedNumber value={totalMs} />
               </div>
-              <p className="text-xs text-muted-foreground">Across all teams</p>
+              <p className="text-sm text-muted-foreground">Across all teams</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -125,7 +125,7 @@ export const DashboardPageClient = ({
               <div className="text-2xl font-bold">
                 <AnimatedNumber value={migratedMs} />
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 {msMigrationPercentage.toFixed(2)}% completed
               </p>
             </CardContent>

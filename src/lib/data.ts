@@ -7,6 +7,10 @@ interface ServiceSummaryItem {
   projectLink: string;
   type: "SPA" | "MICROSERVICE";
   status: "NOT_MIGRATED";
+  technicalSme?: {
+    name: string;
+    email: string;
+  };
 }
 
 interface MainDataApiResponse {
@@ -51,6 +55,7 @@ export async function getDashboardData() {
         projectLink: item.projectLink,
         status: "NOT_MIGRATED",
         environments: { dev: false, sit: false, uat: false, nft: false },
+        technicalSme: item.technicalSme,
       }));
     const spaData: Spa[] = [...migratedSpas, ...notMigratedSpas];
 
@@ -68,6 +73,7 @@ export async function getDashboardData() {
         otel: "N/A",
         mssdk: "N/A",
         environments: { dev: false, sit: false, uat: false, nft: false },
+        technicalSme: item.technicalSme,
       }));
     const msData: Microservice[] = [...migratedMs, ...notMigratedMs];
 
@@ -81,6 +87,10 @@ export async function getDashboardData() {
     allTeams.forEach((team) => {
       const teamSpas = spaData.filter((spa) => spa.subgroupName === team);
       const teamMs = msData.filter((ms) => ms.subgroupName === team);
+
+      const teamServices = allServices.filter((s) => s.subgroupName === team);
+      const technicalSme = teamServices.length > 0 ? teamServices[0].technicalSme : undefined;
+
       allTeamStats.push({
         teamName: team,
         migratedSpaCount: teamSpas.filter((s) => s.status === "MIGRATED")
@@ -90,6 +100,7 @@ export async function getDashboardData() {
         migratedMsCount: teamMs.filter((m) => m.status === "MIGRATED").length,
         outstandingMsCount: teamMs.filter((m) => m.status !== "MIGRATED")
           .length,
+        technicalSme,
       });
     });
 

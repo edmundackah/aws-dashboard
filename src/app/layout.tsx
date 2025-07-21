@@ -1,12 +1,27 @@
-import {Poppins} from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import {ThemeProvider} from "@/components/theme-provider";
 import {Toaster} from "@/components/ui/sonner";
 import {cn} from "@/lib/utils";
 
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["300", "400", "600"],
+const poppins = localFont({
+  src: [
+    {
+      path: "../fonts/poppins-v23-latin-300.woff2",
+      weight: "300",
+      style: "normal",
+    },
+    {
+      path: "../fonts/poppins-v23-latin-regular.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../fonts/poppins-v23-latin-600.woff2",
+      weight: "600",
+      style: "normal",
+    },
+  ],
   display: 'swap',
   variable: '--font-poppins',
 });

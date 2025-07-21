@@ -58,8 +58,8 @@ export function TeamsPageClient({ teamsData = [] }: TeamsPageClientProps) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Show All</SelectItem>
-              <SelectItem value="migrated">Completed Teams</SelectItem>
-              <SelectItem value="not_migrated">Not Started Teams</SelectItem>
+              <SelectItem value="migrated">Completed</SelectItem>
+              <SelectItem value="not_migrated">Not Started</SelectItem>
             </SelectContent>
           </Select>
         </div>

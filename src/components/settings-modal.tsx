@@ -55,7 +55,7 @@ export function SettingsModal({ isOpen, onOpenChange }: SettingsModalProps) {
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Application Settings</DialogTitle>
+          <DialogTitle>Settings</DialogTitle>
           <DialogDescription>
             Manage your dashboard preferences and settings.
           </DialogDescription>

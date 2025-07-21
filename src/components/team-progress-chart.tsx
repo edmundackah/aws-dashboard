@@ -4,8 +4,6 @@ import * as React from "react";
 import {
   Area,
   AreaChart,
-  Bar,
-  BarChart,
   CartesianGrid,
   XAxis,
   YAxis,
@@ -55,6 +53,10 @@ const chartConfig = {
     label: "MS Progress",
     color: "hsl(var(--chart-ms))",
   },
+  totalProgress: {
+    label: "Overall Progress",
+    color: "hsl(var(--chart-purple))",
+  },
 } satisfies ChartConfig;
 
 interface TooltipPayload {
@@ -62,8 +64,9 @@ interface TooltipPayload {
   value: number;
   color: string;
   payload: {
-    spaProgress: number;
-    msProgress: number;
+    spaProgress?: number;
+    msProgress?: number;
+    totalProgress?: number;
     migratedSpaCount: number;
     totalSpas: number;
     migratedMsCount: number;
@@ -86,11 +89,15 @@ const CustomTooltip = ({
 }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
-    return (
-      <div className="rounded-lg border bg-background p-3 shadow-sm">
-        {chartType === "counts" && (
+    const labelContent = label?.replace("team-", "");
+
+    if (chartType === "counts") {
+      return (
+        <div className="rounded-lg border bg-background p-3 shadow-sm">
           <div className="grid gap-1.5">
-            <p className="font-medium text-muted-foreground">Team {label}</p>
+            <p className="font-medium text-muted-foreground">
+              Team {labelContent}
+            </p>
             {payload.map((entry) => (
               <div
                 key={entry.name}
@@ -110,43 +117,56 @@ const CustomTooltip = ({
               </div>
             ))}
           </div>
-        )}
-        {chartType === "progress" && (
-          <div className="grid gap-2">
-            <div className="grid grid-cols-2 gap-8">
-              <div className="flex flex-col">
-                <span className="text-[0.7rem] uppercase text-muted-foreground">
-                  Team
-                </span>
-                <span className="font-bold text-muted-foreground">{label}</span>
-              </div>
-              <div className="flex flex-col text-right">
-                <span className="text-[0.7rem] uppercase text-muted-foreground">
-                  Progress
-                </span>
-                <span className="font-bold">
-                  {data.spaProgress + data.msProgress}%
-                </span>
-              </div>
+        </div>
+      );
+    }
+
+    if (chartType === "progress" && data.totalProgress !== undefined) {
+      const spaMigrationProgress =
+        data.totalSpas > 0
+          ? Math.round((data.migratedSpaCount / data.totalSpas) * 100)
+          : 0;
+      const msMigrationProgress =
+        data.totalMs > 0
+          ? Math.round((data.migratedMsCount / data.totalMs) * 100)
+          : 0;
+      const totalMigrated = data.migratedSpaCount + data.migratedMsCount;
+      const totalServices = data.totalSpas + data.totalMs;
+
+      return (
+        <div className="min-w-[250px] rounded-lg border bg-background p-3 shadow-sm">
+          <div className="mb-2 flex justify-between">
+            <span className="font-medium text-muted-foreground">
+              Team {labelContent}
+            </span>
+            <span className="text-sm font-bold">{payload[0].value}%</span>
+          </div>
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center justify-between">
+              <span>SPAs</span>
+              <span className="font-semibold">
+                {data.migratedSpaCount} / {data.totalSpas} (
+                {spaMigrationProgress}%)
+              </span>
             </div>
-            <div className="grid gap-1.5 text-sm mt-2">
-              <div className="flex items-center justify-between">
-                <span>SPAs:</span>
-                <span className="font-bold">
-                  {data.migratedSpaCount} / {data.totalSpas}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Microservices:</span>
-                <span className="font-bold">
-                  {data.migratedMsCount} / {data.totalMs}
-                </span>
-              </div>
+            <div className="flex items-center justify-between">
+              <span>Microservices</span>
+              <span className="font-semibold">
+                {data.migratedMsCount} / {data.totalMs} ({msMigrationProgress}
+                %)
+              </span>
+            </div>
+            <div className="my-2 border-t"></div>
+            <div className="flex items-center justify-between font-bold">
+              <span>Total Migrated</span>
+              <span>
+                {totalMigrated} / {totalServices}
+              </span>
             </div>
           </div>
-        )}
-      </div>
-    );
+        </div>
+      );
+    }
   }
   return null;
 };
@@ -165,20 +185,15 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
           const totalSpas = team.migratedSpaCount + team.outstandingSpaCount;
           const totalMs = team.migratedMsCount + team.outstandingMsCount;
           const totalServices = totalSpas + totalMs;
-
-          const spaProgress =
+          const totalMigrated = team.migratedSpaCount + team.migratedMsCount;
+          const totalProgress =
             totalServices > 0
-              ? Math.round((team.migratedSpaCount / totalServices) * 100)
-              : 0;
-          const msProgress =
-            totalServices > 0
-              ? Math.round((team.migratedMsCount / totalServices) * 100)
+              ? Math.round((totalMigrated / totalServices) * 100)
               : 0;
 
           return {
             name: team.teamName,
-            spaProgress: spaProgress,
-            msProgress: msProgress,
+            totalProgress: totalProgress,
             migratedSpaCount: team.migratedSpaCount,
             totalSpas,
             migratedMsCount: team.migratedMsCount,
@@ -190,7 +205,7 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.4 }}
+      transition={{ duration: 0.8, delay: 0.5 }}
     >
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -207,7 +222,7 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
               <SelectValue placeholder="Select view" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="counts">Migrated Counts</SelectItem>
+              <SelectItem value="counts">Migrated Services</SelectItem>
               <SelectItem value="progress">Overall Progress</SelectItem>
             </SelectContent>
           </Select>
@@ -220,7 +235,7 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
             {view === "counts" ? (
               <AreaChart
                 data={chartData}
-                margin={{ top: 10, right: 20, left: 5, bottom: 0 }}
+                margin={{ top: 20, right: 30, left: 10, bottom: 0 }}
               >
                 <defs>
                   <linearGradient id="fillSpas" x1="0" y1="0" x2="0" y2="1">
@@ -282,14 +297,33 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
                   fill="url(#fillSpas)"
                   stroke="hsl(var(--chart-spa))"
                 />
-                <ChartLegend content={<ChartLegendContent />} />
+                <ChartLegend content={<ChartLegendContent className="text-sm" />} />
               </AreaChart>
             ) : (
-              <BarChart
+              <AreaChart
                 data={chartData}
-                stackOffset="sign"
-                margin={{ top: 10, right: 20, left: 10, bottom: 0 }}
+                margin={{ top: 20, right: 30, left: 10, bottom: 0 }}
               >
+                <defs>
+                  <linearGradient
+                    id="fillTotalProgress"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop
+                      offset="5%"
+                      stopColor="hsl(var(--chart-purple))"
+                      stopOpacity={0.8}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="hsl(var(--chart-purple))"
+                      stopOpacity={0.1}
+                    />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid vertical={false} />
                 <XAxis
                   dataKey="name"
@@ -297,32 +331,29 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
                   axisLine={false}
                   tickMargin={8}
                   tickFormatter={(value) => value.replace("team-", "T")}
-                  angle={-45}
-                  textAnchor="end"
+                  angle={45}
+                  textAnchor="start"
                   height={50}
                 />
                 <YAxis
                   tickFormatter={(value) => `${value}%`}
                   width={30}
                   domain={[0, 100]}
+                  ticks={[0, 25, 50, 75, 100]}
                 />
                 <ChartTooltip
                   cursor={false}
                   content={<CustomTooltip chartType="progress" />}
                 />
-                <Bar
-                  dataKey="spaProgress"
-                  fill="hsl(var(--chart-spa) / 0.5)"
-                  stackId="a"
-                  radius={4}
+                <Area
+                  dataKey="totalProgress"
+                  type="natural"
+                  fill="url(#fillTotalProgress)"
+                  stroke="hsl(var(--chart-purple))"
+                  strokeWidth={2}
                 />
-                <Bar
-                  dataKey="msProgress"
-                  fill="hsl(var(--chart-ms) / 0.5)"
-                  stackId="a"
-                  radius={4}
-                />
-              </BarChart>
+                <ChartLegend content={<ChartLegendContent className="text-sm" />} />
+              </AreaChart>
             )}
           </ChartContainer>
         </CardContent>

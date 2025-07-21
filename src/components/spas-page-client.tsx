@@ -73,8 +73,8 @@ export function SpasPageClient({ spaData, allTeams }: SpasPageClientProps) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Show All</SelectItem>
-              <SelectItem value="migrated">Migrated Only</SelectItem>
-              <SelectItem value="not_migrated">Not Migrated Only</SelectItem>
+              <SelectItem value="migrated">Migrated</SelectItem>
+              <SelectItem value="not_migrated">Not Migrated</SelectItem>
             </SelectContent>
           </Select>
         </div>
