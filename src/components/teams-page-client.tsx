@@ -4,7 +4,13 @@ import { useMemo, useState, useEffect } from "react";
 import { TeamStat } from "@/app/data/schema";
 import { DataTable } from "@/components/dashboard/data-table";
 import { columns as teamStatsColumns } from "@/components/dashboard/team-stats-columns";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
 interface TeamsPageClientProps {
@@ -27,16 +33,16 @@ const usePersistentState = <T,>(key: string, defaultValue: T) => {
 export function TeamsPageClient({ teamsData = [] }: TeamsPageClientProps) {
   const [statusFilter, setStatusFilter] = usePersistentState(
     "teams_statusFilter",
-    "all"
+    "all",
   );
 
   const filteredData = useMemo(() => {
-    return (teamsData || []).filter(team => {
-      if (statusFilter === 'all') return true;
-      if (statusFilter === 'migrated') {
+    return (teamsData || []).filter((team) => {
+      if (statusFilter === "all") return true;
+      if (statusFilter === "migrated") {
         return team.outstandingSpaCount === 0 && team.outstandingMsCount === 0;
       }
-      if (statusFilter === 'not_migrated') {
+      if (statusFilter === "not_migrated") {
         return team.migratedSpaCount === 0 && team.migratedMsCount === 0;
       }
       return true;
@@ -47,7 +53,6 @@ export function TeamsPageClient({ teamsData = [] }: TeamsPageClientProps) {
     <div className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 h-full w-full max-w-none">
       <div className="flex items-center gap-4 flex-shrink-0 w-full">
         <div>
-          <label className="text-sm font-medium mb-2 block">Filter by Status:</label>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full sm:w-[180px] font-medium">
               <SelectValue placeholder="Select status" />
