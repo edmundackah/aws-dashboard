@@ -57,7 +57,33 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-const CustomTooltip = ({ active, payload, label, chartType }: any) => {
+interface TooltipPayload {
+  name: string;
+  value: number;
+  color: string;
+  payload: {
+    spaProgress: number;
+    msProgress: number;
+    migratedSpaCount: number;
+    totalSpas: number;
+    migratedMsCount: number;
+    totalMs: number;
+  };
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayload[];
+  label?: string;
+  chartType: "counts" | "progress";
+}
+
+const CustomTooltip = ({
+  active,
+  payload,
+  label,
+  chartType,
+}: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
@@ -65,7 +91,7 @@ const CustomTooltip = ({ active, payload, label, chartType }: any) => {
         {chartType === "counts" && (
           <div className="grid gap-1.5">
             <p className="font-medium text-muted-foreground">Team {label}</p>
-            {payload.map((entry: any) => (
+            {payload.map((entry) => (
               <div
                 key={entry.name}
                 className="flex items-center justify-between gap-4"

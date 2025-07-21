@@ -1,10 +1,10 @@
 "use client";
 
-import {SpasPageClient} from "@/components/spas-page-client";
-import {useDashboardStore} from "@/stores/use-dashboard-store";
-import {useEffect} from "react";
-import {LoadingScreen} from "@/components/loading-screen";
-import {ErrorDisplay} from "@/components/error-display";
+import { SpasPageClient } from "@/components/spas-page-client";
+import { useDashboardStore } from "@/stores/use-dashboard-store";
+import { useEffect } from "react";
+import { LoadingScreen } from "@/components/loading-screen";
+import { ErrorDisplay } from "@/components/error-display";
 
 export default function SpasPage() {
   const { data, loading, error, fetchData } = useDashboardStore();
@@ -18,11 +18,11 @@ export default function SpasPage() {
   }
 
   if (error) {
-    return <ErrorDisplay error={error} />;
+    return <ErrorDisplay message={error} />;
   }
 
   if (!data) {
-    return <ErrorDisplay error="No data available" />;
+    return <ErrorDisplay message="No data available" />;
   }
 
   return (

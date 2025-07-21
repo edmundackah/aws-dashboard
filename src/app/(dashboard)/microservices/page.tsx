@@ -18,11 +18,11 @@ export default function MicroservicesPage() {
   }
 
   if (error) {
-    return <ErrorDisplay error={error} />;
+    return <ErrorDisplay message={error} />;
   }
 
   if (!data) {
-    return <ErrorDisplay error="No data available" />;
+    return <ErrorDisplay message="No data available" />;
   }
 
   return (

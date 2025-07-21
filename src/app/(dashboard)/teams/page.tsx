@@ -18,18 +18,16 @@ export default function TeamsPage() {
   }
 
   if (error) {
-    return <ErrorDisplay error={error} />;
+    return <ErrorDisplay message={error} />;
   }
 
   if (!data) {
-    return <ErrorDisplay error="No data available" />;
+    return <ErrorDisplay message="No data available" />;
   }
 
   return (
     <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
-      <TeamsPageClient
-        teamsData={data.allTeamStats}
-      />
+      <TeamsPageClient teamsData={data.allTeamStats} />
     </main>
   );
 }

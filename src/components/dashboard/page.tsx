@@ -1,19 +1,13 @@
 "use client";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TeamProgressChart } from "@/components/team-progress-chart";
 import { MigrationBanner } from "@/components/migration-banner";
 import { AnimatedNumber } from "@/components/animated-number";
 import { useDashboardStore } from "@/stores/use-dashboard-store";
 import { useEffect } from "react";
 import { TeamStat } from "@/app/data/schema";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 
 interface DashboardPageClientProps {
   teamsData: TeamStat[];
@@ -22,7 +16,7 @@ interface DashboardPageClientProps {
 export const DashboardPageClient = ({
   teamsData,
 }: DashboardPageClientProps) => {
-  const { data, fetchData } = useDashboardStore();
+  const { fetchData } = useDashboardStore();
 
   useEffect(() => {
     fetchData();
@@ -153,7 +147,7 @@ export const DashboardPageClient = ({
   );
 };
 
-const cardVariants = {
+const cardVariants: Variants = {
   hidden: { y: 20, opacity: 0 },
   visible: (i: number) => ({
     y: 0,

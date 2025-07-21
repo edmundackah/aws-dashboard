@@ -12,7 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 
 interface SpasPageClientProps {
   spaData: Spa[];
@@ -78,17 +77,6 @@ export function SpasPageClient({ spaData, allTeams }: SpasPageClientProps) {
               <SelectItem value="not_migrated">Not Migrated Only</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-        <div className="md:ml-auto">
-          <Button
-            variant="destructive"
-            onClick={() => {
-              setTeamFilter("all");
-              setStatusFilter("all");
-            }}
-          >
-            Clear
-          </Button>
         </div>
       </div>
       <div className="flex-1 min-h-0 w-full">

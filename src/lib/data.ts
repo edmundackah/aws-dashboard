@@ -1,5 +1,20 @@
 import { Microservice, Spa, TeamStat } from "@/app/data/schema";
 
+interface ServiceSummaryItem {
+  projectName: string;
+  homepage?: string;
+  subgroupName: string;
+  projectLink: string;
+  type: "SPA" | "MICROSERVICE";
+  status: "NOT_MIGRATED";
+}
+
+interface MainDataApiResponse {
+  spaData: Partial<Spa>[];
+  msData: Partial<Microservice>[];
+  lastUpdate: string;
+}
+
 export async function getDashboardData() {
   const mainDataUrl = process.env.NEXT_PUBLIC_API_URL;
   const summaryUrl = process.env.NEXT_PUBLIC_SUMMARY_API_URL;
@@ -19,19 +34,17 @@ export async function getDashboardData() {
       throw new Error("Failed to fetch data from one or more endpoints");
     }
 
-    const mainData = await mainDataRes.json();
-    const summaryData = await summaryRes.json();
+    const mainData: MainDataApiResponse = await mainDataRes.json();
+    const summaryData: ServiceSummaryItem[] = await summaryRes.json();
 
     // Combine migrated and not-migrated data
-    const migratedSpas: Spa[] = mainData.spaData.map((spa: any) => ({
-      ...spa,
+    const migratedSpas: Spa[] = mainData.spaData.map((spa) => ({
+      ...(spa as Spa),
       status: "MIGRATED",
     }));
     const notMigratedSpas: Spa[] = summaryData
-      .filter(
-        (item: any) => item.type === "SPA" && item.status === "NOT_MIGRATED",
-      )
-      .map((item: any) => ({
+      .filter((item) => item.type === "SPA")
+      .map((item) => ({
         projectName: item.projectName,
         homepage: item.homepage || "#",
         subgroupName: item.subgroupName,
@@ -41,16 +54,13 @@ export async function getDashboardData() {
       }));
     const spaData: Spa[] = [...migratedSpas, ...notMigratedSpas];
 
-    const migratedMs: Microservice[] = mainData.msData.map((ms: any) => ({
-      ...ms,
+    const migratedMs: Microservice[] = mainData.msData.map((ms) => ({
+      ...(ms as Microservice),
       status: "MIGRATED",
     }));
     const notMigratedMs: Microservice[] = summaryData
-      .filter(
-        (item: any) =>
-          item.type === "MICROSERVICE" && item.status === "NOT_MIGRATED",
-      )
-      .map((item: any) => ({
+      .filter((item) => item.type === "MICROSERVICE")
+      .map((item) => ({
         projectName: item.projectName,
         subgroupName: item.subgroupName,
         projectLink: item.projectLink,
@@ -61,9 +71,9 @@ export async function getDashboardData() {
       }));
     const msData: Microservice[] = [...migratedMs, ...notMigratedMs];
 
-    const allServices = [...spaData, ...msData];
+    const allServices: (Spa | Microservice)[] = [...spaData, ...msData];
     const allTeams = [
-      ...new Set(allServices.map((item: any) => item.subgroupName)),
+      ...new Set(allServices.map((item) => item.subgroupName)),
     ].sort();
 
     // Calculate all team stats

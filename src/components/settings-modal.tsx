@@ -18,14 +18,14 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 
 interface SettingsModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
 }
 
-const cardVariants = {
+const cardVariants: Variants = {
   hidden: { y: 20, opacity: 0 },
   visible: (i: number) => ({
     y: 0,

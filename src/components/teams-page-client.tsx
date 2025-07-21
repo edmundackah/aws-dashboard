@@ -11,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 
 interface TeamsPageClientProps {
   teamsData: TeamStat[];
@@ -63,16 +62,6 @@ export function TeamsPageClient({ teamsData = [] }: TeamsPageClientProps) {
               <SelectItem value="not_migrated">Not Started Teams</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-        <div className="ml-auto flex gap-2 self-end">
-          <Button
-            variant="destructive"
-            onClick={() => {
-              setStatusFilter("all");
-            }}
-          >
-            Clear
-          </Button>
         </div>
       </div>
       <div className="flex-1 min-h-0 w-full">

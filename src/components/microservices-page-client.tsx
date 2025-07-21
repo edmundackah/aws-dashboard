@@ -12,7 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 
 interface MicroservicesPageClientProps {
   msData: Microservice[];
@@ -77,21 +76,10 @@ export function MicroservicesPageClient({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Show All</SelectItem>
-              <SelectItem value="migrated">Migrated</SelectItem>
-              <SelectItem value="not_migrated">Not Migrated</SelectItem>
+              <SelectItem value="migrated">Migrated Only</SelectItem>
+              <SelectItem value="not_migrated">Not Migrated Only</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-        <div className="md:ml-auto">
-          <Button
-            variant="destructive"
-            onClick={() => {
-              setTeamFilter("all");
-              setStatusFilter("all");
-            }}
-          >
-            Clear
-          </Button>
         </div>
       </div>
       <div className="flex-1 min-h-0 w-full">

@@ -1,4 +1,3 @@
-import { Spa, Microservice, TeamStat } from "@/app/data/schema";
 import { useDashboardStore } from "@/stores/use-dashboard-store";
 
 // Function to download CSV
@@ -14,15 +13,13 @@ const downloadCSV = (csvContent: string, fileName: string) => {
 };
 
 // Function to convert array of objects to CSV string
-const convertToCSV = (data: any[]): string => {
+const convertToCSV = (data: Record<string, unknown>[]): string => {
   if (data.length === 0) return "";
   const headers = Object.keys(data[0]);
   const headerRow = headers.join(",") + "\n";
   const dataRows = data
     .map((row) =>
-      headers
-        .map((header) => JSON.stringify(row[header] ?? ""))
-        .join(",")
+      headers.map((header) => JSON.stringify(row[header] ?? "")).join(","),
     )
     .join("\n");
   return headerRow + dataRows;
@@ -48,4 +45,4 @@ export const exportData = async (type: "spa" | "ms" | "teams" | "all") => {
   if (type === "all" || type === "teams") {
     downloadCSV(convertToCSV(allTeamStats), "teams_data.csv");
   }
-}; 
+};

@@ -3,10 +3,8 @@
 import { Button } from "./ui/button";
 import {
   Search,
-  Calendar,
   Settings,
   User,
-  Calculator,
   SunDim,
   MoonStar,
   Server,
