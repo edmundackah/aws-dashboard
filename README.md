@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AWS Migration Tracker Dashboard
+
+This is a dashboard application for tracking the progress of AWS migrations. It provides a comprehensive overview of SPAs, microservices, and team progress, with a clean, modern interface.
+
+## Features
+
+- **Responsive Design:** A fully responsive layout that works on all screen sizes.
+- **Dark Mode:** A beautiful dark mode that is easy on the eyes.
+- **Data Visualization:** Interactive charts and graphs to visualize migration progress.
+- **Filtering and Searching:** Powerful filtering and searching capabilities to quickly find the information you need.
+- **Persistent State:** The application remembers your theme, sidebar, and filter preferences.
+- **Settings Modal:** A centralized location to manage your application settings.
+- **Page Transitions:** Smooth, animated transitions between pages.
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Node.js (v20 or higher)
+- npm
+
+### Installation
+
+1. Clone the repository:
+   ```sh
+   git clone https://github.com/your-username/aws-dashboard.git
+   ```
+2. Navigate to the project directory:
+    ```sh
+    cd aws-dashboard
+    ```
+3. Install the dependencies:
+    ```sh
+    npm install
+    ```
+### Environment Variables
+Create a .env.local file in the root of the project and add the following environment variables:
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+NEXT_PUBLIC_API_URL=http://localhost:8080/api/main-data
+NEXT_PUBLIC_SUMMARY_API_URL=http://localhost:8080/api/summary-data
+```
+## Running the Application
+To run the application in development mode, use the following command:
+```
+npm run dev
+```
+## Built With
+- [Next.js](https://nextjs.org/) - React framework for building server-side rendered and static websites.
+- [Tailwind CSS](https://tailwindcss.com/) - A utility-first CSS framework for rapid UI development.
+- [TypeScript](https://www.typescriptlang.org/) - A typed superset of JavaScript that compiles to plain JavaScript.
+- [Framer Motion](https://www.framer.com/motion/) - A production-ready motion library for React.
+- [Zustand](https://zustand-demo.pmnd.rs/) - A small, fast, and scalable state-management solution.
+- [Recharts](https://recharts.org/) - A composable charting library built on React components.
+- [Lucide React](https://lucide.dev/) - A beautiful and consistent icon toolkit.

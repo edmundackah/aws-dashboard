@@ -1,4 +1,4 @@
-// components/dashboard/team-stats-modal.tsx
+// components/(dashboard)/team-stats-modal.tsx
 import {DialogContent, DialogDescription, DialogHeader, DialogTitle,} from "@/components/ui/dialog";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/components/ui/table";
 import {Microservice, Spa} from "@/app/data/schema";

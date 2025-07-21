@@ -1,35 +1,28 @@
-// components/animated-number.tsx
 "use client";
 
-import {useEffect, useState} from "react";
+import { useEffect, useRef } from "react";
+import { animate } from "framer-motion";
 
-export function AnimatedNumber({ target }: { target: number }) {
-  const [current, setCurrent] = useState(0);
+interface AnimatedNumberProps {
+  value: number;
+}
+
+export const AnimatedNumber = ({ value }: AnimatedNumberProps) => {
+  const nodeRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
-    if (current === target) return;
+    const node = nodeRef.current;
+    if (!node) return;
 
-    // Start the animation only when the target is greater than 0
-    if (target > 0) {
-      const interval = setInterval(() => {
-        setCurrent((prev) => {
-          if (prev < target) {
-            // Increment faster for larger numbers
-            const increment = Math.ceil((target - prev) / 10);
-            return prev + increment;
-          } else {
-            clearInterval(interval);
-            return target;
-          }
-        });
-      }, 40); // Adjust speed of animation here
+    const controls = animate(0, value, {
+      duration: 1,
+      onUpdate(value) {
+        node.textContent = Math.round(value).toLocaleString();
+      },
+    });
 
-      return () => clearInterval(interval);
-    } else {
-      // If target is 0, set it immediately
-      setCurrent(0);
-    }
-  }, [current, target]);
+    return () => controls.stop();
+  }, [value]);
 
-  return <>{current}</>;
-}
+  return <span ref={nodeRef} />;
+};
