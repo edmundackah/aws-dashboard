@@ -255,7 +255,7 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
             {view === "counts" ? (
               <AreaChart
                 data={chartData}
-                margin={{ top: 20, right: 30, left: 10, bottom: 40 }}
+                margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
               >
                 <defs>
                   <linearGradient id="fillSpas" x1="0" y1="0" x2="0" y2="1">
@@ -302,7 +302,7 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
                   textAnchor="start"
                   height={50}
                 />
-                <YAxis width={30} allowDecimals={false} />
+                <YAxis width={40} allowDecimals={false} />
                 <ChartTooltip
                   cursor={false}
                   content={<CustomTooltip chartType="counts" />}
@@ -324,7 +324,7 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
             ) : (
               <AreaChart
                 data={chartData}
-                margin={{ top: 20, right: 30, left: 10, bottom: 40 }}
+                margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
               >
                 <defs>
                   <linearGradient

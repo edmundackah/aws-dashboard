@@ -93,9 +93,7 @@ export function processDashboardData(
     const serviceWithSme = teamServices.find(
       (s) => s.technicalSme && s.technicalSme.name !== "N/A",
     );
-    const technicalSme = serviceWithSme
-      ? serviceWithSme.technicalSme
-      : undefined;
+    const technicalSme = serviceWithSme?.technicalSme;
 
     const migratedSpaCount = teamSpas.filter(
       (s) => s.status === "MIGRATED",
