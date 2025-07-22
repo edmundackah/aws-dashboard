@@ -174,14 +174,34 @@ const CustomTooltip = ({
 export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
   const [view, setView] = React.useState("counts");
 
+  const processedTeamStats = React.useMemo(() => {
+    const teamMap = new Map<string, TeamStat>();
+
+    teamStats.forEach((team) => {
+      const teamName = team.teamName.toLowerCase();
+      if (teamMap.has(teamName)) {
+        const existingTeam = teamMap.get(teamName)!;
+        existingTeam.migratedSpaCount += team.migratedSpaCount;
+        existingTeam.outstandingSpaCount += team.outstandingSpaCount;
+        existingTeam.migratedMsCount += team.migratedMsCount;
+        existingTeam.outstandingMsCount += team.outstandingMsCount;
+      } else {
+        teamMap.set(teamName, { ...team });
+      }
+    });
+
+    return Array.from(teamMap.values());
+  }, [teamStats]);
+
+
   const chartData =
     view === "counts"
-      ? teamStats.map((team) => ({
+      ? processedTeamStats.map((team) => ({
           name: team.teamName.replace("team-", ""),
           spas: team.migratedSpaCount,
           microservices: team.migratedMsCount,
         }))
-      : teamStats.map((team) => {
+      : processedTeamStats.map((team) => {
           const totalSpas = team.migratedSpaCount + team.outstandingSpaCount;
           const totalMs = team.migratedMsCount + team.outstandingMsCount;
           const totalServices = totalSpas + totalMs;
@@ -276,7 +296,7 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
                   axisLine={false}
                   tickMargin={8}
                   tickFormatter={(value) =>
-                    value.length > 8 ? `${value.slice(0, 8)}...` : value
+                    value.length > 13 ? `${value.slice(0, 13)}...` : value
                   }
                   angle={45}
                   textAnchor="start"
@@ -333,7 +353,7 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
                   axisLine={false}
                   tickMargin={8}
                   tickFormatter={(value) =>
-                    value.length > 8 ? `${value.slice(0, 8)}...` : value
+                    value.length > 13 ? `${value.slice(0, 13)}...` : value
                   }
                   angle={45}
                   textAnchor="start"
