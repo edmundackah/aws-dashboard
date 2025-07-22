@@ -78,8 +78,10 @@ export function processDashboardData(
     const teamSpas = spaData.filter((spa) => spa.subgroupName === team);
     const teamMs = msData.filter((ms) => ms.subgroupName === team);
     const teamServices = allServices.filter((s) => s.subgroupName === team);
-    const technicalSme =
-      teamServices.length > 0 ? teamServices[0].technicalSme : undefined;
+    const serviceWithSme = teamServices.find((s) => s.technicalSme);
+    const technicalSme = serviceWithSme
+      ? serviceWithSme.technicalSme
+      : undefined;
 
     const migratedSpaCount = teamSpas.filter(
       (s) => s.status === "MIGRATED",
