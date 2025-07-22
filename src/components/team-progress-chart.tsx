@@ -250,12 +250,12 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
         <CardContent>
           <ChartContainer
             config={chartConfig}
-            className="aspect-auto h-[250px] w-full"
+            className="aspect-auto h-[300px] w-full"
           >
             {view === "counts" ? (
               <AreaChart
                 data={chartData}
-                margin={{ top: 20, right: 30, left: 10, bottom: 0 }}
+                margin={{ top: 20, right: 30, left: 10, bottom: 40 }}
               >
                 <defs>
                   <linearGradient id="fillSpas" x1="0" y1="0" x2="0" y2="1">
@@ -302,7 +302,7 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
                   textAnchor="start"
                   height={50}
                 />
-                <YAxis width={30} />
+                <YAxis width={30} allowDecimals={false} />
                 <ChartTooltip
                   cursor={false}
                   content={<CustomTooltip chartType="counts" />}
@@ -324,7 +324,7 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
             ) : (
               <AreaChart
                 data={chartData}
-                margin={{ top: 20, right: 30, left: 10, bottom: 0 }}
+                margin={{ top: 20, right: 30, left: 10, bottom: 40 }}
               >
                 <defs>
                   <linearGradient
@@ -361,7 +361,7 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
                 />
                 <YAxis
                   tickFormatter={(value) => `${value}%`}
-                  width={30}
+                  width={40}
                   domain={[0, 100]}
                   ticks={[0, 25, 50, 75, 100]}
                 />

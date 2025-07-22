@@ -90,7 +90,9 @@ export function processDashboardData(
     const teamSpas = spaData.filter((spa) => spa.subgroupName === team);
     const teamMs = msData.filter((ms) => ms.subgroupName === team);
     const teamServices = allServices.filter((s) => s.subgroupName === team);
-    const serviceWithSme = teamServices.find((s) => s.technicalSme);
+    const serviceWithSme = teamServices.find(
+      (s) => s.technicalSme && s.technicalSme.name !== "N/A",
+    );
     const technicalSme = serviceWithSme
       ? serviceWithSme.technicalSme
       : undefined;
