@@ -33,9 +33,19 @@ export function processDashboardData(
 } {
   const summary = summaryData || [];
 
+  const smeMap = new Map<string, ServiceSummaryItem["technicalSme"]>();
+  if (summaryData) {
+    summaryData.forEach((item) => {
+      if (item.technicalSme) {
+        smeMap.set(item.projectName, item.technicalSme);
+      }
+    });
+  }
+
   const migratedSpas: Spa[] = mainData.spaData.map((spa) => ({
     ...(spa as Spa),
     status: "MIGRATED",
+    technicalSme: smeMap.get(spa.projectName!),
   }));
   const migratedSpaNames = new Set(migratedSpas.map((s) => s.projectName));
   const notMigratedSpas: Spa[] = summary
@@ -59,6 +69,7 @@ export function processDashboardData(
   const migratedMs: Microservice[] = mainData.msData.map((ms) => ({
     ...(ms as Microservice),
     status: "MIGRATED",
+    technicalSme: smeMap.get(ms.projectName!),
   }));
   const migratedMsNames = new Set(migratedMs.map((m) => m.projectName));
   const notMigratedMs: Microservice[] = summary
