@@ -81,14 +81,23 @@ export function processDashboardData(
     const technicalSme =
       teamServices.length > 0 ? teamServices[0].technicalSme : undefined;
 
+    const migratedSpaCount = teamSpas.filter(
+      (s) => s.status === "MIGRATED",
+    ).length;
+    const migratedMsCount = teamMs.filter(
+      (m) => m.status === "MIGRATED",
+    ).length;
+
     allTeamStats.push({
       teamName: team,
-      migratedSpaCount: teamSpas.filter((s) => s.status === "MIGRATED").length,
-      outstandingSpaCount: teamSpas.filter((s) => s.status !== "MIGRATED")
-        .length,
-      migratedMsCount: teamMs.filter((m) => m.status === "MIGRATED").length,
-      outstandingMsCount: teamMs.filter((m) => m.status !== "MIGRATED")
-        .length,
+      migratedSpaCount,
+      outstandingSpaCount: summaryData
+        ? teamSpas.filter((s) => s.status !== "MIGRATED").length
+        : 0,
+      migratedMsCount,
+      outstandingMsCount: summaryData
+        ? teamMs.filter((m) => m.status !== "MIGRATED").length
+        : 0,
       technicalSme,
     });
   });
