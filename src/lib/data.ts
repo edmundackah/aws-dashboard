@@ -6,7 +6,7 @@ export interface ServiceSummaryItem {
   subgroupName: string;
   projectLink: string;
   type: "SPA" | "MICROSERVICE";
-  status: "NOT_MIGRATED";
+  status: "MIGRATED" | "NOT_MIGRATED";
   technicalSme?: {
     name: string;
     email: string;
@@ -37,8 +37,14 @@ export function processDashboardData(
     ...(spa as Spa),
     status: "MIGRATED",
   }));
+  const migratedSpaNames = new Set(migratedSpas.map((s) => s.projectName));
   const notMigratedSpas: Spa[] = summary
-    .filter((item) => item.type === "SPA")
+    .filter(
+      (item) =>
+        item.type === "SPA" &&
+        item.status === "NOT_MIGRATED" &&
+        !migratedSpaNames.has(item.projectName),
+    )
     .map((item) => ({
       projectName: item.projectName,
       homepage: item.homepage || "#",
@@ -54,8 +60,14 @@ export function processDashboardData(
     ...(ms as Microservice),
     status: "MIGRATED",
   }));
+  const migratedMsNames = new Set(migratedMs.map((m) => m.projectName));
   const notMigratedMs: Microservice[] = summary
-    .filter((item) => item.type === "MICROSERVICE")
+    .filter(
+      (item) =>
+        item.type === "MICROSERVICE" &&
+        item.status === "NOT_MIGRATED" &&
+        !migratedMsNames.has(item.projectName),
+    )
     .map((item) => ({
       projectName: item.projectName,
       subgroupName: item.subgroupName,
