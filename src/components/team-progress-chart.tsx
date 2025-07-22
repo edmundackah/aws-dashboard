@@ -192,7 +192,7 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
               : 0;
 
           return {
-            name: team.teamName,
+            name: team.teamName.replace("team-", ""),
             totalProgress: totalProgress,
             migratedSpaCount: team.migratedSpaCount,
             totalSpas,
@@ -275,7 +275,9 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
                   tickLine={false}
                   axisLine={false}
                   tickMargin={8}
-                  tickFormatter={(value) => `T${value}`}
+                  tickFormatter={(value) =>
+                    value.length > 8 ? `${value.slice(0, 8)}...` : value
+                  }
                   angle={45}
                   textAnchor="start"
                   height={50}
@@ -330,7 +332,9 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
                   tickLine={false}
                   axisLine={false}
                   tickMargin={8}
-                  tickFormatter={(value) => value.replace("team-", "T")}
+                  tickFormatter={(value) =>
+                    value.length > 8 ? `${value.slice(0, 8)}...` : value
+                  }
                   angle={45}
                   textAnchor="start"
                   height={50}
