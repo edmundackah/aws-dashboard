@@ -1,18 +1,29 @@
+"use client";
+
 import { ErrorDisplay } from "@/components/error-display";
 import { DashboardPageClient } from "@/components/dashboard/page";
-import { getDashboardData } from "@/lib/data";
+import { useDashboardStore } from "@/stores/use-dashboard-store";
+import { useEffect } from "react";
+import { LoadingScreen } from "@/components/loading-screen";
 
-export default async function Page() {
-  try {
-    const data = await getDashboardData();
-    if (!data || !data.allTeamStats) {
-      return <ErrorDisplay message="Could Not Load Dashboard" />;
-    }
-    return <DashboardPageClient teamsData={data.allTeamStats} />;
-  } catch (error) {
-    if (error instanceof Error) {
-      return <ErrorDisplay message={error.message} />;
-    }
-    return <ErrorDisplay message="An unknown error occurred" />;
+export default function Page() {
+  const { data, loading, error, fetchData } = useDashboardStore();
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  if (loading) {
+    return <LoadingScreen />;
   }
+
+  if (error) {
+    return <ErrorDisplay message={error} />;
+  }
+
+  if (!data) {
+    return <ErrorDisplay message="No data available" />;
+  }
+
+  return <DashboardPageClient teamsData={data.allTeamStats} />;
 }

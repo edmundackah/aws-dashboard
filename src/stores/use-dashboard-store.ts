@@ -1,4 +1,9 @@
 import { create } from "zustand";
+import {
+  MainDataApiResponse,
+  processDashboardData,
+  ServiceSummaryItem,
+} from "@/lib/data";
 import { Microservice, Spa, TeamStat } from "@/app/data/schema";
 
 interface DashboardData {
@@ -14,6 +19,8 @@ interface DashboardState {
   loading: boolean;
   error: string | null;
   lastFetched: number | null;
+  // This will hold the raw main data so we can re-process it
+  rawMainData: MainDataApiResponse | null;
   fetchData: () => Promise<void>;
   clearData: () => void;
 }
@@ -22,38 +29,49 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 export const useDashboardStore = create<DashboardState>((set, get) => ({
   data: null,
-  loading: false,
+  loading: true, // Start in a loading state
   error: null,
   lastFetched: null,
+  rawMainData: null,
 
   fetchData: async () => {
     const state = get();
     const now = Date.now();
 
-    // Return cached data if it's still valid
-    if (
-      state.data &&
-      state.lastFetched &&
-      now - state.lastFetched < CACHE_DURATION
-    ) {
+    if (state.data && state.lastFetched && now - state.lastFetched < CACHE_DURATION) {
+      set({ loading: false }); // If we have cached data, we're not loading.
       return;
     }
 
     set({ loading: true, error: null });
 
     try {
-      const response = await fetch("/api/dashboard-data");
-      if (!response.ok) {
-        throw new Error("Failed to fetch dashboard data");
-      }
+      // 1. Fetch initial data
+      const mainDataUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!mainDataUrl) throw new Error("Main API URL not defined.");
+      const mainDataRes = await fetch(mainDataUrl);
+      const mainData: MainDataApiResponse = await mainDataRes.json();
 
-      const data = await response.json();
+      // Process and set initial data
+      const initialProcessedData = processDashboardData(mainData);
       set({
-        data,
-        loading: false,
+        data: initialProcessedData,
+        rawMainData: mainData,
+        loading: false, // Set loading to false after initial data is processed
         lastFetched: now,
-        error: null,
       });
+
+      // 2. Fetch summary data in the background
+      const summaryUrl = process.env.NEXT_PUBLIC_SUMMARY_API_URL;
+      if (!summaryUrl) return; // or throw, depending on desired behavior
+      const summaryRes = await fetch(summaryUrl);
+      const summaryData: ServiceSummaryItem[] = await summaryRes.json();
+
+      // 3. Merge summary data and update state
+      if (get().rawMainData) {
+        const finalData = processDashboardData(get().rawMainData!, summaryData);
+        set({ data: finalData });
+      }
     } catch (error) {
       set({
         loading: false,
@@ -68,6 +86,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       loading: false,
       error: null,
       lastFetched: null,
+      rawMainData: null,
     });
   },
 }));

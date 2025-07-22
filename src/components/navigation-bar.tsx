@@ -21,6 +21,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { useDashboardStore } from "@/stores/use-dashboard-store";
 import { exportData } from "@/lib/export-utils";
+import { toast } from "sonner";
 import { SettingsModal } from "@/components/settings-modal";
 import {
   Command as CommandPrimitive,
@@ -96,6 +97,11 @@ export function NavigationBar() {
 
   const handleExport = async (type: "spa" | "ms" | "teams" | "all") => {
     await exportData(type);
+    toast.success(
+      `Successfully exported ${
+        type === "ms" ? "microservices" : type
+      } data.`,
+    );
     setOpen(false);
   };
 
