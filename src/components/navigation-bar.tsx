@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { motion } from "framer-motion";
-import { useDashboardStore } from "@/stores/use-dashboard-store";
+import { useDashboardStore, Page } from "@/stores/use-dashboard-store";
 import { exportData } from "@/lib/export-utils";
 import { toast } from "sonner";
 import { SettingsModal } from "@/components/settings-modal";
@@ -46,7 +46,7 @@ const navItems = [
     icon: Server,
   },
   { name: "Teams", page: "teams", icon: User },
-];
+] as const;
 
 export function NavigationBar() {
   const [open, setOpen] = useState(false);
@@ -86,7 +86,7 @@ export function NavigationBar() {
     return () => document.removeEventListener("keydown", down);
   }, []);
 
-  const handleNavigation = (page) => {
+  const handleNavigation = (page: Page) => {
     setCurrentPage(page);
     setOpen(false);
   };

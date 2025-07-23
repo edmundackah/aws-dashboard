@@ -6,7 +6,7 @@ import {
 } from "@/lib/data";
 import { Microservice, Spa, TeamStat } from "@/app/data/schema";
 
-type Page = "overview" | "spas" | "microservices" | "teams";
+export type Page = "overview" | "spas" | "microservices" | "teams";
 
 interface DashboardData {
   spaData: Spa[];
