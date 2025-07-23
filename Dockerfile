@@ -3,18 +3,21 @@
 FROM node:22-alpine AS base
 WORKDIR /app
 
-# --- Dependencies + unzip + PEM ---
+# --- Dependency & Cert Setup ---
 FROM base AS deps
 
-# Install unzip and certificate tools
+# Install unzip and certificate tooling
 RUN apk add --no-cache unzip libc6-compat ca-certificates
 
-# 👇 Add the PEM file to the system trusted certs
-COPY artifactory.pem /usr/local/share/ca-certificates/artifactory.crt
-RUN cp /usr/local/share/ca-certificates/artifactory.crt /usr/share/ca-certificates/artifactory.crt && \
-    update-ca-certificates
+# Copy all certs (we'll filter only .crt later)
+COPY certs/ /tmp/certs/
 
-# Copy ZIP archive into image
+# Copy only `.crt` files to the system cert store and update
+RUN find /tmp/certs -type f -name '*.crt' -exec cp {} /usr/share/ca-certificates/ \; && \
+    update-ca-certificates && \
+    rm -rf /tmp/certs
+
+# Copy app ZIP
 COPY aws-dashboard.zip .
 
 # Unzip and flatten directory
@@ -22,10 +25,10 @@ RUN unzip aws-dashboard.zip -d extracted && \
     mv extracted/*/* . && \
     rm -rf extracted aws-dashboard.zip
 
-# Clean up leftovers from zip
+# Clean possible leftover artifacts
 RUN rm -rf node_modules .npmrc
 
-# Install deps and print logs on failure
+# Install dependencies and surface logs on error
 RUN npm ci --no-audit --no-fund || \
   (echo "===== NPM LOG =====" && \
    cat /root/.npm/_logs/*-debug-0.log || true && \
@@ -37,7 +40,7 @@ FROM base AS builder
 COPY --from=deps /app ./
 RUN npm run build
 
-# --- Runtime Image ---
+# --- Runtime Stage ---
 FROM node:22-alpine AS runner
 WORKDIR /app
 
