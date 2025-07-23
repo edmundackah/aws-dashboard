@@ -1,27 +1,24 @@
-# syntax=docker/dockerfile:1
-
-# Base image: Node 22 on Debian slim (not Alpine)
-FROM node:22-slim AS base
+FROM node:22-alpine AS base
 WORKDIR /app
 
-# --- Unzip and install dependencies ---
+# --- Unzip & Install Dependencies ---
 FROM base AS deps
 
-# Install unzip
-RUN apt-get update && apt-get install -y unzip && rm -rf /var/lib/apt/lists/*
+# Add required tools
+RUN apk add --no-cache unzip libc6-compat
 
-# Copy your zip file
+# Copy ZIP archive into image
 COPY aws-dashboard.zip .
 
-# Unzip and flatten top-level directory (if present)
+# Unzip contents (including flattening top-level folder)
 RUN unzip aws-dashboard.zip -d extracted && \
     mv extracted/*/* . && \
     rm -rf extracted aws-dashboard.zip
 
-# Remove leftover modules or npmrc if zip included them
+# Clean leftover files from zip
 RUN rm -rf node_modules .npmrc
 
-# Run npm ci, and log any errors to stdout
+# Install production dependencies + print logs on failure
 RUN npm ci --no-audit --no-fund || \
   (echo "===== NPM LOG =====" && \
    cat /root/.npm/_logs/*-debug-0.log || true && \
@@ -33,22 +30,23 @@ FROM base AS builder
 COPY --from=deps /app ./
 RUN npm run build
 
-# --- Production Stage ---
-FROM node:22-slim AS runner
+# --- Runtime Image ---
+FROM node:22-alpine AS runner
 WORKDIR /app
 
-# Add non-root user for security
-RUN groupadd -r nodejs && useradd -r -g nodejs --uid 1001 nextjs
+# Add non-root user
+RUN addgroup -S nodejs && adduser -S nextjs -G nodejs
 
 ENV NODE_ENV=production
-ENV PORT=8088
+ENV PORT=8080
 ENV HOSTNAME=0.0.0.0
 
-# Copy only what's needed for runtime
+# Copy only what's needed to run
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs
-EXPOSE 8088
+
+EXPOSE 8080
 CMD ["node", "server.js"]
