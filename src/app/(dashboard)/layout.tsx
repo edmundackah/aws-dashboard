@@ -1,6 +1,6 @@
 "use client";
 
-import { Header } from "@/components/Header";
+import { Header } from "@/components/header";
 import { ScrollToTop } from "@/components/scroll-to-top";
 import { Separator } from "@/components/ui/separator";
 import { Footer } from "@/components/footer";
