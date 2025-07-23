@@ -7,13 +7,15 @@ WORKDIR /app
 FROM base AS deps
 RUN apk add --no-cache unzip
 
-# Copy the zip file into the image
+# Copy ZIP archive into container
 COPY aws-dashboard.zip .
 
-# Unzip it to /app
-RUN unzip aws-dashboard.zip -d . && rm aws-dashboard.zip
+# Unzip and move contents if they're inside a top-level folder
+RUN unzip aws-dashboard.zip -d extracted && \
+    mv extracted/*/* . && \
+    rm -rf extracted aws-dashboard.zip
 
-# Install deps using npm
+# Install only production dependencies
 RUN npm ci
 
 # --- Build stage ---
