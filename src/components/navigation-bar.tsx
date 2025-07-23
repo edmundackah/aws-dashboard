@@ -15,9 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import Link from "next/link";
 import { motion } from "framer-motion";
 import { useDashboardStore } from "@/stores/use-dashboard-store";
 import { exportData } from "@/lib/export-utils";
@@ -38,25 +36,23 @@ import {
 const navItems = [
   {
     name: "Overview",
-    href: "/",
+    page: "overview",
     icon: LayoutDashboard,
   },
-  { name: "SPAs", href: "/spas", icon: Grid },
+  { name: "SPAs", page: "spas", icon: Grid },
   {
     name: "Microservices",
-    href: "/microservices",
+    page: "microservices",
     icon: Server,
   },
-  { name: "Teams", href: "/teams", icon: User },
+  { name: "Teams", page: "teams", icon: User },
 ];
 
 export function NavigationBar() {
   const [open, setOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const router = useRouter();
-  const pathname = usePathname();
   const { theme, setTheme } = useTheme();
-  const { data } = useDashboardStore();
+  const { data, currentPage, setCurrentPage } = useDashboardStore();
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -90,8 +86,8 @@ export function NavigationBar() {
     return () => document.removeEventListener("keydown", down);
   }, []);
 
-  const handleNavigation = (path: string) => {
-    router.push(path);
+  const handleNavigation = (page) => {
+    setCurrentPage(page);
     setOpen(false);
   };
 
@@ -123,33 +119,33 @@ export function NavigationBar() {
     <>
       <div className="relative flex-col md:flex w-full">
         <div className="flex h-14 items-center gap-6 px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-          <Link
-            href="/"
-            className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
+          <a
+            onClick={() => handleNavigation("overview")}
+            className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base cursor-pointer"
           >
             <Server className="h-4 w-4 transition-all group-hover:scale-110" />
             <span className="sr-only">Migration Tracker</span>
-          </Link>
+          </a>
           <nav className="hidden md:flex items-center gap-4">
             {navItems.map((item) => (
-              <Link
+              <a
                 key={item.name}
-                href={item.href}
+                onClick={() => handleNavigation(item.page)}
                 className={cn(
-                  "text-sm font-medium transition-colors hover:text-primary relative",
-                  pathname === item.href
+                  "text-sm font-medium transition-colors hover:text-primary relative cursor-pointer",
+                  currentPage === item.page
                     ? "text-primary"
                     : "text-muted-foreground",
                 )}
               >
                 {item.name}
-                {pathname === item.href && (
+                {currentPage === item.page && (
                   <motion.div
                     className="absolute bottom-[-4px] left-0 right-0 h-[2px] bg-primary"
                     layoutId="underline"
                   />
                 )}
-              </Link>
+              </a>
             ))}
           </nav>
           <div className="flex justify-center flex-1">
@@ -210,7 +206,7 @@ export function NavigationBar() {
               {navItems.map((item) => (
                 <CommandItem
                   key={item.name}
-                  onSelect={() => handleNavigation(item.href)}
+                  onSelect={() => handleNavigation(item.page)}
                 >
                   <item.icon className="mr-2 h-4 w-4" />
                   <span>{item.name}</span>

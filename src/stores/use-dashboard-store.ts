@@ -6,6 +6,8 @@ import {
 } from "@/lib/data";
 import { Microservice, Spa, TeamStat } from "@/app/data/schema";
 
+type Page = "overview" | "spas" | "microservices" | "teams";
+
 interface DashboardData {
   spaData: Spa[];
   msData: Microservice[];
@@ -19,10 +21,11 @@ interface DashboardState {
   loading: boolean;
   error: string | null;
   lastFetched: number | null;
-  // This will hold the raw main data so we can re-process it
+  currentPage: Page;
   rawMainData: MainDataApiResponse | null;
   fetchData: () => Promise<void>;
   clearData: () => void;
+  setCurrentPage: (page: Page) => void;
 }
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -32,6 +35,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   loading: true, // Start in a loading state
   error: null,
   lastFetched: null,
+  currentPage: "overview",
   rawMainData: null,
 
   fetchData: async () => {
@@ -88,5 +92,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       lastFetched: null,
       rawMainData: null,
     });
+  },
+
+  setCurrentPage: (page: Page) => {
+    set({ currentPage: page });
   },
 }));
