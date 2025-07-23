@@ -54,9 +54,11 @@ export function NavigationBar() {
   const { theme, setTheme } = useTheme();
   const { data, currentPage, setCurrentPage } = useDashboardStore();
   const [isMounted, setIsMounted] = useState(false);
+  const [isMac, setIsMac] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
+    setIsMac(navigator.platform.toUpperCase().indexOf("MAC") >= 0);
   }, []);
 
   const formatTimestamp = (isoString: string) => {
@@ -110,11 +112,6 @@ export function NavigationBar() {
     setTheme(theme === "light" ? "dark" : "light");
   };
 
-  const isMac =
-    typeof window !== "undefined" &&
-    navigator.platform.toUpperCase().indexOf("MAC") >= 0;
-  const cmdKey = isMac ? "⌘" : "Ctrl";
-
   return (
     <>
       <div className="relative flex-col md:flex w-full">
@@ -160,7 +157,13 @@ export function NavigationBar() {
                   <span>Search...</span>
                 </div>
                 <div className="flex items-center gap-1 text-xs">
-                  <Command className="h-3 w-3" />
+                  {isMac ? (
+                    <Command className="h-3 w-3" />
+                  ) : (
+                    <span className="rounded-sm border border-input bg-muted px-1.5 py-0.5 text-xs">
+                      Ctrl
+                    </span>
+                  )}
                   <span>K</span>
                 </div>
               </Button>
@@ -218,7 +221,9 @@ export function NavigationBar() {
               <CommandItem onSelect={() => handleExport("all")}>
                 <Download className="mr-2 h-4 w-4" />
                 <span>Export All Data</span>
-                <CommandShortcut>{cmdKey}E</CommandShortcut>
+                <CommandShortcut platform={isMac ? "mac" : "windows"}>
+                  E
+                </CommandShortcut>
               </CommandItem>
               <CommandItem onSelect={() => handleExport("spa")}>
                 <Download className="mr-2 h-4 w-4" />
@@ -238,7 +243,9 @@ export function NavigationBar() {
               <CommandItem onSelect={handleSettings}>
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
-                <CommandShortcut>{cmdKey}S</CommandShortcut>
+                <CommandShortcut platform={isMac ? "mac" : "windows"}>
+                  S
+                </CommandShortcut>
               </CommandItem>
             </CommandGroup>
           </CommandList>

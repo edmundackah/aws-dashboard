@@ -1,18 +1,25 @@
 "use client";
 
-import {Column, ColumnDef} from "@tanstack/react-table";
-import {TeamStat} from "@/app/data/schema";
-import {Button} from "@/components/ui/button";
-import {ArrowUpDown} from "lucide-react";
+import { Column, ColumnDef } from "@tanstack/react-table";
+import { TeamStat, Spa, Microservice } from "@/app/data/schema";
+import { Button } from "@/components/ui/button";
+import { ArrowUpDown, User, Mail } from "lucide-react";
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from "../ui/hover-card";
 import { Separator } from "../ui/separator";
-import { User, Mail } from "lucide-react";
+import { ServicePopover } from "./service-popover";
+import { useDashboardStore } from "@/stores/use-dashboard-store";
 
-const SortableHeader = <TData,>({ column, children }: { column: Column<TData, unknown>; children: React.ReactNode }) => (
+const SortableHeader = <TData,>({
+  column,
+  children,
+}: {
+  column: Column<TData, unknown>;
+  children: React.ReactNode;
+}) => (
   <Button
     variant="ghost"
     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
@@ -23,32 +30,80 @@ const SortableHeader = <TData,>({ column, children }: { column: Column<TData, un
   </Button>
 );
 
+const CellRenderer = ({
+  teamName,
+  count,
+  serviceType,
+  status,
+}: {
+  teamName: string;
+  count: number;
+  serviceType: "SPA" | "Microservice";
+  status: "Migrated" | "Outstanding";
+}) => {
+  const { data } = useDashboardStore();
+  const services =
+    serviceType === "SPA" ? data?.spaData || [] : data?.msData || [];
+
+  const filteredServices = services.filter(
+    (s: Spa | Microservice) =>
+      s.subgroupName === teamName &&
+      (status === "Migrated"
+        ? s.status === "MIGRATED"
+        : s.status !== "MIGRATED"),
+  );
+
+  return (
+    <ServicePopover
+      teamName={teamName}
+      serviceType={serviceType}
+      status={status}
+      count={count}
+      services={filteredServices}
+    >
+      <div className="text-right pr-4 cursor-pointer text-primary underline hover:font-bold">
+        {count}
+      </div>
+    </ServicePopover>
+  );
+};
+
 export const columns: ColumnDef<TeamStat>[] = [
   {
     accessorKey: "teamName",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Team Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Team Name
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
     cell: ({ row }) => (
       <div className="capitalize pl-4">{row.getValue("teamName")}</div>
     ),
   },
   {
     accessorKey: "technicalSme",
-    header: "Technical SME",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="-ml-4"
+      >
+        Technical SME
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    sortingFn: (rowA, rowB) => {
+      const a = rowA.original.technicalSme?.name || "";
+      const b = rowB.original.technicalSme?.name || "";
+      return a.localeCompare(b);
+    },
     cell: ({ row }) => {
       const sme = row.original.technicalSme;
-      if (!sme) {
-        return "N/A";
-      }
+      if (!sme) return "N/A";
       return (
         <HoverCard>
           <HoverCardTrigger asChild>
@@ -85,7 +140,14 @@ export const columns: ColumnDef<TeamStat>[] = [
         <SortableHeader column={column}>Migrated SPAs</SortableHeader>
       </div>
     ),
-    cell: ({ row }) => <div className="text-right pr-4">{row.getValue("migratedSpaCount")}</div>
+    cell: ({ row }) => (
+      <CellRenderer
+        teamName={row.original.teamName}
+        count={row.original.migratedSpaCount}
+        serviceType="SPA"
+        status="Migrated"
+      />
+    ),
   },
   {
     accessorKey: "outstandingSpaCount",
@@ -94,7 +156,14 @@ export const columns: ColumnDef<TeamStat>[] = [
         <SortableHeader column={column}>Outstanding SPAs</SortableHeader>
       </div>
     ),
-    cell: ({ row }) => <div className="text-right pr-4">{row.getValue("outstandingSpaCount")}</div>
+    cell: ({ row }) => (
+      <CellRenderer
+        teamName={row.original.teamName}
+        count={row.original.outstandingSpaCount}
+        serviceType="SPA"
+        status="Outstanding"
+      />
+    ),
   },
   {
     accessorKey: "migratedMsCount",
@@ -103,7 +172,14 @@ export const columns: ColumnDef<TeamStat>[] = [
         <SortableHeader column={column}>Migrated MS</SortableHeader>
       </div>
     ),
-    cell: ({ row }) => <div className="text-right pr-4">{row.getValue("migratedMsCount")}</div>
+    cell: ({ row }) => (
+      <CellRenderer
+        teamName={row.original.teamName}
+        count={row.original.migratedMsCount}
+        serviceType="Microservice"
+        status="Migrated"
+      />
+    ),
   },
   {
     accessorKey: "outstandingMsCount",
@@ -112,6 +188,13 @@ export const columns: ColumnDef<TeamStat>[] = [
         <SortableHeader column={column}>Outstanding MS</SortableHeader>
       </div>
     ),
-    cell: ({ row }) => <div className="text-right pr-4">{row.getValue("outstandingMsCount")}</div>
+    cell: ({ row }) => (
+      <CellRenderer
+        teamName={row.original.teamName}
+        count={row.original.outstandingMsCount}
+        serviceType="Microservice"
+        status="Outstanding"
+      />
+    ),
   },
 ];

@@ -24,8 +24,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from "@/components/ui/select";
-
 import {
   Pagination,
   PaginationContent,
@@ -83,7 +81,7 @@ export function DataTable<TData, TValue>({
     },
     initialState: {
       pagination: {
-        pageSize: 10,
+        pageSize: 12,
       },
     },
   });
@@ -94,7 +92,7 @@ export function DataTable<TData, TValue>({
   const rowVirtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => tableContainerRef.current,
-    estimateSize: () => 35,
+    estimateSize: () => 48, // Set a fixed row height
     overscan: 10,
   });
 
@@ -145,9 +143,13 @@ export function DataTable<TData, TValue>({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
+                    style={{ height: "48px" }} // Apply fixed height
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
+                      <TableCell
+                        key={cell.id}
+                        className="p-2" // Adjust padding
+                      >
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext(),
@@ -168,27 +170,9 @@ export function DataTable<TData, TValue>({
       </div>
 
       <div className="flex items-center justify-between py-4 flex-shrink-0 w-full">
-        <div className="flex items-center gap-2">
-          <p className="text-sm font-medium">Rows per page</p>
-          <Select
-            value={`${table.getState().pagination.pageSize}`}
-            onValueChange={(value) => {
-              table.setPageSize(Number(value))
-            }}
-          >
-            <SelectTrigger className="h-8 w-[80px]">
-              <SelectValue placeholder={table.getState().pagination.pageSize} />
-            </SelectTrigger>
-            <SelectContent side="top">
-              {[10, 15, 20, 30, 40, 50, 100].map((pageSize) => (
-                <SelectItem key={pageSize} value={`${pageSize}`}>
-                  {pageSize}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex-1 text-sm text-muted-foreground">
+          {table.getFilteredRowModel().rows.length} row(s)
         </div>
-
         <Pagination className="mx-0 w-auto">
           <PaginationContent>
             <PaginationItem>

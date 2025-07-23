@@ -142,27 +142,39 @@ function CommandItem({
       data-slot="command-item"
       className={cn(
         "data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 function CommandShortcut({
   className,
+  platform,
   ...props
-}: React.ComponentProps<"span">) {
+}: React.ComponentProps<"span"> & {
+  platform?: "mac" | "windows";
+}) {
+  const isMac =
+    platform === "mac" ||
+    (typeof window !== "undefined" &&
+      navigator.platform.toUpperCase().indexOf("MAC") >= 0);
+  const cmdKey = isMac ? "⌘" : "Ctrl";
+
   return (
     <span
       data-slot="command-shortcut"
       className={cn(
         "text-muted-foreground ml-auto text-xs tracking-widest",
-        className
+        className,
       )}
       {...props}
-    />
-  )
+    >
+      {cmdKey}
+      {props.children}
+    </span>
+  );
 }
 
 export {
