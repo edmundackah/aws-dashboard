@@ -1,37 +1,41 @@
-# ─────── Stage 1: Build ───────
-FROM node:22-slim AS builder
-
-ENV NODE_ENV=production
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
-
+FROM node:22-alpine AS base
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm install && npm rebuild lightningcss
+# --- Source stage: Clone the repo and checkout a specific branch
+FROM base AS source
+RUN apk add --no-cache git
 
-COPY . .
+RUN git clone --branch "main" --depth 1 "https://github.com/edmundackah/aws-dashboard.git" /app
+
+# --- Dependency install stage ---
+FROM base AS deps
+COPY --from=source /app/package.json /app/package-lock.json ./
+RUN npm ci
+
+# --- Build stage ---
+FROM base AS builder
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=source /app ./
 RUN npm run build
 
-# ─────── Stage 2: Runtime ───────
-FROM node:20-slim AS runner
+# --- Production runner stage ---
+FROM node:22-alpine AS runner
+WORKDIR /app
+
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
 ENV NODE_ENV=production
 
-RUN groupadd -g 1001 nodejs && \
-    useradd -u 1001 -g nodejs -m nextjs
-
-WORKDIR /app
+ENV PORT=8080
+ENV HOSTNAME=0.0.0.0
 
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/next.config.ts ./next.config.ts
-COPY --from=builder /app/tsconfig.json ./tsconfig.json
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-EXPOSE 3000
 USER nextjs
 
-CMD ["npx", "next", "start"]
+EXPOSE 8080
+
+CMD ["node", "server.js"]
