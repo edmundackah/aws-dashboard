@@ -1,59 +1,35 @@
 # syntax=docker/dockerfile:1
 
-FROM node:22-alpine AS base
+FROM node:22-alpine
+
 WORKDIR /app
 
-# --- Dependency & Cert Setup ---
-FROM base AS deps
-
-# Install unzip and certificate tooling
+# Install required packages
 RUN apk add --no-cache unzip libc6-compat ca-certificates
 
-# Copy all certs (we'll filter only .crt later)
-COPY certs/ /tmp/certs/
+# Disable strict SSL if using internal registry/self-signed certs
+RUN npm config set strict-ssl false
 
-# Copy only `.crt` files to the system cert store and update
-RUN find /tmp/certs -type f -name '*.crt' -exec cp {} /usr/share/ca-certificates/ \; && \
-    update-ca-certificates && \
-    rm -rf /tmp/certs
-
-# Copy app ZIP
+# Copy ZIP and extract it
 COPY aws-dashboard.zip .
 
-# Unzip and flatten directory
 RUN unzip aws-dashboard.zip -d extracted && \
     mv extracted/*/* . && \
     rm -rf extracted aws-dashboard.zip
 
-# Clean possible leftover artifacts
-RUN rm -rf node_modules .npmrc
+# Install production dependencies only
+RUN npm ci --omit=dev --no-audit --no-fund
 
-# Install dependencies and surface logs on error
-RUN npm ci --no-audit --no-fund || \
-  (echo "===== NPM LOG =====" && \
-   cat /root/.npm/_logs/*-debug-0.log || true && \
-   echo "===== END LOG =====" && \
-   exit 1)
-
-# --- Build Stage ---
-FROM base AS builder
-COPY --from=deps /app ./
+# Build the Next.js application
 RUN npm run build
 
-# --- Runtime Stage ---
-FROM node:22-alpine AS runner
-WORKDIR /app
-
-RUN addgroup -S nodejs && adduser -S nextjs -G nodejs
-
+# Set environment variables
 ENV NODE_ENV=production
-ENV PORT=8080
+ENV PORT=8081
 ENV HOSTNAME=0.0.0.0
 
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Expose the app port
+EXPOSE 8081
 
-USER nextjs
-EXPOSE 8080
-CMD ["node", "server.js"]
+# Start the app with Next.js
+CMD ["npm", "start"]
