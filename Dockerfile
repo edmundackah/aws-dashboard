@@ -18,20 +18,16 @@ RUN unzip aws-dashboard.zip -d extracted && \
 # Install production dependencies and build the app
 RUN npm ci --no-audit --no-fund && npm run build
 
-# Manually copy public and static assets into standalone folder
-# Copy static and public assets into standalone folder
-RUN cp -r public .next/standalone/ && \
-    cp -r .next/static .next/standalone/.next/ && \
-    echo "Copied public and static files to .next/standalone" && \
-    echo ".next/standalone contents:" && \
-    find .next/standalone -type f | sort
+# Move static and public assets into standalone folder
+RUN mv .next/static .next/standalone/.next
+RUN mv public .next/standalone/
+
+RUN find .next/standalone -type f | sort
 
 # Set environment variables
 ENV NODE_ENV=production
 ENV PORT=8080
 ENV HOSTNAME=0.0.0.0
 
-WORKDIR /app/.next/standalone
-
 EXPOSE 8080
-CMD ["node", "server.js"]
+CMD ["node", ".next/standalone/server.js"]
