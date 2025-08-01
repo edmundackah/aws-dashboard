@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { motion } from "framer-motion";
-import { useDashboardStore, Page } from "@/stores/use-dashboard-store";
+import { useDashboardStore } from "@/stores/use-dashboard-store";
 import { exportData } from "@/lib/export-utils";
 import { toast } from "sonner";
 import { SettingsModal } from "@/components/settings-modal";
@@ -32,27 +32,30 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from "./ui/command";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const navItems = [
   {
     name: "Overview",
-    page: "overview",
+    path: "/",
     icon: LayoutDashboard,
   },
-  { name: "SPAs", page: "spas", icon: Grid },
+  { name: "SPAs", path: "/spas", icon: Grid },
   {
     name: "Microservices",
-    page: "microservices",
+    path: "/microservices",
     icon: Server,
   },
-  { name: "Teams", page: "teams", icon: User },
+  { name: "Teams", path: "/teams", icon: User },
 ] as const;
 
 export function NavigationBar() {
   const [open, setOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const { theme, setTheme } = useTheme();
-  const { data, currentPage, setCurrentPage } = useDashboardStore();
+  const { data } = useDashboardStore();
+  const pathname = usePathname();
   const [isMounted, setIsMounted] = useState(false);
   const [isMac, setIsMac] = useState(false);
 
@@ -88,11 +91,6 @@ export function NavigationBar() {
     return () => document.removeEventListener("keydown", down);
   }, []);
 
-  const handleNavigation = (page: Page) => {
-    setCurrentPage(page);
-    setOpen(false);
-  };
-
   const handleExport = async (type: "spa" | "ms" | "teams" | "all") => {
     await exportData(type);
     toast.success(
@@ -116,33 +114,33 @@ export function NavigationBar() {
     <>
       <div className="relative flex-col md:flex w-full">
         <div className="flex h-14 items-center gap-6 px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-          <a
-            onClick={() => handleNavigation("overview")}
+          <Link
+            href="/"
             className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base cursor-pointer"
           >
             <Server className="h-4 w-4 transition-all group-hover:scale-110" />
             <span className="sr-only">Migration Tracker</span>
-          </a>
+          </Link>
           <nav className="hidden md:flex items-center gap-4">
             {navItems.map((item) => (
-              <a
+              <Link
                 key={item.name}
-                onClick={() => handleNavigation(item.page)}
+                href={item.path}
                 className={cn(
                   "text-sm font-medium transition-colors hover:text-primary relative cursor-pointer",
-                  currentPage === item.page
+                  pathname === item.path
                     ? "text-primary"
                     : "text-muted-foreground",
                 )}
               >
                 {item.name}
-                {currentPage === item.page && (
+                {pathname === item.path && (
                   <motion.div
                     className="absolute bottom-[-4px] left-0 right-0 h-[2px] bg-primary"
                     layoutId="underline"
                   />
                 )}
-              </a>
+              </Link>
             ))}
           </nav>
           <div className="flex justify-center flex-1">
@@ -209,7 +207,10 @@ export function NavigationBar() {
               {navItems.map((item) => (
                 <CommandItem
                   key={item.name}
-                  onSelect={() => handleNavigation(item.page)}
+                  onSelect={() => {
+                    setOpen(false);
+                    window.location.href = item.path;
+                  }}
                 >
                   <item.icon className="mr-2 h-4 w-4" />
                   <span>{item.name}</span>

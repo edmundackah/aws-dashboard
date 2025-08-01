@@ -21,11 +21,9 @@ interface DashboardState {
   loading: boolean;
   error: string | null;
   lastFetched: number | null;
-  currentPage: Page;
   rawMainData: MainDataApiResponse | null;
   fetchData: () => Promise<void>;
   clearData: () => void;
-  setCurrentPage: (page: Page) => void;
 }
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -35,7 +33,6 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   loading: true, // Start in a loading state
   error: null,
   lastFetched: null,
-  currentPage: "overview",
   rawMainData: null,
 
   fetchData: async () => {
@@ -92,9 +89,5 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       lastFetched: null,
       rawMainData: null,
     });
-  },
-
-  setCurrentPage: (page: Page) => {
-    set({ currentPage: page });
   },
 }));

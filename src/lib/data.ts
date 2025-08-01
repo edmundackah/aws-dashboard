@@ -1,4 +1,10 @@
 import { Microservice, Spa, TeamStat } from "@/app/data/schema";
+import logger from "./logger";
+import { 
+  incrementDataFetch, 
+  observeDataFetchDuration, 
+  observeDataProcessingDuration 
+} from "./metrics-collector";
 
 export interface ServiceSummaryItem {
   projectName: string;
@@ -17,6 +23,62 @@ export interface MainDataApiResponse {
   spaData: Partial<Spa>[];
   msData: Partial<Microservice>[];
   lastUpdate: string;
+}
+
+export async function fetchData() {
+  logger.info("Starting to fetch data");
+  const startTime = Date.now();
+  
+  try {
+    incrementDataFetch("fetch_start");
+    
+    const mainDataUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (!mainDataUrl) throw new Error("Main API URL not defined.");
+    const mainDataRes = await fetch(mainDataUrl, { cache: "no-store" });
+    const mainData: MainDataApiResponse = await mainDataRes.json();
+
+    let summaryData: ServiceSummaryItem[] = [];
+    const summaryUrl = process.env.NEXT_PUBLIC_SUMMARY_API_URL;
+    if (summaryUrl) {
+      const summaryRes = await fetch(summaryUrl, { cache: "no-store" });
+      summaryData = await summaryRes.json();
+    }
+
+    // Measure processing time
+    const processingStartTime = Date.now();
+    const processedData = processDashboardData(mainData, summaryData);
+    const processingDuration = Date.now() - processingStartTime;
+    
+    // Record metrics
+    const totalDuration = Date.now() - startTime;
+    observeDataFetchDuration("complete", "success", totalDuration);
+    observeDataProcessingDuration(
+      processedData.spaData.length,
+      processedData.msData.length,
+      processedData.allTeams.length,
+      processingDuration
+    );
+    incrementDataFetch("fetch_success");
+    
+    logger.info("Successfully fetched and processed data", {
+      duration: totalDuration,
+      spa_count: processedData.spaData.length,
+      microservice_count: processedData.msData.length,
+      team_count: processedData.allTeams.length
+    });
+    
+    return { data: processedData, error: null };
+  } catch (error) {
+    const totalDuration = Date.now() - startTime;
+    observeDataFetchDuration("complete", "error", totalDuration);
+    incrementDataFetch("fetch_error");
+    
+    logger.error({ error }, "Error fetching data");
+    return {
+      data: null,
+      error: error instanceof Error ? error.message : "An error occurred",
+    };
+  }
 }
 
 // This is the function that will do all the data processing and combining.
