@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import {
-  Area,
-  AreaChart,
+  Bar,
+  BarChart,
   CartesianGrid,
   XAxis,
   YAxis,
@@ -20,7 +20,6 @@ import {
   ChartConfig,
   ChartContainer,
   ChartLegend,
-  ChartLegendContent,
   ChartTooltip,
 } from "@/components/ui/chart";
 import {
@@ -171,6 +170,43 @@ const CustomTooltip = ({
   return null;
 };
 
+// Custom Legend Component with proper colors
+const CustomLegend = ({ 
+  config, 
+  view 
+}: { 
+  config: ChartConfig; 
+  view: "counts" | "progress"; 
+}) => {
+  const legendItems = view === "counts" 
+    ? [
+        { key: "microservices", label: config.microservices.label, color: config.microservices.color },
+        { key: "spas", label: config.spas.label, color: config.spas.color }
+      ]
+    : [
+        { key: "totalProgress", label: config.totalProgress.label, color: config.totalProgress.color }
+      ];
+
+  return (
+    <div className="flex items-center justify-center gap-4 pt-3">
+      {legendItems.map((item) => (
+        <div
+          key={item.key}
+          className="flex items-center gap-1.5"
+        >
+          <div
+            className="h-2 w-2 shrink-0 rounded-[2px]"
+            style={{
+              backgroundColor: item.color,
+            }}
+          />
+          <span className="text-sm text-muted-foreground">{item.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
   const [view, setView] = React.useState("counts");
 
@@ -253,7 +289,7 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
             className="aspect-auto h-[300px] w-full"
           >
             {view === "counts" ? (
-              <AreaChart
+              <BarChart
                 data={chartData}
                 margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
               >
@@ -267,7 +303,7 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
                     <stop
                       offset="95%"
                       stopColor="hsl(var(--chart-spa))"
-                      stopOpacity={0.1}
+                      stopOpacity={0.3}
                     />
                   </linearGradient>
                   <linearGradient
@@ -285,7 +321,7 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
                     <stop
                       offset="95%"
                       stopColor="hsl(var(--chart-ms))"
-                      stopOpacity={0.1}
+                      stopOpacity={0.3}
                     />
                   </linearGradient>
                 </defs>
@@ -307,22 +343,28 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
                   cursor={false}
                   content={<CustomTooltip chartType="counts" />}
                 />
-                <Area
+                <Bar
                   dataKey="microservices"
-                  type="natural"
                   fill="url(#fillMicroservices)"
-                  stroke="hsl(var(--chart-ms))"
+                  radius={[4, 4, 0, 0]}
+                  animationBegin={200}
+                  animationDuration={1200}
+                  isAnimationActive={true}
                 />
-                <Area
+                <Bar
                   dataKey="spas"
-                  type="natural"
                   fill="url(#fillSpas)"
-                  stroke="hsl(var(--chart-spa))"
+                  radius={[4, 4, 0, 0]}
+                  animationBegin={400}
+                  animationDuration={1200}
+                  isAnimationActive={true}
                 />
-                <ChartLegend content={<ChartLegendContent className="text-sm" />} />
-              </AreaChart>
+                <ChartLegend 
+                  content={<CustomLegend config={chartConfig} view="counts" />} 
+                />
+              </BarChart>
             ) : (
-              <AreaChart
+              <BarChart
                 data={chartData}
                 margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
               >
@@ -342,7 +384,7 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
                     <stop
                       offset="95%"
                       stopColor="hsl(var(--chart-purple))"
-                      stopOpacity={0.1}
+                      stopOpacity={0.3}
                     />
                   </linearGradient>
                 </defs>
@@ -369,15 +411,18 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
                   cursor={false}
                   content={<CustomTooltip chartType="progress" />}
                 />
-                <Area
+                <Bar
                   dataKey="totalProgress"
-                  type="natural"
                   fill="url(#fillTotalProgress)"
-                  stroke="hsl(var(--chart-purple))"
-                  strokeWidth={2}
+                  radius={[4, 4, 0, 0]}
+                  animationBegin={300}
+                  animationDuration={1200}
+                  isAnimationActive={true}
                 />
-                <ChartLegend content={<ChartLegendContent className="text-sm" />} />
-              </AreaChart>
+                <ChartLegend 
+                  content={<CustomLegend config={chartConfig} view="progress" />} 
+                />
+              </BarChart>
             )}
           </ChartContainer>
         </CardContent>
