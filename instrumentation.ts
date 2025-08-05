@@ -1,5 +1,7 @@
 // instrumentation.ts
 // Only initialize OpenTelemetry in Node.js runtime, not Edge Runtime
+import {SemanticResourceAttributes} from "@opentelemetry/semantic-conventions";
+
 export function register() {
   // Check if we're in a Node.js environment (not Edge Runtime)
   if (typeof globalThis.process !== 'undefined' && globalThis.process.versions?.node) {
