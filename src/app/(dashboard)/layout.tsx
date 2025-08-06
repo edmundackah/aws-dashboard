@@ -2,7 +2,6 @@
 
 import { Header } from "@/components/Header";
 import { ScrollToTop } from "@/components/scroll-to-top";
-import { Separator } from "@/components/ui/separator";
 import { useDashboardStore } from "@/stores/use-dashboard-store";
 import OverviewPage from "./page";
 import SpasPage from "./spas/page";

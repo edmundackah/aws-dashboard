@@ -96,7 +96,7 @@ export function DataTable<TData, TValue>({
                                            tabId = "default",
                                          }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [pageSize, setPageSize] = usePersistentState(`${tabId}_pageSize`, 25);
+  const [pageSize, setPageSize] = usePersistentState(`${tabId}_pageSize`,15);
 
   const table = useReactTable({
     data,
@@ -114,8 +114,6 @@ export function DataTable<TData, TValue>({
       },
     },
   });
-
-  const { rows } = table.getRowModel();
 
   // Update table page size when pageSize state changes
   useEffect(() => {
@@ -182,6 +180,7 @@ export function DataTable<TData, TValue>({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="10">10</SelectItem>
+                <SelectItem value="15">15</SelectItem>
                 <SelectItem value="25">25</SelectItem>
                 <SelectItem value="50">50</SelectItem>
                 <SelectItem value="100">100</SelectItem>
