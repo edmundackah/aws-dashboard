@@ -49,8 +49,8 @@ export function TeamsPageClient({ teamsData = [] }: TeamsPageClientProps) {
   }, [teamsData, statusFilter]);
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 h-full w-full max-w-none">
-      <div className="flex items-center gap-4 flex-shrink-0 w-full">
+    <div className="flex flex-col gap-4 w-full max-w-none">
+      <div className="flex items-center gap-4 w-full">
         <div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full sm:w-[180px] font-medium">
@@ -64,8 +64,8 @@ export function TeamsPageClient({ teamsData = [] }: TeamsPageClientProps) {
           </Select>
         </div>
       </div>
-      <div className="flex-1 min-h-0 w-full">
-        <DataTable columns={teamStatsColumns} data={filteredData} />
+      <div className="w-full">
+        <DataTable columns={teamStatsColumns} data={filteredData} tabId="teams" />
       </div>
     </div>
   );

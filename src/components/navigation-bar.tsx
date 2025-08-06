@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   Command,
   Download,
+  Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -171,8 +172,14 @@ export function NavigationBar() {
           </div>
           <div className="flex items-center gap-2 ml-auto">
             {isMounted && data?.lastUpdate && (
-              <div className="text-sm text-muted-foreground">
-                Last updated: {formatTimestamp(data.lastUpdate)}
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg border border-border">
+                <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                <div className="flex flex-col">
+                  <span className="text-xs text-muted-foreground font-medium">Last updated</span>
+                  <span className="text-xs text-foreground font-semibold">
+                    {formatTimestamp(data.lastUpdate)}
+                  </span>
+                </div>
               </div>
             )}
             {isMounted && (

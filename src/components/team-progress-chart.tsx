@@ -208,7 +208,7 @@ const CustomLegend = ({
 };
 
 export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
-  const [view, setView] = React.useState("counts");
+  const [view, setView] = React.useState("progress");
 
   const processedTeamStats = React.useMemo(() => {
     const teamMap = new Map<string, TeamStat>();
@@ -237,31 +237,33 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
           spas: team.migratedSpaCount,
           microservices: team.migratedMsCount,
         }))
-      : processedTeamStats.map((team) => {
-          const totalSpas = team.migratedSpaCount + team.outstandingSpaCount;
-          const totalMs = team.migratedMsCount + team.outstandingMsCount;
-          const totalServices = totalSpas + totalMs;
-          const totalMigrated = team.migratedSpaCount + team.migratedMsCount;
-          const totalProgress =
-            totalServices > 0
-              ? Math.round((totalMigrated / totalServices) * 100)
-              : 0;
+      : processedTeamStats
+          .map((team) => {
+            const totalSpas = team.migratedSpaCount + team.outstandingSpaCount;
+            const totalMs = team.migratedMsCount + team.outstandingMsCount;
+            const totalServices = totalSpas + totalMs;
+            const totalMigrated = team.migratedSpaCount + team.migratedMsCount;
+            const totalProgress =
+              totalServices > 0
+                ? Math.round((totalMigrated / totalServices) * 100)
+                : 0;
 
-          return {
-            name: team.teamName.replace("team-", ""),
-            totalProgress: totalProgress,
-            migratedSpaCount: team.migratedSpaCount,
-            totalSpas,
-            migratedMsCount: team.migratedMsCount,
-            totalMs,
-          };
-        });
+            return {
+              name: team.teamName.replace("team-", ""),
+              totalProgress: totalProgress,
+              migratedSpaCount: team.migratedSpaCount,
+              totalSpas,
+              migratedMsCount: team.migratedMsCount,
+              totalMs,
+            };
+          })
+          .sort((a, b) => b.totalProgress - a.totalProgress); // Sort by progress descending
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8, delay: 0.5 }}
+      transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
     >
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -291,7 +293,7 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
             {view === "counts" ? (
               <BarChart
                 data={chartData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
+                margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
               >
                 <defs>
                   <linearGradient id="fillSpas" x1="0" y1="0" x2="0" y2="1">
@@ -332,11 +334,11 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
                   axisLine={false}
                   tickMargin={8}
                   tickFormatter={(value) =>
-                    value.length > 13 ? `${value.slice(0, 13)}...` : value
+                    value.length > 10 ? `${value.slice(0, 10)}...` : value
                   }
                   angle={45}
                   textAnchor="start"
-                  height={50}
+                  height={60}
                 />
                 <YAxis width={40} allowDecimals={false} />
                 <ChartTooltip
@@ -347,16 +349,16 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
                   dataKey="microservices"
                   fill="url(#fillMicroservices)"
                   radius={[4, 4, 0, 0]}
-                  animationBegin={200}
-                  animationDuration={1200}
+                  animationBegin={0}
+                  animationDuration={800}
                   isAnimationActive={true}
                 />
                 <Bar
                   dataKey="spas"
                   fill="url(#fillSpas)"
                   radius={[4, 4, 0, 0]}
-                  animationBegin={400}
-                  animationDuration={1200}
+                  animationBegin={150}
+                  animationDuration={800}
                   isAnimationActive={true}
                 />
                 <ChartLegend 
@@ -366,7 +368,7 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
             ) : (
               <BarChart
                 data={chartData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
+                margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
               >
                 <defs>
                   <linearGradient
@@ -395,11 +397,11 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
                   axisLine={false}
                   tickMargin={8}
                   tickFormatter={(value) =>
-                    value.length > 13 ? `${value.slice(0, 13)}...` : value
+                    value.length > 10 ? `${value.slice(0, 10)}...` : value
                   }
                   angle={45}
                   textAnchor="start"
-                  height={50}
+                  height={60}
                 />
                 <YAxis
                   tickFormatter={(value) => `${value}%`}
@@ -415,8 +417,8 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
                   dataKey="totalProgress"
                   fill="url(#fillTotalProgress)"
                   radius={[4, 4, 0, 0]}
-                  animationBegin={300}
-                  animationDuration={1200}
+                  animationBegin={0}
+                  animationDuration={800}
                   isAnimationActive={true}
                 />
                 <ChartLegend 
