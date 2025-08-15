@@ -6,7 +6,7 @@ import { TeamProgressChart } from "@/components/team-progress-chart";
 import { MigrationBanner } from "@/components/migration-banner";
 import { AnimatedNumber } from "@/components/animated-number";
 import { useDashboardStore } from "@/stores/use-dashboard-store";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { Microservice, Spa, TeamStat } from "@/app/data/schema";
 
 interface DashboardPageClientProps {
@@ -76,27 +76,31 @@ export const DashboardPageClient = ({
     nft: "NFT",
   };
 
-  const envCounts = useMemo(() => {
-    if (selectedEnv === "all") {
-      return {
-        spaTotal: totalSpas,
-        spaMigrated: migratedSpas,
-        msTotal: totalMs,
-        msMigrated: migratedMs,
-        spaCoveragePct: 100,
-        msCoveragePct: 100,
-      };
-    }
+  const inSelectedEnv = useCallback(
+    (env?: {
+      dev?: boolean;
+      sit?: boolean;
+      uat?: boolean;
+      nft?: boolean;
+    }) =>
+      selectedEnv === "all"
+        ? Boolean(env?.dev && env?.sit && env?.uat && env?.nft)
+        : Boolean(env?.[selectedEnv]),
+    [selectedEnv],
+  );
 
+  const envCounts = useMemo(() => {
     const spaTotalAll = spaData.length;
     const msTotalAll = msData.length;
-    const spaInEnv = spaData.filter((s) => s.environments?.[selectedEnv]).length;
-    const msInEnv = msData.filter((m) => m.environments?.[selectedEnv]).length;
+
+    const spaInEnv = spaData.filter((s) => inSelectedEnv(s.environments)).length;
+    const msInEnv = msData.filter((m) => inSelectedEnv(m.environments)).length;
+
     const spaMigratedInEnv = spaData.filter(
-      (s) => s.environments?.[selectedEnv] && s.status === "MIGRATED",
+      (s) => inSelectedEnv(s.environments) && s.status === "MIGRATED",
     ).length;
     const msMigratedInEnv = msData.filter(
-      (m) => m.environments?.[selectedEnv] && m.status === "MIGRATED",
+      (m) => inSelectedEnv(m.environments) && m.status === "MIGRATED",
     ).length;
 
     return {
@@ -104,15 +108,12 @@ export const DashboardPageClient = ({
       spaMigrated: spaMigratedInEnv,
       msTotal: msInEnv,
       msMigrated: msMigratedInEnv,
-      spaCoveragePct:
-        spaTotalAll > 0 ? (spaInEnv / spaTotalAll) * 100 : 0,
+      spaCoveragePct: spaTotalAll > 0 ? (spaInEnv / spaTotalAll) * 100 : 0,
       msCoveragePct: msTotalAll > 0 ? (msInEnv / msTotalAll) * 100 : 0,
     };
-  }, [selectedEnv, spaData, msData, totalSpas, migratedSpas, totalMs, migratedMs]);
+  }, [inSelectedEnv, spaData, msData]);
 
   const displayTeamStats: TeamStat[] = useMemo(() => {
-    if (selectedEnv === "all") return teamsData;
-
     const teamMap = new Map<string, TeamStat>();
 
     const ensureTeam = (teamName: string) => {
@@ -129,7 +130,7 @@ export const DashboardPageClient = ({
     };
 
     spaData.forEach((s) => {
-      if (s.environments?.[selectedEnv]) {
+      if (inSelectedEnv(s.environments)) {
         const team = ensureTeam(s.subgroupName);
         if (s.status === "MIGRATED") team.migratedSpaCount += 1;
         else team.outstandingSpaCount += 1;
@@ -137,7 +138,7 @@ export const DashboardPageClient = ({
     });
 
     msData.forEach((m) => {
-      if (m.environments?.[selectedEnv]) {
+      if (inSelectedEnv(m.environments)) {
         const team = ensureTeam(m.subgroupName);
         if (m.status === "MIGRATED") team.migratedMsCount += 1;
         else team.outstandingMsCount += 1;
@@ -145,13 +146,13 @@ export const DashboardPageClient = ({
     });
 
     return Array.from(teamMap.values());
-  }, [selectedEnv, teamsData, spaData, msData]);
+  }, [inSelectedEnv, spaData, msData]);
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
       <MigrationBanner />
       <Tabs value={selectedEnv} onValueChange={handleEnvChange}>
         <div className="flex items-center justify-between">
-          <TabsList>
+          <TabsList className="bg-muted/90 border border-border">
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="dev">DEV</TabsTrigger>
             <TabsTrigger value="sit">SIT</TabsTrigger>
@@ -246,7 +247,12 @@ export const DashboardPageClient = ({
       </Tabs>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <div className="col-span-7">
-          <TeamProgressChart teamStats={displayTeamStats ?? []} />
+          <TeamProgressChart
+            teamStats={displayTeamStats ?? []}
+            contextLabel={
+              selectedEnv === "all" ? "All envs deployed" : envLabels[selectedEnv as EnvKey]
+            }
+          />
         </div>
       </div>
     </div>

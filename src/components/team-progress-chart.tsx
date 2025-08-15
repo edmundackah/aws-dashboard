@@ -33,6 +33,7 @@ import { TeamStat } from "@/app/data/schema";
 
 interface TeamProgressChartProps {
   teamStats: TeamStat[];
+  contextLabel?: string;
 }
 
 const chartConfig = {
@@ -207,7 +208,7 @@ const CustomLegend = ({
   );
 };
 
-export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
+export function TeamProgressChart({ teamStats, contextLabel }: TeamProgressChartProps) {
   const [view, setView] = React.useState("progress");
 
   const processedTeamStats = React.useMemo(() => {
@@ -271,8 +272,8 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
             <CardTitle>Team Progress</CardTitle>
             <CardDescription>
               {view === "counts"
-                ? "Showing number of migrated services per team."
-                : "Showing overall migration percentage per team."}
+                ? `Migrated services per team${contextLabel ? ` — ${contextLabel}` : ""}.`
+                : `Overall migration percentage per team${contextLabel ? ` — ${contextLabel}` : ""}.`}
             </CardDescription>
           </div>
           <Select value={view} onValueChange={setView}>
