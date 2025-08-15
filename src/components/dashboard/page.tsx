@@ -147,6 +147,17 @@ export const DashboardPageClient = ({
   const displayTeamStats: TeamStat[] = useMemo(() => {
     const teamMap = new Map<string, TeamStat>();
 
+    // Seed all known teams so 0% teams still appear
+    teamsData.forEach((t) => {
+      teamMap.set(t.teamName, {
+        teamName: t.teamName,
+        migratedSpaCount: 0,
+        outstandingSpaCount: 0,
+        migratedMsCount: 0,
+        outstandingMsCount: 0,
+      } as TeamStat);
+    });
+
     const ensureTeam = (teamName: string) => {
       if (!teamMap.has(teamName)) {
         teamMap.set(teamName, {
@@ -177,7 +188,7 @@ export const DashboardPageClient = ({
     });
 
     return Array.from(teamMap.values());
-  }, [inSelectedEnv, spaData, msData]);
+  }, [inSelectedEnv, spaData, msData, teamsData]);
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
       {allEnvStats.meetsThreshold ? (
