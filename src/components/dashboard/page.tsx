@@ -58,6 +58,15 @@ export const DashboardPageClient = ({
     const n = raw ? Number(raw) : NaN;
     return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : 50;
   })();
+  const confettiMode = (process.env.NEXT_PUBLIC_CONFETTI_MODE as
+    | "off"
+    | "eco"
+    | "normal") || "eco";
+  const confettiCooldownMs = (() => {
+    const raw = process.env.NEXT_PUBLIC_CONFETTI_COOLDOWN_MS;
+    const n = raw ? Number(raw) : NaN;
+    return Number.isFinite(n) ? Math.max(0, n) : 30000; // 30s default
+  })();
 
 
   const inSelectedEnv = useCallback(
@@ -127,21 +136,48 @@ export const DashboardPageClient = ({
   // Fire confetti when threshold met on every tab change
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // Respect OS reduced motion
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+
     const spaPct = envCounts.spaTotal > 0 ? (envCounts.spaMigrated / envCounts.spaTotal) * 100 : 0;
     const msPct = envCounts.msTotal > 0 ? (envCounts.msMigrated / envCounts.msTotal) * 100 : 0;
     const meets = Math.max(spaPct, msPct) >= thresholdPct;
     if (!meets) return;
 
-    const duration = 1500;
+    // Tune for low-performance (Citrix, low cores) and configurable modes
+    const ua = navigator.userAgent?.toLowerCase?.() || "";
+    const isLikelyCitrix = ua.includes("citrix");
+    const lowCores = (navigator as any).hardwareConcurrency && (navigator as any).hardwareConcurrency <= 2;
+    const mode: "off" | "eco" | "normal" = isLikelyCitrix || lowCores ? "eco" : confettiMode;
+    if (mode === "off") return;
+
+    // Cooldown to avoid repeated heavy effects when flipping tabs
+    const cdKey = `confetti_last_${selectedEnv}`;
+    const now = Date.now();
+    const last = Number(window.sessionStorage.getItem(cdKey) || 0);
+    if (confettiCooldownMs > 0 && now - last < confettiCooldownMs) {
+      return;
+    }
+
+    const duration = mode === "eco" ? 500 : 900;
     const end = Date.now() + duration;
     const colors = ["#ef4444","#f59e0b","#eab308","#22c55e","#06b6d4","#6366f1","#a855f7"];
-    const burst = () => {
-      confetti({ particleCount: 6, angle: 60, spread: 75, origin: { x: 0 }, colors, scalar: 1 });
-      confetti({ particleCount: 6, angle: 120, spread: 75, origin: { x: 1 }, colors, scalar: 1 });
-      if (Date.now() < end) requestAnimationFrame(burst);
-    };
-    confetti({ particleCount: 200, spread: 80, startVelocity: 40, origin: { y: 0.6 }, colors, scalar: 1.1 });
-    requestAnimationFrame(burst);
+    if (mode === "eco") {
+      // Single light burst
+      confetti({ particleCount: 60, spread: 70, startVelocity: 30, origin: { y: 0.6 }, colors, scalar: 0.9 });
+    } else {
+      const burst = () => {
+        confetti({ particleCount: 4, angle: 60, spread: 75, origin: { x: 0 }, colors, scalar: 1 });
+        confetti({ particleCount: 4, angle: 120, spread: 75, origin: { x: 1 }, colors, scalar: 1 });
+        if (Date.now() < end) requestAnimationFrame(burst);
+      };
+      confetti({ particleCount: 120, spread: 80, startVelocity: 35, origin: { y: 0.6 }, colors, scalar: 1 });
+      requestAnimationFrame(burst);
+    }
+
+    window.sessionStorage.setItem(cdKey, String(now));
   }, [selectedEnv, thresholdPct, envCounts.spaMigrated, envCounts.spaTotal, envCounts.msMigrated, envCounts.msTotal]);
 
   const displayTeamStats: TeamStat[] = useMemo(() => {
