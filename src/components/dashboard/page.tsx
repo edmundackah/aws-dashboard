@@ -149,7 +149,8 @@ export const DashboardPageClient = ({
     // Tune for low-performance (Citrix, low cores) and configurable modes
     const ua = navigator.userAgent?.toLowerCase?.() || "";
     const isLikelyCitrix = ua.includes("citrix");
-    const lowCores = (navigator as any).hardwareConcurrency && (navigator as any).hardwareConcurrency <= 2;
+    const navAny = navigator as Navigator & { hardwareConcurrency?: number };
+    const lowCores = typeof navAny.hardwareConcurrency === "number" && navAny.hardwareConcurrency <= 2;
     const mode: "off" | "eco" | "normal" = isLikelyCitrix || lowCores ? "eco" : confettiMode;
     if (mode === "off") return;
 
@@ -178,7 +179,7 @@ export const DashboardPageClient = ({
     }
 
     window.sessionStorage.setItem(cdKey, String(now));
-  }, [selectedEnv, thresholdPct, envCounts.spaMigrated, envCounts.spaTotal, envCounts.msMigrated, envCounts.msTotal]);
+  }, [selectedEnv, thresholdPct, envCounts.spaMigrated, envCounts.spaTotal, envCounts.msMigrated, envCounts.msTotal, confettiCooldownMs, confettiMode]);
 
   const displayTeamStats: TeamStat[] = useMemo(() => {
     const teamMap = new Map<string, TeamStat>();
@@ -266,7 +267,7 @@ export const DashboardPageClient = ({
                 </span>
               </div>
               <div className="mt-2 flex items-baseline gap-2">
-                <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold">
                   <AnimatedNumber value={envCounts.spaMigrated} />
                 </div>
                 <div className="text-sm text-muted-foreground">/ {envCounts.spaTotal}</div>
@@ -300,7 +301,7 @@ export const DashboardPageClient = ({
                 </span>
               </div>
               <div className="mt-2 flex items-baseline gap-2">
-                <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold">
                   <AnimatedNumber value={envCounts.msMigrated} />
                 </div>
                 <div className="text-sm text-muted-foreground">/ {envCounts.msTotal}</div>
@@ -325,7 +326,7 @@ export const DashboardPageClient = ({
                 {envCounts.msPresent} present in {selectedEnv === "all" ? "all envs" : envLabels[selectedEnv as EnvKey]} · {envCounts.msCoveragePct.toFixed(1)}% coverage
               </div>
             </div>
-          </div>
+      </div>
         </TabsContent>
       </Tabs>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
