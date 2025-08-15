@@ -58,10 +58,6 @@ export const DashboardPageClient = ({
     const n = raw ? Number(raw) : NaN;
     return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : 50;
   })();
-  const [hasMounted, setHasMounted] = useState(false);
-  useEffect(() => {
-    setHasMounted(true);
-  }, []);
   const confettiMode = (process.env.NEXT_PUBLIC_CONFETTI_MODE as
     | "off"
     | "eco"
@@ -112,6 +108,22 @@ export const DashboardPageClient = ({
     };
   }, [inSelectedEnv, spaData, msData]);
 
+  // Debounce the glow to avoid brief flickers on mount/data hydration
+  const [glowSpa, setGlowSpa] = useState(false);
+  const [glowMs, setGlowMs] = useState(false);
+  useEffect(() => {
+    const spaPct = envCounts.spaTotal > 0 ? (envCounts.spaMigrated / envCounts.spaTotal) * 100 : 0;
+    const msPct = envCounts.msTotal > 0 ? (envCounts.msMigrated / envCounts.msTotal) * 100 : 0;
+    const meetsSpa = spaPct >= thresholdPct;
+    const meetsMs = msPct >= thresholdPct;
+
+    const timer = window.setTimeout(() => {
+      setGlowSpa(meetsSpa);
+      setGlowMs(meetsMs);
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [envCounts.spaMigrated, envCounts.spaTotal, envCounts.msMigrated, envCounts.msTotal, thresholdPct, selectedEnv]);
+
   // Compute overall progress specifically for services deployed to all environments
   const allEnvStats = useMemo(() => {
     const inAll = (env?: { dev?: boolean; sit?: boolean; uat?: boolean; nft?: boolean }) =>
@@ -154,7 +166,7 @@ export const DashboardPageClient = ({
     const ua = navigator.userAgent?.toLowerCase?.() || "";
     const isLikelyCitrix = ua.includes("citrix");
     const navAny = navigator as Navigator & { hardwareConcurrency?: number };
-    const lowCores = typeof navAny.hardwareConcurrency === "number" && navAny.hardwareConcurrency <= 2;
+    const lowCores = navAny.hardwareConcurrency <= 2;
     const mode: "off" | "eco" | "normal" = isLikelyCitrix || lowCores ? "eco" : confettiMode;
     if (mode === "off") return;
 
@@ -263,7 +275,7 @@ export const DashboardPageClient = ({
 
         <TabsContent value={selectedEnv}>
           <div className="grid gap-3 md:grid-cols-2">
-            <div className={`rounded-md border p-3 bg-muted ${hasMounted && ((envCounts.spaTotal > 0 ? (envCounts.spaMigrated / envCounts.spaTotal) * 100 : 0) >= thresholdPct) ? 'rainbow-glow' : ''}`}>
+            <div className={`rounded-md border p-3 bg-muted ${glowSpa ? 'rainbow-glow' : ''}`}>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">SPAs</span>
                 <span className="text-sm text-muted-foreground">
@@ -297,7 +309,7 @@ export const DashboardPageClient = ({
               </div>
             </div>
 
-            <div className={`rounded-md border p-3 bg-muted ${hasMounted && ((envCounts.msTotal > 0 ? (envCounts.msMigrated / envCounts.msTotal) * 100 : 0) >= thresholdPct) ? 'rainbow-glow' : ''}`}>
+            <div className={`rounded-md border p-3 bg-muted ${glowMs ? 'rainbow-glow' : ''}`}>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Microservices</span>
                 <span className="text-sm text-muted-foreground">
