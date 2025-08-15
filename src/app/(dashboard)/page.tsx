@@ -25,5 +25,11 @@ export default function Page() {
     return <ErrorDisplay message="No data available" />;
   }
 
-  return <DashboardPageClient teamsData={data.allTeamStats} />;
+  return (
+    <DashboardPageClient
+      teamsData={data.allTeamStats}
+      spaData={data.spaData}
+      msData={data.msData}
+    />
+  );
 }
