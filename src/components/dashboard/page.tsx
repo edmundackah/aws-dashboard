@@ -6,6 +6,8 @@ import { MigrationBanner } from "@/components/migration-banner";
 import { AnimatedNumber } from "@/components/animated-number";
 import { useDashboardStore } from "@/stores/use-dashboard-store";
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { Trophy } from "lucide-react";
+import confetti from "canvas-confetti";
 import { Microservice, Spa, TeamStat } from "@/app/data/schema";
 
 interface DashboardPageClientProps {
@@ -25,31 +27,7 @@ export const DashboardPageClient = ({
     fetchData();
   }, [fetchData]);
 
-  // Overall totals (All environments)
-  const totalSpas = teamsData.reduce(
-    (acc, team) =>
-      acc + (team.migratedSpaCount ?? 0) + (team.outstandingSpaCount ?? 0),
-    0,
-  );
-  const migratedSpas = teamsData.reduce(
-    (acc, team) => acc + (team.migratedSpaCount ?? 0),
-    0,
-  );
-
-  const totalMs = teamsData.reduce(
-    (acc, team) =>
-      acc + (team.migratedMsCount ?? 0) + (team.outstandingMsCount ?? 0),
-    0,
-  );
-  const migratedMs = teamsData.reduce(
-    (acc, team) => acc + (team.migratedMsCount ?? 0),
-    0,
-  );
-
-  const spaMigrationPercentage =
-    totalSpas > 0 ? (migratedSpas / totalSpas) * 100 : 0;
-  const msMigrationPercentage = totalMs > 0 ? (migratedMs / totalMs) * 100 : 0;
-
+  // Totals are computed contextually per environment below
   type EnvKey = "dev" | "sit" | "uat" | "nft";
   const ENV_STORAGE_KEY = "dashboard.selectedEnv";
   const isEnvValue = (value: string): value is "all" | EnvKey =>
@@ -74,6 +52,13 @@ export const DashboardPageClient = ({
     uat: "UAT",
     nft: "NFT",
   };
+
+  const thresholdPct = (() => {
+    const raw = process.env.NEXT_PUBLIC_CONFETTI_THRESHOLD_PCT;
+    const n = raw ? Number(raw) : NaN;
+    return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : 50;
+  })();
+
 
   const inSelectedEnv = useCallback(
     (env?: {
@@ -114,6 +99,51 @@ export const DashboardPageClient = ({
     };
   }, [inSelectedEnv, spaData, msData]);
 
+  // Compute overall progress specifically for services deployed to all environments
+  const allEnvStats = useMemo(() => {
+    const inAll = (env?: { dev?: boolean; sit?: boolean; uat?: boolean; nft?: boolean }) =>
+      Boolean(env?.dev && env?.sit && env?.uat && env?.nft);
+
+    const spaMigratedAll = spaData.filter(
+      (s) => inAll(s.environments) && s.status === "MIGRATED",
+    ).length;
+    const msMigratedAll = msData.filter(
+      (m) => inAll(m.environments) && m.status === "MIGRATED",
+    ).length;
+
+    const spaPct = spaData.length > 0 ? (spaMigratedAll / spaData.length) * 100 : 0;
+    const msPct = msData.length > 0 ? (msMigratedAll / msData.length) * 100 : 0;
+    const meetsThreshold = spaPct >= thresholdPct && msPct >= thresholdPct;
+
+    return {
+      spaMigratedAll,
+      msMigratedAll,
+      spaPct,
+      msPct,
+      meetsThreshold,
+    };
+  }, [spaData, msData, thresholdPct]);
+
+  // Fire confetti when threshold met on every tab change
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const spaPct = envCounts.spaTotal > 0 ? (envCounts.spaMigrated / envCounts.spaTotal) * 100 : 0;
+    const msPct = envCounts.msTotal > 0 ? (envCounts.msMigrated / envCounts.msTotal) * 100 : 0;
+    const meets = Math.max(spaPct, msPct) >= thresholdPct;
+    if (!meets) return;
+
+    const duration = 1500;
+    const end = Date.now() + duration;
+    const colors = ["#ef4444","#f59e0b","#eab308","#22c55e","#06b6d4","#6366f1","#a855f7"];
+    const burst = () => {
+      confetti({ particleCount: 6, angle: 60, spread: 75, origin: { x: 0 }, colors, scalar: 1 });
+      confetti({ particleCount: 6, angle: 120, spread: 75, origin: { x: 1 }, colors, scalar: 1 });
+      if (Date.now() < end) requestAnimationFrame(burst);
+    };
+    confetti({ particleCount: 200, spread: 80, startVelocity: 40, origin: { y: 0.6 }, colors, scalar: 1.1 });
+    requestAnimationFrame(burst);
+  }, [selectedEnv, thresholdPct, envCounts.spaMigrated, envCounts.spaTotal, envCounts.msMigrated, envCounts.msTotal]);
+
   const displayTeamStats: TeamStat[] = useMemo(() => {
     const teamMap = new Map<string, TeamStat>();
 
@@ -150,7 +180,24 @@ export const DashboardPageClient = ({
   }, [inSelectedEnv, spaData, msData]);
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
-      <MigrationBanner />
+      {allEnvStats.meetsThreshold ? (
+        <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="bg-green-500/20 p-2 rounded-full">
+              <Trophy className="h-6 w-6 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <h3 className="font-bold text-base text-black dark:text-black">Milestone reached! 🎉</h3>
+              <p className="text-sm text-black/80 dark:text-black/80">Across all environments, migration has surpassed {thresholdPct}% for SPAs and Microservices.</p>
+            </div>
+          </div>
+          <div className="text-xs text-black/80 dark:text-black/80 whitespace-nowrap">
+            {allEnvStats.spaMigratedAll + allEnvStats.msMigratedAll} of {spaData.length + msData.length} migrated
+          </div>
+        </div>
+      ) : (
+        <MigrationBanner />
+      )}
       <Tabs value={selectedEnv} onValueChange={handleEnvChange}>
         <div className="flex items-center justify-between">
           <TabsList className="bg-muted/90 border border-border">
@@ -164,7 +211,7 @@ export const DashboardPageClient = ({
 
         <TabsContent value={selectedEnv}>
           <div className="grid gap-3 md:grid-cols-2">
-            <div className="rounded-md border p-3 bg-muted">
+            <div className={`rounded-md border p-3 bg-muted ${((envCounts.spaTotal > 0 ? (envCounts.spaMigrated / envCounts.spaTotal) * 100 : 0) >= thresholdPct) ? 'rainbow-glow' : ''}`}>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">SPAs</span>
                 <span className="text-sm text-muted-foreground">
@@ -198,7 +245,7 @@ export const DashboardPageClient = ({
               </div>
             </div>
 
-            <div className="rounded-md border p-3 bg-muted">
+            <div className={`rounded-md border p-3 bg-muted ${((envCounts.msTotal > 0 ? (envCounts.msMigrated / envCounts.msTotal) * 100 : 0) >= thresholdPct) ? 'rainbow-glow' : ''}`}>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Microservices</span>
                 <span className="text-sm text-muted-foreground">

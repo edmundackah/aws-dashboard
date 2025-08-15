@@ -147,3 +147,27 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Racing rainbow glow utility for threshold highlight */
+.rainbow-glow {
+  position: relative;
+}
+.rainbow-glow::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 12px;
+  padding: 2px;
+  background: linear-gradient(90deg, #ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #6366f1, #a855f7, #ef4444);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: rainbow-run 3s linear infinite;
+  pointer-events: none;
+}
+@keyframes rainbow-run {
+  to {
+    background-position: 200% 0;
+  }
+}
