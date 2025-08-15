@@ -58,6 +58,10 @@ export const DashboardPageClient = ({
     const n = raw ? Number(raw) : NaN;
     return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : 50;
   })();
+  const [hasMounted, setHasMounted] = useState(false);
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
   const confettiMode = (process.env.NEXT_PUBLIC_CONFETTI_MODE as
     | "off"
     | "eco"
@@ -259,7 +263,7 @@ export const DashboardPageClient = ({
 
         <TabsContent value={selectedEnv}>
           <div className="grid gap-3 md:grid-cols-2">
-            <div className={`rounded-md border p-3 bg-muted ${((envCounts.spaTotal > 0 ? (envCounts.spaMigrated / envCounts.spaTotal) * 100 : 0) >= thresholdPct) ? 'rainbow-glow' : ''}`}>
+            <div className={`rounded-md border p-3 bg-muted ${hasMounted && ((envCounts.spaTotal > 0 ? (envCounts.spaMigrated / envCounts.spaTotal) * 100 : 0) >= thresholdPct) ? 'rainbow-glow' : ''}`}>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">SPAs</span>
                 <span className="text-sm text-muted-foreground">
@@ -293,7 +297,7 @@ export const DashboardPageClient = ({
               </div>
             </div>
 
-            <div className={`rounded-md border p-3 bg-muted ${((envCounts.msTotal > 0 ? (envCounts.msMigrated / envCounts.msTotal) * 100 : 0) >= thresholdPct) ? 'rainbow-glow' : ''}`}>
+            <div className={`rounded-md border p-3 bg-muted ${hasMounted && ((envCounts.msTotal > 0 ? (envCounts.msMigrated / envCounts.msTotal) * 100 : 0) >= thresholdPct) ? 'rainbow-glow' : ''}`}>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Microservices</span>
                 <span className="text-sm text-muted-foreground">
