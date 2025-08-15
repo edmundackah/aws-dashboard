@@ -1,6 +1,5 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TeamProgressChart } from "@/components/team-progress-chart";
 import { MigrationBanner } from "@/components/migration-banner";
@@ -104,12 +103,14 @@ export const DashboardPageClient = ({
     ).length;
 
     return {
-      spaTotal: spaInEnv,
+      spaTotal: spaData.length, // overall totals to make stats comparable
       spaMigrated: spaMigratedInEnv,
-      msTotal: msInEnv,
+      msTotal: msData.length,
       msMigrated: msMigratedInEnv,
       spaCoveragePct: spaTotalAll > 0 ? (spaInEnv / spaTotalAll) * 100 : 0,
       msCoveragePct: msTotalAll > 0 ? (msInEnv / msTotalAll) * 100 : 0,
+      spaPresent: spaInEnv,
+      msPresent: msInEnv,
     };
   }, [inSelectedEnv, spaData, msData]);
 
@@ -162,86 +163,74 @@ export const DashboardPageClient = ({
         </div>
 
         <TabsContent value={selectedEnv}>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle>
-                  {selectedEnv === "all"
-                    ? "Total SPAs"
-                    : `SPAs (${envLabels[selectedEnv as EnvKey]})`}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  <AnimatedNumber value={envCounts.spaTotal} />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {selectedEnv === "all"
-                    ? "Across all teams"
-                    : `${envCounts.spaCoveragePct.toFixed(2)}% of all SPAs`}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle>
-                  {selectedEnv === "all"
-                    ? "Migrated SPAs"
-                    : `Migrated SPAs (${envLabels[selectedEnv as EnvKey]})`}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="rounded-md border p-3 bg-muted">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">SPAs</span>
+                <span className="text-sm text-muted-foreground">
+                  {selectedEnv === "all" ? "All envs deployed" : envLabels[selectedEnv as EnvKey]}
+                </span>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
                 <div className="text-2xl font-bold">
                   <AnimatedNumber value={envCounts.spaMigrated} />
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {selectedEnv === "all"
-                    ? `${spaMigrationPercentage.toFixed(2)}% completed`
-                    : `of ${envCounts.spaTotal} in ${envLabels[selectedEnv as EnvKey]}`}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle>
-                  {selectedEnv === "all"
-                    ? "Total Microservices"
-                    : `Microservices (${envLabels[selectedEnv as EnvKey]})`}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  <AnimatedNumber value={envCounts.msTotal} />
+                <div className="text-sm text-muted-foreground">/ {envCounts.spaTotal}</div>
+                <div className="ml-auto text-sm font-medium">
+                  {(
+                    envCounts.spaTotal > 0
+                      ? (envCounts.spaMigrated / envCounts.spaTotal) * 100
+                      : 0
+                  ).toFixed(1)}%
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {selectedEnv === "all"
-                    ? "Across all teams"
-                    : `${envCounts.msCoveragePct.toFixed(2)}% of all microservices`}
-                </p>
-              </CardContent>
-            </Card>
+              </div>
+              <div className="mt-4 h-1.5 w-full rounded bg-border">
+                <div
+                  className="h-1.5 rounded bg-emerald-500"
+                  style={{
+                    width: `${Math.min(100, Math.max(0, envCounts.spaTotal > 0 ? (envCounts.spaMigrated / envCounts.spaTotal) * 100 : 0))}%`,
+                    transition: "width 400ms ease-out",
+                  }}
+                />
+              </div>
+              <div className="mt-2 text-sm text-muted-foreground">
+                {envCounts.spaPresent} present in {selectedEnv === "all" ? "all envs" : envLabels[selectedEnv as EnvKey]} · {envCounts.spaCoveragePct.toFixed(1)}% coverage
+              </div>
+            </div>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle>
-                  {selectedEnv === "all"
-                    ? "Migrated Microservices"
-                    : `Migrated Microservices (${envLabels[selectedEnv as EnvKey]})`}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+            <div className="rounded-md border p-3 bg-muted">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Microservices</span>
+                <span className="text-sm text-muted-foreground">
+                  {selectedEnv === "all" ? "All envs deployed" : envLabels[selectedEnv as EnvKey]}
+                </span>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
                 <div className="text-2xl font-bold">
                   <AnimatedNumber value={envCounts.msMigrated} />
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {selectedEnv === "all"
-                    ? `${msMigrationPercentage.toFixed(2)}% completed`
-                    : `of ${envCounts.msTotal} in ${envLabels[selectedEnv as EnvKey]}`}
-                </p>
-              </CardContent>
-            </Card>
+                <div className="text-sm text-muted-foreground">/ {envCounts.msTotal}</div>
+                <div className="ml-auto text-sm font-medium">
+                  {(
+                    envCounts.msTotal > 0
+                      ? (envCounts.msMigrated / envCounts.msTotal) * 100
+                      : 0
+                  ).toFixed(1)}%
+                </div>
+              </div>
+              <div className="mt-4 h-1.5 w-full rounded bg-border">
+                <div
+                  className="h-1.5 rounded bg-indigo-500"
+                  style={{
+                    width: `${Math.min(100, Math.max(0, envCounts.msTotal > 0 ? (envCounts.msMigrated / envCounts.msTotal) * 100 : 0))}%`,
+                    transition: "width 400ms ease-out",
+                  }}
+                />
+              </div>
+              <div className="mt-2 text-sm text-muted-foreground">
+                {envCounts.msPresent} present in {selectedEnv === "all" ? "all envs" : envLabels[selectedEnv as EnvKey]} · {envCounts.msCoveragePct.toFixed(1)}% coverage
+              </div>
+            </div>
           </div>
         </TabsContent>
       </Tabs>
@@ -249,6 +238,7 @@ export const DashboardPageClient = ({
         <div className="col-span-7">
           <TeamProgressChart
             teamStats={displayTeamStats ?? []}
+            overallTeamStats={teamsData}
             contextLabel={
               selectedEnv === "all" ? "All envs deployed" : envLabels[selectedEnv as EnvKey]
             }
