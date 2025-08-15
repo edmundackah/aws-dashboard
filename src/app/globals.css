@@ -147,3 +147,48 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Racing rainbow glow utility for threshold highlight */
+.rainbow-glow {
+  position: relative;
+}
+/* Animate the hue sweep around the border, not the element itself */
+@property --glow-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+.rainbow-glow::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 12px;
+  padding: 2px;
+  background: conic-gradient(
+    from var(--glow-angle),
+    #ef4444,
+    #f59e0b,
+    #eab308,
+    #22c55e,
+    #06b6d4,
+    #6366f1,
+    #a855f7,
+    #ef4444
+  );
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: rainbow-sweep 3s linear infinite;
+  pointer-events: none;
+}
+@keyframes rainbow-sweep {
+  to {
+    --glow-angle: 360deg;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rainbow-glow::before {
+    animation: none;
+  }
+}

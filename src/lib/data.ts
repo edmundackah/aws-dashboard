@@ -7,6 +7,8 @@ export interface ServiceSummaryItem {
   projectLink: string;
   type: "SPA" | "MICROSERVICE";
   status: "MIGRATED" | "NOT_MIGRATED";
+  otel?: Microservice["otel"];
+  mssdk?: Microservice["mssdk"];
   technicalSme?: {
     name: string;
     email: string;
@@ -84,8 +86,8 @@ export function processDashboardData(
       subgroupName: item.subgroupName,
       projectLink: item.projectLink,
       status: "NOT_MIGRATED",
-      otel: "N/A",
-      mssdk: "N/A",
+      otel: item.otel ?? "N/A",
+      mssdk: item.mssdk ?? "N/A",
       environments: { dev: false, sit: false, uat: false, nft: false },
       technicalSme: item.technicalSme,
     }));

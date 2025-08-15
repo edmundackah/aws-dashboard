@@ -32,7 +32,9 @@ import {
 import { TeamStat } from "@/app/data/schema";
 
 interface TeamProgressChartProps {
-  teamStats: TeamStat[];
+  teamStats: TeamStat[]; // filtered (per selected environment)
+  overallTeamStats?: TeamStat[]; // overall totals (all environments)
+  contextLabel?: string;
 }
 
 const chartConfig = {
@@ -207,7 +209,7 @@ const CustomLegend = ({
   );
 };
 
-export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
+export function TeamProgressChart({ teamStats, overallTeamStats, contextLabel }: TeamProgressChartProps) {
   const [view, setView] = React.useState("progress");
 
   const processedTeamStats = React.useMemo(() => {
@@ -229,6 +231,17 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
     return Array.from(teamMap.values());
   }, [teamStats]);
 
+  const overallMap = React.useMemo(() => {
+    const m = new Map<string, { totalSpas: number; totalMs: number }>();
+    (overallTeamStats ?? []).forEach((t) => {
+      const key = t.teamName.toLowerCase();
+      const totalSpas = t.migratedSpaCount + t.outstandingSpaCount;
+      const totalMs = t.migratedMsCount + t.outstandingMsCount;
+      m.set(key, { totalSpas, totalMs });
+    });
+    return m;
+  }, [overallTeamStats]);
+
 
   const chartData =
     view === "counts"
@@ -239,8 +252,9 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
         }))
       : processedTeamStats
           .map((team) => {
-            const totalSpas = team.migratedSpaCount + team.outstandingSpaCount;
-            const totalMs = team.migratedMsCount + team.outstandingMsCount;
+            const overall = overallMap.get(team.teamName.toLowerCase());
+            const totalSpas = overall ? overall.totalSpas : team.migratedSpaCount + team.outstandingSpaCount;
+            const totalMs = overall ? overall.totalMs : team.migratedMsCount + team.outstandingMsCount;
             const totalServices = totalSpas + totalMs;
             const totalMigrated = team.migratedSpaCount + team.migratedMsCount;
             const totalProgress =
@@ -271,8 +285,8 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
             <CardTitle>Team Progress</CardTitle>
             <CardDescription>
               {view === "counts"
-                ? "Showing number of migrated services per team."
-                : "Showing overall migration percentage per team."}
+                ? `Migrated services per team${contextLabel ? ` — ${contextLabel}` : ""}.`
+                : `Overall migration percentage per team${contextLabel ? ` — ${contextLabel}` : ""}.`}
             </CardDescription>
           </div>
           <Select value={view} onValueChange={setView}>
