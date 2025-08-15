@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import {
-  Area,
-  AreaChart,
+  Bar,
+  BarChart,
   CartesianGrid,
   XAxis,
   YAxis,
@@ -20,7 +20,6 @@ import {
   ChartConfig,
   ChartContainer,
   ChartLegend,
-  ChartLegendContent,
   ChartTooltip,
 } from "@/components/ui/chart";
 import {
@@ -171,8 +170,45 @@ const CustomTooltip = ({
   return null;
 };
 
+// Custom Legend Component with proper colors
+const CustomLegend = ({ 
+  config, 
+  view 
+}: { 
+  config: ChartConfig; 
+  view: "counts" | "progress"; 
+}) => {
+  const legendItems = view === "counts" 
+    ? [
+        { key: "microservices", label: config.microservices.label, color: config.microservices.color },
+        { key: "spas", label: config.spas.label, color: config.spas.color }
+      ]
+    : [
+        { key: "totalProgress", label: config.totalProgress.label, color: config.totalProgress.color }
+      ];
+
+  return (
+    <div className="flex items-center justify-center gap-4 pt-3">
+      {legendItems.map((item) => (
+        <div
+          key={item.key}
+          className="flex items-center gap-1.5"
+        >
+          <div
+            className="h-2 w-2 shrink-0 rounded-[2px]"
+            style={{
+              backgroundColor: item.color,
+            }}
+          />
+          <span className="text-sm text-muted-foreground">{item.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
-  const [view, setView] = React.useState("counts");
+  const [view, setView] = React.useState("progress");
 
   const processedTeamStats = React.useMemo(() => {
     const teamMap = new Map<string, TeamStat>();
@@ -201,31 +237,33 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
           spas: team.migratedSpaCount,
           microservices: team.migratedMsCount,
         }))
-      : processedTeamStats.map((team) => {
-          const totalSpas = team.migratedSpaCount + team.outstandingSpaCount;
-          const totalMs = team.migratedMsCount + team.outstandingMsCount;
-          const totalServices = totalSpas + totalMs;
-          const totalMigrated = team.migratedSpaCount + team.migratedMsCount;
-          const totalProgress =
-            totalServices > 0
-              ? Math.round((totalMigrated / totalServices) * 100)
-              : 0;
+      : processedTeamStats
+          .map((team) => {
+            const totalSpas = team.migratedSpaCount + team.outstandingSpaCount;
+            const totalMs = team.migratedMsCount + team.outstandingMsCount;
+            const totalServices = totalSpas + totalMs;
+            const totalMigrated = team.migratedSpaCount + team.migratedMsCount;
+            const totalProgress =
+              totalServices > 0
+                ? Math.round((totalMigrated / totalServices) * 100)
+                : 0;
 
-          return {
-            name: team.teamName.replace("team-", ""),
-            totalProgress: totalProgress,
-            migratedSpaCount: team.migratedSpaCount,
-            totalSpas,
-            migratedMsCount: team.migratedMsCount,
-            totalMs,
-          };
-        });
+            return {
+              name: team.teamName.replace("team-", ""),
+              totalProgress: totalProgress,
+              migratedSpaCount: team.migratedSpaCount,
+              totalSpas,
+              migratedMsCount: team.migratedMsCount,
+              totalMs,
+            };
+          })
+          .sort((a, b) => b.totalProgress - a.totalProgress); // Sort by progress descending
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8, delay: 0.5 }}
+      transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
     >
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -253,9 +291,9 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
             className="aspect-auto h-[300px] w-full"
           >
             {view === "counts" ? (
-              <AreaChart
+              <BarChart
                 data={chartData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
+                margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
               >
                 <defs>
                   <linearGradient id="fillSpas" x1="0" y1="0" x2="0" y2="1">
@@ -267,7 +305,7 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
                     <stop
                       offset="95%"
                       stopColor="hsl(var(--chart-spa))"
-                      stopOpacity={0.1}
+                      stopOpacity={0.3}
                     />
                   </linearGradient>
                   <linearGradient
@@ -285,7 +323,7 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
                     <stop
                       offset="95%"
                       stopColor="hsl(var(--chart-ms))"
-                      stopOpacity={0.1}
+                      stopOpacity={0.3}
                     />
                   </linearGradient>
                 </defs>
@@ -296,35 +334,41 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
                   axisLine={false}
                   tickMargin={8}
                   tickFormatter={(value) =>
-                    value.length > 13 ? `${value.slice(0, 13)}...` : value
+                    value.length > 10 ? `${value.slice(0, 10)}...` : value
                   }
                   angle={45}
                   textAnchor="start"
-                  height={50}
+                  height={60}
                 />
                 <YAxis width={40} allowDecimals={false} />
                 <ChartTooltip
                   cursor={false}
                   content={<CustomTooltip chartType="counts" />}
                 />
-                <Area
+                <Bar
                   dataKey="microservices"
-                  type="natural"
                   fill="url(#fillMicroservices)"
-                  stroke="hsl(var(--chart-ms))"
+                  radius={[4, 4, 0, 0]}
+                  animationBegin={0}
+                  animationDuration={800}
+                  isAnimationActive={true}
                 />
-                <Area
+                <Bar
                   dataKey="spas"
-                  type="natural"
                   fill="url(#fillSpas)"
-                  stroke="hsl(var(--chart-spa))"
+                  radius={[4, 4, 0, 0]}
+                  animationBegin={150}
+                  animationDuration={800}
+                  isAnimationActive={true}
                 />
-                <ChartLegend content={<ChartLegendContent className="text-sm" />} />
-              </AreaChart>
+                <ChartLegend 
+                  content={<CustomLegend config={chartConfig} view="counts" />} 
+                />
+              </BarChart>
             ) : (
-              <AreaChart
+              <BarChart
                 data={chartData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
+                margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
               >
                 <defs>
                   <linearGradient
@@ -342,7 +386,7 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
                     <stop
                       offset="95%"
                       stopColor="hsl(var(--chart-purple))"
-                      stopOpacity={0.1}
+                      stopOpacity={0.3}
                     />
                   </linearGradient>
                 </defs>
@@ -353,11 +397,11 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
                   axisLine={false}
                   tickMargin={8}
                   tickFormatter={(value) =>
-                    value.length > 13 ? `${value.slice(0, 13)}...` : value
+                    value.length > 10 ? `${value.slice(0, 10)}...` : value
                   }
                   angle={45}
                   textAnchor="start"
-                  height={50}
+                  height={60}
                 />
                 <YAxis
                   tickFormatter={(value) => `${value}%`}
@@ -369,15 +413,18 @@ export function TeamProgressChart({ teamStats }: TeamProgressChartProps) {
                   cursor={false}
                   content={<CustomTooltip chartType="progress" />}
                 />
-                <Area
+                <Bar
                   dataKey="totalProgress"
-                  type="natural"
                   fill="url(#fillTotalProgress)"
-                  stroke="hsl(var(--chart-purple))"
-                  strokeWidth={2}
+                  radius={[4, 4, 0, 0]}
+                  animationBegin={0}
+                  animationDuration={800}
+                  isAnimationActive={true}
                 />
-                <ChartLegend content={<ChartLegendContent className="text-sm" />} />
-              </AreaChart>
+                <ChartLegend 
+                  content={<CustomLegend config={chartConfig} view="progress" />} 
+                />
+              </BarChart>
             )}
           </ChartContainer>
         </CardContent>

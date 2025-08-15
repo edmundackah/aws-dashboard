@@ -2,8 +2,6 @@
 
 import { Header } from "@/components/Header";
 import { ScrollToTop } from "@/components/scroll-to-top";
-import { Separator } from "@/components/ui/separator";
-import { Footer } from "@/components/footer";
 import { useDashboardStore } from "@/stores/use-dashboard-store";
 import OverviewPage from "./page";
 import SpasPage from "./spas/page";
@@ -24,13 +22,15 @@ const PageRenderer = () => {
 
 export default function DashboardLayout() {
   return (
-    <div className="flex min-h-screen w-full flex-col bg-muted/40 p-4">
-      <Header />
-      <Separator className="my-4" />
-      <main className="flex-1 flex flex-col min-h-0">
+    <div className="flex min-h-screen w-full flex-col bg-muted/40">
+      <div className="sticky top-0 z-50 bg-background border-b">
+        <div className="p-4">
+          <Header />
+        </div>
+      </div>
+      <main className="flex-1 flex flex-col p-4">
         <PageRenderer />
       </main>
-      <Footer />
       <ScrollToTop />
     </div>
   );

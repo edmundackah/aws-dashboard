@@ -1,0 +1,48 @@
+[
+  {
+    "projectId": 1000,
+    "projectName": "spa-hanna",
+    "subgroupName": "team-6",
+    "subgroupId": 1016,
+    "type": "SPA",
+    "status": "MIGRATED",
+    "projectLink": "https://gitlab.com/team-6/spa-hanna",
+    "homepage": "https://spa-hanna.example.com",
+    "technicalSme": {
+      "name": "Dana Sme",
+      "email": "dana.sme@example.com"
+    }
+  },
+  {
+    "projectId": 1304,
+    "projectName": "msvc-obrien",
+    "subgroupName": "team-1",
+    "subgroupId": 1370,
+    "type": "MICROSERVICE",
+    "status": "MIGRATED",
+    "projectLink": "https://gitlab.com/team-1/msvc-obrien",
+    "technicalSme": {
+      "name": "Mike Sme",
+      "email": "mike.sme@example.com"
+    }
+  },
+  {
+    "projectId": 9999,
+    "projectName": "spa-new-service",
+    "subgroupName": "team-11",
+    "subgroupId": 1111,
+    "type": "SPA",
+    "status": "NOT_MIGRATED",
+    "projectLink": "https://gitlab.com/team-11/spa-new-service",
+    "homepage": "https://spa-new-service.example.com"
+  },
+  {
+    "projectId": 8888,
+    "projectName": "msvc-new-service",
+    "subgroupName": "team-12",
+    "subgroupId": 1222,
+    "type": "MICROSERVICE",
+    "status": "NOT_MIGRATED",
+    "projectLink": "https://gitlab.com/team-12/msvc-new-service"
+  }
+]

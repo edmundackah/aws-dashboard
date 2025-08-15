@@ -8,7 +8,12 @@
     "lint": "next lint",
     "serve": "npm run build && npx serve out",
     "start": "next start",
-    "build:dev": "cross-env NODE_ENV=dev npm run serve"
+    "build:dev": "cross-env NODE_ENV=dev npm run serve",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.14",
@@ -46,6 +51,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@fullhuman/postcss-purgecss": "^7.0.2",
+    "@playwright/test": "^1.49.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20.19.9",
     "@types/react": "^19",

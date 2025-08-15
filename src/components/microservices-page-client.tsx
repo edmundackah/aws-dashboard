@@ -60,8 +60,8 @@ export function MicroservicesPageClient({
   }, [msData, teamFilter, statusFilter]);
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 h-full w-full max-w-none">
-      <div className="flex flex-col md:flex-row md:items-end gap-4 flex-shrink-0 w-full">
+    <div className="flex flex-col gap-4 w-full max-w-none">
+      <div className="flex flex-col md:flex-row md:items-end gap-4 w-full">
         <div>
           <TeamCombobox
             teams={allTeams}
@@ -82,8 +82,8 @@ export function MicroservicesPageClient({
           </Select>
         </div>
       </div>
-      <div className="flex-1 min-h-0 w-full">
-        <DataTable columns={msColumns} data={filteredData} />
+      <div className="w-full">
+        <DataTable columns={msColumns} data={filteredData} tabId="microservices" />
       </div>
     </div>
   );
