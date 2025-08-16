@@ -147,6 +147,12 @@ export function SettingsModal({ isOpen, onOpenChange }: SettingsModalProps) {
                       {process.env.NEXT_PUBLIC_SUMMARY_API_URL}
                     </span>
                   </p>
+                  <p>
+                    <strong>Burndown API:</strong>{" "}
+                    <span className="font-mono bg-muted/50 px-2 py-1 rounded">
+                      {process.env.NEXT_PUBLIC_BURNDOWN_API_URL}
+                    </span>
+                  </p>
                 </div>
               </CardContent>
             </Card>
