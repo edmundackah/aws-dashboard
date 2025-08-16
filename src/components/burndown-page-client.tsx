@@ -92,8 +92,7 @@ const chartConfig = {
 
 function calculateDaysToTarget(target: string): number {
   const targetDate = new Date(target);
-  const today = new Date();
-  const diffTime = targetDate.getTime() - today.getTime();
+  const diffTime = targetDate.getTime() - new Date().getTime();
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
 
@@ -409,9 +408,9 @@ export function BurndownPageClient() {
     }
     
     // Sum migrated services across all environments
-    environmentMetrics.forEach(env => {
-      totalSpaMigrated += (env.totalSpa - env.currentSpa); // Migrated = Total - Remaining
-      totalMsMigrated += (env.totalMs - env.currentMs);
+    environmentMetrics.forEach(({ totalSpa, currentSpa, totalMs, currentMs }) => {
+      totalSpaMigrated += (totalSpa - currentSpa); // Migrated = Total - Remaining
+      totalMsMigrated += (totalMs - currentMs);
     });
 
     const remainingServices = (totalSpaInOrg - totalSpaMigrated) + (totalMsInOrg - totalMsMigrated);
@@ -719,8 +718,6 @@ export function BurndownPageClient() {
                   <ChartContainer config={chartConfig} className="min-h-[250px] w-full" >
                     <LineChart
                       accessibilityLayer
-                      width="100%"
-                      height="100%"
                       data={filteredChartData}
                       margin={{
                         left: 12,
@@ -747,7 +744,7 @@ export function BurndownPageClient() {
                       <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                       <Line
                         type="monotone"
-                        dataKey="spaRemaining"
+                        dataKey="spaActual"
                         stroke="var(--chart-1)"
                         strokeWidth={2}
                         connectNulls={true}
@@ -755,7 +752,7 @@ export function BurndownPageClient() {
                       />
                       <Line
                         type="monotone"
-                        dataKey="spaExpectedRemaining"
+                        dataKey="spaExpected"
                         stroke="var(--chart-1)"
                         strokeWidth={2}
                         strokeDasharray="5 5"
@@ -765,7 +762,7 @@ export function BurndownPageClient() {
                       />
                       <Line
                         type="monotone"
-                        dataKey="msRemaining"
+                        dataKey="msActual"
                         stroke="var(--chart-2)"
                         strokeWidth={2}
                         connectNulls={true}
@@ -773,7 +770,7 @@ export function BurndownPageClient() {
                       />
                       <Line
                         type="monotone"
-                        dataKey="msExpectedRemaining"
+                        dataKey="msExpected"
                         stroke="var(--chart-2)"
                         strokeWidth={2}
                         strokeDasharray="5 5"
@@ -816,5 +813,3 @@ export function BurndownPageClient() {
     </TooltipProvider>
   );
 }
-
-export default BurndownPageClient;
