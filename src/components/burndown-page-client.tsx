@@ -661,14 +661,14 @@ export function BurndownPageClient() {
           {environmentMetrics.map((env) => (
             <Card
               key={env.env}
-              className={`bg-muted/50 ${
+              className={`bg-muted ${
                 env.overallProgress >= 95
-                  ? "rainbow-glow border border-border/60"
+                  ? "rainbow-glow border"
                   : env.status === 'missed'
-                  ? "border border-border/60"
+                  ? "border"
                   : env.status === 'at_risk'
                   ? "border-2 border-amber-500"
-                  : "border border-border/60"
+                  : "border"
               }`}
             >
               <CardHeader className="pb-2">
@@ -766,7 +766,7 @@ export function BurndownPageClient() {
             }
             
             return (
-              <Card key={metrics.env} className="bg-muted/50 border border-border/60">
+              <Card key={metrics.env} className="bg-muted border">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="capitalize">{metrics.env.toUpperCase()} Burndown</CardTitle>
