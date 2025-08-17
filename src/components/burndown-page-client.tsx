@@ -656,7 +656,6 @@ export function BurndownPageClient() {
           </AccordionItem>
         </Accordion>
 
-        {/* Environment Progress Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {environmentMetrics.map((env) => (
             <Card
@@ -744,9 +743,10 @@ export function BurndownPageClient() {
             
             // Filter out points where all values are null or undefined
             const filteredChartData = chartData.filter(point => 
-              point.spaActual != null || point.spaExpected != null || 
-              point.msActual != null || point.msExpected != null ||
-              point.spaProjected != null || point.msProjected != null
+              point.spaActual != null ||
+              point.msActual != null ||
+              point.spaProjected != null ||
+              point.msProjected != null
             );
 
             console.log(`Filtered chart data for ${metrics.env}:`, JSON.stringify(filteredChartData, null, 2));
@@ -858,7 +858,7 @@ export function BurndownPageClient() {
                           const date = typeof label === 'number' ? new Date(label) : (typeof payload[0]?.payload?.ts === 'number' ? new Date(payload[0].payload.ts) : null);
                           const dateLabel = date ? date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : '';
                           const rows = payload
-                            .filter(item => item && item.value != null && (item.dataKey === 'spaActual' || item.dataKey === 'spaExpected' || item.dataKey === 'spaProjected' || item.dataKey === 'msActual' || item.dataKey === 'msExpected' || item.dataKey === 'msProjected'))
+                            .filter(item => item && item.value != null && (item.dataKey === 'spaActual' || item.dataKey === 'spaProjected' || item.dataKey === 'msActual' || item.dataKey === 'msProjected'))
                             .map((item) => ({
                               key: String(item.dataKey ?? item.name ?? 'value'),
                               label: item.name ?? String(item.dataKey ?? ''),
@@ -898,16 +898,6 @@ export function BurndownPageClient() {
                       />
                       <Line
                         type="monotone"
-                        dataKey="spaExpected"
-                        stroke="hsl(var(--chart-spa))"
-                        strokeWidth={1.5}
-                        strokeDasharray="5 5"
-                        connectNulls={true}
-                        name="SPAs Remaining (Expected)"
-                        opacity={0.5}
-                      />
-                      <Line
-                        type="monotone"
                         dataKey="spaProjected"
                         stroke="hsl(var(--chart-spa))"
                         strokeWidth={1.5}
@@ -924,16 +914,6 @@ export function BurndownPageClient() {
                         connectNulls={true}
                         name="Microservices Remaining (Actual)"
                         opacity={0.6}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="msExpected"
-                        stroke="hsl(var(--chart-ms))"
-                        strokeWidth={1.5}
-                        strokeDasharray="5 5"
-                        connectNulls={true}
-                        name="Microservices Remaining (Expected)"
-                        opacity={0.5}
                       />
                       <Line
                         type="monotone"
@@ -978,9 +958,7 @@ export function BurndownPageClient() {
                           : 'At Risk'}
                       </div>
                     </div>
-                    <div className="mt-2 text-xs text-muted-foreground">
-                      Legend: Expected (dashed) • Projected (dotted)
-                    </div>
+                    <div className="mt-2 text-xs text-muted-foreground">Legend: Projected (dotted)</div>
                   </div>
                 </CardFooter>
               </Card>
