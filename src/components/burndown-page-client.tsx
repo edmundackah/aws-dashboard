@@ -27,6 +27,7 @@ import {
   ChartContainer,
   ChartTooltip,
 } from "@/components/ui/chart";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 // Tooltips removed for burndown page
 
 type EnvBurndownPoint = {
@@ -87,7 +88,7 @@ type EnvironmentProgress = {
   isOnTrack: boolean;
   trend: 'improving' | 'declining' | 'stable';
   axisEndTs: number;
-  status: 'completed' | 'completed_late' | 'on_track' | 'at_risk' | 'missed';
+  status: 'completed' | 'on_track' | 'at_risk' | 'missed';
   projectedCompletionTs: number | null;
   projectedSpaTs: number | null;
   projectedMsTs: number | null;
@@ -340,6 +341,8 @@ function calculateEnvironmentMetrics(burndownData: { [key: string]: EnvBurndownP
       .sort((a, b) => a.ts - b.ts);
 
     const recent = combinedSeries.slice(-4); // up to 3 intervals
+    // Determine the first time we reached full completion (0 remaining)
+    const completionTsFromSeries = combinedSeries.find((p) => p.remaining <= 0)?.ts ?? null;
     // trend: remaining decreased in at least 2 of last 3 intervals
     let decreasesCount = 0;
     for (let i = 1; i < recent.length; i++) {
@@ -409,11 +412,10 @@ function calculateEnvironmentMetrics(burndownData: { [key: string]: EnvBurndownP
       : Number.POSITIVE_INFINITY;
 
     // overall status
-    let status: 'completed' | 'completed_late' | 'on_track' | 'at_risk' | 'missed';
-    if (overallProgress >= 95 && todayTs > targetTs) {
-      status = 'completed_late';
-    } else if (overallProgress >= 95) {
-      status = 'completed';
+    let status: 'completed' | 'on_track' | 'at_risk' | 'missed';
+    if (overallProgress >= 95) {
+      // If completion (0 remaining) occurred after the target date, mark as missed for the detailed chart
+      status = completionTsFromSeries && completionTsFromSeries > targetTs ? 'missed' : 'completed';
     } else if (todayTs > targetTs && overallProgress < 95) {
       status = 'missed';
     } else if (Number.isFinite(projectedCompletionTs) && projectedCompletionTs <= targetTs && trendImproving) {
@@ -622,6 +624,38 @@ export function BurndownPageClient() {
     <div className="space-y-6">
         {/* Executive Summary Cards removed for simplicity */}
 
+        {/* Status Guide Accordion */}
+        <Accordion type="single" collapsible className="rounded-md border border-border/60 bg-muted/30">
+          <AccordionItem value="status-guide">
+            <AccordionTrigger>
+              <div className="flex items-center gap-2">
+                <span className="inline-block h-2.5 w-2.5 rounded-sm bg-green-500" />
+                <span>Status guide</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="grid gap-2">
+                <div className="flex items-center gap-3">
+                  <span className="inline-block h-2.5 w-2.5 rounded-sm bg-green-500" />
+                  <div><span className="font-medium text-foreground">Completed</span> — at least 95% complete by the target date</div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="inline-block h-2.5 w-2.5 rounded-sm bg-blue-500" />
+                  <div><span className="font-medium text-foreground">On track</span> — projection indicates completion by the target date</div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="inline-block h-2.5 w-2.5 rounded-sm bg-amber-500" />
+                  <div><span className="font-medium text-foreground">At risk</span> — trend/burn rate suggests slipping or close to the target</div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="inline-block h-2.5 w-2.5 rounded-sm bg-red-500" />
+                  <div><span className="font-medium text-foreground">Target missed</span> — target passed and less than 95% complete (shown on charts)</div>
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+
         {/* Environment Progress Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {environmentMetrics.map((env) => (
@@ -630,8 +664,10 @@ export function BurndownPageClient() {
               className={`bg-muted/50 ${
                 env.overallProgress >= 95
                   ? "rainbow-glow border border-border/60"
-                  : env.status === 'at_risk' || env.status === 'missed'
-                  ? "border-2 border-red-500"
+                  : env.status === 'missed'
+                  ? "border border-border/60"
+                  : env.status === 'at_risk'
+                  ? "border-2 border-amber-500"
                   : "border border-border/60"
               }`}
             >
@@ -639,18 +675,16 @@ export function BurndownPageClient() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-medium capitalize">{env.env.toUpperCase()}</CardTitle>
                   <Badge
-                    variant={
-                      env.status === 'completed' || env.status === 'completed_late' ? 'secondary' : env.status === 'on_track' ? 'default' : 'destructive'
-                    }
+                    variant={env.status === 'completed' || env.status === 'missed' ? 'secondary' : env.status === 'on_track' ? 'default' : 'destructive'}
                     className={
-                      env.status === 'completed' || env.status === 'completed_late'
+                      env.status === 'completed' || env.status === 'missed'
                         ? 'bg-green-600 hover:bg-green-700 text-white'
-                        : env.status === 'at_risk' || env.status === 'missed'
-                        ? 'bg-red-600 hover:bg-red-700 text-white'
+                        : env.status === 'at_risk'
+                        ? 'bg-amber-500 hover:bg-amber-600 text-white'
                         : ''
                     }
                   >
-                    {env.status === 'completed' || env.status === 'completed_late'
+                    {env.status === 'completed' || env.status === 'missed'
                       ? 'Completed'
                       : env.status === 'on_track'
                       ? 'On Track'
@@ -691,8 +725,6 @@ export function BurndownPageClient() {
                   <div className="text-xs text-muted-foreground mt-1">
                     {env.status === 'completed'
                       ? 'Target achieved'
-                      : env.status === 'completed_late'
-                      ? 'Completed'
                       : env.status === 'on_track'
                       ? 'On track for target'
                       : env.status === 'at_risk'
@@ -740,19 +772,21 @@ export function BurndownPageClient() {
                     <CardTitle className="capitalize">{metrics.env.toUpperCase()} Burndown</CardTitle>
                     <Badge
                       variant={
-                        metrics.status === 'completed' || metrics.status === 'completed_late' ? 'secondary' : metrics.status === 'on_track' ? 'default' : 'destructive'
+                        metrics.overallProgress >= 95
+                          ? 'secondary'
+                          : metrics.status === 'on_track'
+                          ? 'default'
+                          : 'destructive'
                       }
                       className={
-                        metrics.status === 'completed' || metrics.status === 'completed_late'
+                        metrics.overallProgress >= 95
                           ? 'bg-green-600 hover:bg-green-700 text-white'
                           : metrics.status === 'missed'
                           ? 'bg-red-600 hover:bg-red-700 text-white'
                           : ''
                       }
                     >
-                      {metrics.status === 'completed'
-                        ? 'Completed'
-                        : metrics.status === 'completed_late'
+                      {metrics.overallProgress >= 95
                         ? 'Completed'
                         : metrics.status === 'on_track'
                         ? 'On Track'
