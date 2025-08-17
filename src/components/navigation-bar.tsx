@@ -15,7 +15,7 @@ import {
   Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { useTheme } from "next-themes";
 import { motion } from "framer-motion";
 import { useDashboardStore, Page } from "@/stores/use-dashboard-store";
@@ -56,11 +56,40 @@ export function NavigationBar() {
   const { data, currentPage, setCurrentPage } = useDashboardStore();
   const [isMounted, setIsMounted] = useState(false);
   const [isMac, setIsMac] = useState(false);
+  const navRef = useRef<HTMLDivElement | null>(null)
+  const itemRefs = useRef<Record<string, HTMLAnchorElement | null>>({})
+  const [pill, setPill] = useState<{ left: number; width: number } | null>(null)
+  const dockRef = useRef<HTMLDivElement | null>(null)
+  const dockItemRefs = useRef<Record<string, HTMLButtonElement | null>>({})
+  const [dockPill, setDockPill] = useState<{ left: number; width: number } | null>(null)
 
   useEffect(() => {
     setIsMounted(true);
     setIsMac(navigator.platform.toUpperCase().indexOf("MAC") >= 0);
   }, []);
+
+  // Measure active tab for animated pill
+  useLayoutEffect(() => {
+    const activeEl = itemRefs.current[currentPage]
+    const container = navRef.current
+    if (activeEl && container) {
+      const rect = activeEl.getBoundingClientRect()
+      const parentRect = container.getBoundingClientRect()
+      const next = { left: rect.left - parentRect.left, width: rect.width }
+      setPill(next)
+    }
+  }, [currentPage])
+
+  useLayoutEffect(() => {
+    const activeEl = dockItemRefs.current[currentPage]
+    const container = dockRef.current
+    if (activeEl && container) {
+      const rect = activeEl.getBoundingClientRect()
+      const parentRect = container.getBoundingClientRect()
+      const next = { left: rect.left - parentRect.left, width: rect.width }
+      setDockPill(next)
+    }
+  }, [currentPage])
 
   const formatTimestamp = (isoString: string) => {
     return new Date(isoString).toLocaleString("en-US", {
@@ -118,15 +147,16 @@ export function NavigationBar() {
       {/* Frosted Glass Navigation Bar */}
       <div className="sticky top-0 z-50 w-full">
         <div className="relative">
-          {/* Backdrop blur and glass effect only for nav */}
-          <div className="absolute inset-0 bg-background/10 backdrop-blur-md border-b-2 border-border/60" />
+          {/* Glass + subtle gradient + noise overlay */}
+          <div className="absolute inset-0 backdrop-blur-xl bg-white/10 dark:bg-black/10 border-b border-border/60" />
+          <div className="pointer-events-none absolute inset-0 [background:radial-gradient(1200px_circle_at_10%_-20%,hsl(var(--primary)/.08),transparent_40%),radial-gradient(1000px_circle_at_90%_-10%,hsl(var(--primary)/.06),transparent_40%)]" />
           
           {/* Navigation content */}
           <div className="relative flex h-16 items-center gap-6 px-4 sm:px-6 lg:px-8">
             {/* Logo */}
             <motion.a
               onClick={() => handleNavigation("overview")}
-              className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-primary/90 to-primary/70 text-lg font-semibold text-primary-foreground cursor-pointer transition-all duration-300 hover:scale-105 backdrop-blur-sm"
+              className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-primary/90 to-primary/70 text-lg font-semibold text-primary-foreground cursor-pointer transition-all duration-300 hover:scale-105 shadow-[0_8px_24px_rgba(0,0,0,0.15)]"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -134,41 +164,44 @@ export function NavigationBar() {
               <span className="sr-only">Migration Tracker</span>
             </motion.a>
 
-            {/* Navigation Links */}
-            <nav className="hidden md:flex items-center gap-1">
-              {navItems.map((item) => (
-                <motion.a
-                  key={item.name}
-                  onClick={() => handleNavigation(item.page)}
-                  className={cn(
-                    "relative px-4 py-2 text-sm font-medium transition-all duration-200 cursor-pointer rounded-lg",
-                    currentPage === item.page
-                      ? "text-primary bg-primary/10"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
-                  )}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  {item.name}
-                  {currentPage === item.page && (
-                    <motion.div
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-primary/60 rounded-full"
-                      layoutId="underline"
-                      initial={false}
-                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    />
-                  )}
-                </motion.a>
-              ))}
+            {/* Navigation Links with animated pill */}
+            <nav ref={navRef} className="relative hidden md:flex items-center gap-1">
+              {pill && (
+                <motion.div
+                  className="absolute top-1/2 -translate-y-1/2 h-9 rounded-xl border shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] bg-primary/15 border-primary/25 dark:bg-white/12 dark:border-white/15 pointer-events-none"
+                  style={{ left: 0, width: 0, zIndex: 0 }}
+                  animate={{ left: pill.left, width: pill.width }}
+                  initial={false}
+                  transition={{ type: "spring", stiffness: 360, damping: 28 }}
+                />
+              )}
+              {navItems.map((item) => {
+                const isActive = currentPage === item.page
+                return (
+                  <motion.a
+                    key={item.name}
+                    ref={(el) => { itemRefs.current[item.page] = el }}
+                    onClick={() => handleNavigation(item.page)}
+                    className={cn(
+                      "relative z-10 px-3.5 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer rounded-xl",
+                      isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+                    )}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    {item.name}
+                  </motion.a>
+                )
+              })}
             </nav>
 
             {/* Search Bar */}
-            <div className="flex justify-center flex-1 max-w-md mx-8">
+            <div className="hidden md:flex justify-center flex-1 max-w-md mx-8">
               <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Button
                   variant="outline"
-                  className="w-full justify-between rounded-xl pl-10 pr-4 h-10 bg-white/5 dark:bg-white/3 border border-border/60 hover:bg-white/10 dark:hover:bg-white/5 hover:border-border transition-all duration-200"
+                  className="w-full justify-between rounded-xl pl-10 pr-4 h-10 bg-white/10 dark:bg-white/5 border border-border/50 hover:bg-white/20 dark:hover:bg-white/10 hover:border-border transition-all duration-200 backdrop-blur"
                   onClick={() => setOpen(true)}
                 >
                   <div className="flex items-center gap-2">
@@ -193,7 +226,7 @@ export function NavigationBar() {
               {/* Last Updated */}
               {isMounted && data?.lastUpdate && (
                 <motion.div 
-                  className="flex items-center gap-2 px-3 py-2 bg-white/5 dark:bg-white/3 rounded-xl border border-border/60 hover:bg-white/10 dark:hover:bg-white/5 hover:border-border transition-all duration-200"
+                  className="flex items-center gap-2 px-3 py-2 bg-white/10 dark:bg-white/5 rounded-xl border border-border/50 hover:bg-white/20 dark:hover:bg-white/10 hover:border-border transition-all duration-200 backdrop-blur"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -221,7 +254,7 @@ export function NavigationBar() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-10 w-10 p-0 rounded-xl hover:bg-white/5 dark:hover:bg-white/3 transition-all duration-200 border border-transparent hover:border-white/20 dark:hover:border-white/10"
+                    className="h-10 w-10 p-0 rounded-xl hover:bg-white/10 dark:hover:bg-white/5 transition-all duration-200 border border-white/10"
                     onClick={toggleTheme}
                   >
                     <SunDim className="h-4 w-4" />
@@ -235,7 +268,7 @@ export function NavigationBar() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-10 w-10 p-0 rounded-xl hover:bg-white/5 dark:hover:bg-white/3 transition-all duration-200 border border-transparent hover:border-white/20 dark:hover:border-white/10"
+                className="h-10 w-10 p-0 rounded-xl hover:bg-white/10 dark:hover:bg-white/5 transition-all duration-200 border border-white/10"
                 onClick={handleSettings}
               >
                 <Settings className="h-4 w-4" />
@@ -243,6 +276,39 @@ export function NavigationBar() {
               </Button>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Mobile Glass Dock */}
+      <div className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
+        <div ref={dockRef} className="relative flex items-center gap-1 rounded-2xl border border-border/50 bg-white/10 dark:bg-black/20 backdrop-blur-xl px-2 py-1.5 shadow-[0_8px_24px_rgba(0,0,0,0.2)]">
+          {dockPill && (
+            <motion.div
+              className="absolute top-1/2 -translate-y-1/2 h-10 rounded-xl bg-primary/20 border border-primary/25 dark:bg-white/12 dark:border-white/15 pointer-events-none"
+              style={{ left: 0, width: 0 }}
+              animate={{ left: dockPill.left, width: dockPill.width }}
+              initial={false}
+              transition={{ type: "spring", stiffness: 360, damping: 28 }}
+            />
+          )}
+          {navItems.map((item) => {
+            const ActiveIcon = item.icon
+            const isActive = currentPage === item.page
+            return (
+              <motion.button
+                key={item.name}
+                ref={(el) => { dockItemRefs.current[item.page] = el }}
+                onClick={() => handleNavigation(item.page)}
+                className={cn(
+                  "relative mx-1 inline-flex h-10 w-10 items-center justify-center rounded-xl transition-colors z-10",
+                  isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+                whileTap={{ scale: 0.96 }}
+              >
+                <ActiveIcon className="h-5 w-5" />
+              </motion.button>
+            )
+          })}
         </div>
       </div>
 
