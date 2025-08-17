@@ -7,7 +7,6 @@ import {
   CartesianGrid,
   XAxis,
   YAxis,
-  Legend,
   ReferenceLine,
 } from "recharts";
 import {
@@ -27,9 +26,8 @@ import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
-  ChartTooltipContent,
 } from "@/components/ui/chart";
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+// Tooltips removed for burndown page
 
 type EnvBurndownPoint = {
   date: string;
@@ -621,37 +619,41 @@ export function BurndownPageClient() {
   }
 
   return (
-    <TooltipProvider delayDuration={100}>
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Executive Summary Cards removed for simplicity */}
 
         {/* Environment Progress Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {environmentMetrics.map((env) => (
-            <Card key={env.env} className={`${env.overallProgress >= 95 ? "rainbow-glow" : env.status === 'at_risk' || env.status === 'missed' ? "border-2 border-red-500" : ""}`}>
+            <Card
+              key={env.env}
+              className={`bg-muted/50 ${
+                env.overallProgress >= 95
+                  ? "rainbow-glow border border-border/60"
+                  : env.status === 'at_risk' || env.status === 'missed'
+                  ? "border-2 border-red-500"
+                  : "border border-border/60"
+              }`}
+            >
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-medium capitalize">{env.env.toUpperCase()}</CardTitle>
                   <Badge
                     variant={
-                      env.status === 'completed' ? 'secondary' : env.status === 'on_track' ? 'default' : 'destructive'
+                      env.status === 'completed' || env.status === 'completed_late' ? 'secondary' : env.status === 'on_track' ? 'default' : 'destructive'
                     }
                     className={
-                      env.status === 'completed'
+                      env.status === 'completed' || env.status === 'completed_late'
                         ? 'bg-green-600 hover:bg-green-700 text-white'
-                        : env.status === 'missed'
+                        : env.status === 'at_risk' || env.status === 'missed'
                         ? 'bg-red-600 hover:bg-red-700 text-white'
                         : ''
                     }
                   >
-                    {env.status === 'completed'
-                      ? 'Completed'
-                      : env.status === 'completed_late'
+                    {env.status === 'completed' || env.status === 'completed_late'
                       ? 'Completed'
                       : env.status === 'on_track'
                       ? 'On Track'
-                      : env.status === 'at_risk'
-                      ? 'At Risk'
                       : 'At Risk'}
                   </Badge>
                 </div>
@@ -663,14 +665,7 @@ export function BurndownPageClient() {
                 <div>
                   <div className="flex items-center justify-between text-sm mb-1">
                     <span>SPAs</span>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="cursor-help">{env.spaProgress}%</span>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" align="center" sideOffset={8} className="z-50 rounded-md border border-border bg-background text-foreground shadow-lg px-3 py-2 bg-opacity-100 backdrop-blur-none">
-                        Percentage of SPAs migrated in this environment
-                      </TooltipContent>
-                    </Tooltip>
+                    <span>{env.spaProgress}%</span>
                   </div>
                   <Progress value={env.spaProgress} className="h-2" />
                   <div className="text-xs text-muted-foreground mt-1">
@@ -680,14 +675,7 @@ export function BurndownPageClient() {
                 <div>
                   <div className="flex items-center justify-between text-sm mb-1">
                     <span>Microservices</span>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="cursor-help">{env.msProgress}%</span>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" align="center" sideOffset={8} className="z-50 rounded-md border border-border bg-background text-foreground shadow-lg px-3 py-2 bg-opacity-100 backdrop-blur-none">
-                        Percentage of Microservices migrated in this environment
-                      </TooltipContent>
-                    </Tooltip>
+                    <span>{env.msProgress}%</span>
                   </div>
                   <Progress value={env.msProgress} className="h-2" />
                   <div className="text-xs text-muted-foreground mt-1">
@@ -697,14 +685,7 @@ export function BurndownPageClient() {
                 <div className="pt-2 border-t">
                   <div className="flex items-center justify-between text-sm">
                     <span>Overall</span>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="font-medium cursor-help">{env.overallProgress}%</span>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" align="center" sideOffset={8} className="z-50 rounded-md border border-border bg-background text-foreground shadow-lg px-3 py-2 bg-opacity-100 backdrop-blur-none">
-                        Combined progress of SPAs and Microservices in this environment
-                      </TooltipContent>
-                    </Tooltip>
+                    <span className="font-medium">{env.overallProgress}%</span>
                   </div>
                   <Progress value={env.overallProgress} className="h-2 mt-1" />
                   <div className="text-xs text-muted-foreground mt-1">
@@ -753,7 +734,7 @@ export function BurndownPageClient() {
             }
             
             return (
-              <Card key={metrics.env}>
+              <Card key={metrics.env} className="bg-muted/50 border border-border/60">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="capitalize">{metrics.env.toUpperCase()} Burndown</CardTitle>
@@ -809,8 +790,8 @@ export function BurndownPageClient() {
                       margin={{
                         left: 12,
                         right: 12,
-                        top: 20,
-                        bottom: 80,
+                        top: 40,
+                        bottom: 36,
                       }}
                     >
                       <CartesianGrid vertical={false} />
@@ -828,7 +809,7 @@ export function BurndownPageClient() {
                           if (Number.isNaN(ts)) return '';
                           return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
                         }}
-                        label={{ value: "Time", position: "bottom", offset: 15 }}
+                        label={{ value: "Time", position: "bottom", offset: 12 }}
                       />
                       <YAxis
                         tickLine={false}
@@ -837,16 +818,45 @@ export function BurndownPageClient() {
                         label={{ value: "Services Remaining", angle: -90, position: "left", offset: 0 }}
                       />
                       <ChartTooltip
-                        cursor={false}
-                        wrapperStyle={{ background: 'transparent', border: 'none', opacity: 1 as unknown as number, backdropFilter: 'none' as unknown as string }}
-                        content={<ChartTooltipContent className="!bg-background !text-foreground !opacity-100 !backdrop-blur-none" />}
+                        cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }}
+                        content={({ active, payload, label }) => {
+                          if (!active || !payload || payload.length === 0) return null;
+                          const date = typeof label === 'number' ? new Date(label) : (typeof payload[0]?.payload?.ts === 'number' ? new Date(payload[0].payload.ts) : null);
+                          const dateLabel = date ? date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : '';
+                          const rows = payload
+                            .filter(item => item && item.value != null && (item.dataKey === 'spaActual' || item.dataKey === 'spaExpected' || item.dataKey === 'spaProjected' || item.dataKey === 'msActual' || item.dataKey === 'msExpected' || item.dataKey === 'msProjected'))
+                            .map((item) => ({
+                              key: String(item.dataKey ?? item.name ?? 'value'),
+                              label: item.name ?? String(item.dataKey ?? ''),
+                              value: Number(item.value),
+                              color: item.color as string | undefined,
+                            }));
+                          if (rows.length === 0) return null;
+                          return (
+                            <div className="rounded-xl border border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 px-4 py-3 shadow-2xl min-w-[16rem] max-w-[28rem]">
+                              <div className="text-[12px] uppercase tracking-wide text-muted-foreground mb-2">{dateLabel}</div>
+                              <div className="space-y-1.5">
+                                {rows.map((r) => (
+                                  <div key={r.key} className="flex items-start justify-between gap-3">
+                                    <div className="flex items-start gap-2">
+                                      <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: r.color || 'hsl(var(--muted-foreground))' }} />
+                                      <span className="text-[13px] text-foreground whitespace-pre-wrap break-words leading-5">{r.label}</span>
+                                    </div>
+                                    <span className="text-[13px] font-mono tabular-nums leading-5">{r.value.toLocaleString()}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        }}
                       />
+                      
                       {/* Combined lines removed for simplicity */}
                       {/* Re-enabled SPA/MS lines for detailed view */}
                       <Line
                         type="monotone"
                         dataKey="spaActual"
-                        stroke="var(--chart-1)"
+                        stroke="hsl(var(--chart-spa))"
                         strokeWidth={1.5}
                         connectNulls={true}
                         name="SPAs Remaining (Actual)"
@@ -855,7 +865,7 @@ export function BurndownPageClient() {
                       <Line
                         type="monotone"
                         dataKey="spaExpected"
-                        stroke="var(--chart-1)"
+                        stroke="hsl(var(--chart-spa))"
                         strokeWidth={1.5}
                         strokeDasharray="5 5"
                         connectNulls={true}
@@ -865,7 +875,7 @@ export function BurndownPageClient() {
                       <Line
                         type="monotone"
                         dataKey="spaProjected"
-                        stroke="var(--chart-1)"
+                        stroke="hsl(var(--chart-spa))"
                         strokeWidth={1.5}
                         strokeDasharray="2 6"
                         connectNulls={true}
@@ -875,7 +885,7 @@ export function BurndownPageClient() {
                       <Line
                         type="monotone"
                         dataKey="msActual"
-                        stroke="var(--chart-2)"
+                        stroke="hsl(var(--chart-ms))"
                         strokeWidth={1.5}
                         connectNulls={true}
                         name="Microservices Remaining (Actual)"
@@ -884,7 +894,7 @@ export function BurndownPageClient() {
                       <Line
                         type="monotone"
                         dataKey="msExpected"
-                        stroke="var(--chart-2)"
+                        stroke="hsl(var(--chart-ms))"
                         strokeWidth={1.5}
                         strokeDasharray="5 5"
                         connectNulls={true}
@@ -894,45 +904,48 @@ export function BurndownPageClient() {
                       <Line
                         type="monotone"
                         dataKey="msProjected"
-                        stroke="var(--chart-2)"
+                        stroke="hsl(var(--chart-ms))"
                         strokeWidth={1.5}
                         strokeDasharray="2 6"
                         connectNulls={true}
                         name="Microservices Remaining (Projected)"
                         opacity={0.6}
                       />
-                      <Legend verticalAlign="bottom" align="center" wrapperStyle={{ paddingTop: '35px' }} />
+                      
                       {metrics.projectedCompletionTs && (
                         <ReferenceLine
                           x={metrics.projectedCompletionTs}
                           stroke="var(--foreground)"
                           strokeDasharray="3 3"
-                          label={{ value: 'Projected', position: 'top', fill: 'currentColor' }}
+                          label={{ value: 'Projected', position: 'top', fill: 'currentColor', dy: 8, dx: -24 }}
                         />
                       )}
                     </LineChart>
                   </ChartContainer>
                 </CardContent>
-                <CardFooter>
-                  <div className="flex w-full items-start gap-2 text-sm">
-                    <div className="grid gap-2">
-                      <div className="flex items-center gap-2 leading-none font-medium">
-                        {metrics ? `${metrics.overallProgress}% complete` : 'No data available'}
+                <CardFooter className="pt-2">
+                  <div className="w-full">
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
+                      <div className="flex items-center gap-2 text-sm">
+                        {metrics.overallProgress >= 95 ? (
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        ) : metrics.isOnTrack ? (
+                          <TrendingUp className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <TrendingDown className="h-4 w-4 text-red-500" />
+                        )}
+                        <span className="font-medium">{metrics.overallProgress}% complete</span>
                       </div>
-                      <div className="text-muted-foreground flex items-center gap-2 leading-none">
-                        {metrics ? (() => {
-                          if (metrics.daysToTarget > 0) {
-                            return `${metrics.daysToTarget} days to target`;
-                          } else if (metrics.overallProgress >= 95) {
-                            return 'Target achieved';
-                          } else {
-                            return 'Target missed';
-                          }
-                        })() : 'Migration progress tracking'}
+                      <div className="text-xs text-muted-foreground">
+                        {metrics.overallProgress >= 95
+                          ? 'Completed'
+                          : metrics.daysToTarget > 0
+                          ? `${metrics.daysToTarget} days to target`
+                          : 'At Risk'}
                       </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        Dashed lines show path to 100% migration by target deadline
-                      </div>
+                    </div>
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      Legend: Expected (dashed) • Projected (dotted)
                     </div>
                   </div>
                 </CardFooter>
@@ -941,7 +954,6 @@ export function BurndownPageClient() {
           })}
         </div>
       </div>
-    </TooltipProvider>
   );
 }
 
