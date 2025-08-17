@@ -8,6 +8,7 @@ import {
   XAxis,
   YAxis,
   Legend,
+  ReferenceLine,
 } from "recharts";
 import {
   Card,
@@ -19,7 +20,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { TrendingUp, TrendingDown, Target, Clock, CheckCircle, AlertCircle } from "lucide-react";
+import { TrendingUp, TrendingDown, CheckCircle } from "lucide-react";
 import { ErrorDisplay } from "@/components/error-display";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -32,12 +33,18 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/comp
 
 type EnvBurndownPoint = {
   date: string;
+  ts?: number;
   spaActual?: number;
   spaExpected?: number;
+  spaProjected?: number;
   spaTotal?: number;
   msActual?: number;
   msExpected?: number;
+  msProjected?: number;
   msTotal?: number;
+  combinedActual?: number;
+  combinedExpected?: number;
+  combinedProjected?: number;
 };
 
 type BurndownResponse = {
@@ -81,6 +88,9 @@ type EnvironmentProgress = {
   daysToTarget: number;
   isOnTrack: boolean;
   trend: 'improving' | 'declining' | 'stable';
+  axisEndTs: number;
+  status: 'completed' | 'on_track' | 'at_risk' | 'missed';
+  projectedCompletionTs: number | null;
 };
 
 const chartConfig = {
@@ -175,6 +185,8 @@ function normalizeBurndownData(data: BurndownResponse): { data: { [key: string]:
     }
 
     const series = Array.from(map.values()).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    // assign numeric timestamp for time-scale axis
+    series.forEach(p => { p.ts = new Date(p.date).getTime(); });
     
     // Calculate expected burndown for SPA and Microservices
     const firstSpaActualPoint = series.find(p => p.spaActual != null);
@@ -244,6 +256,16 @@ function normalizeBurndownData(data: BurndownResponse): { data: { [key: string]:
       // Convert actual migrated to remaining
       point.spaActual = (point.spaTotal ?? spaTotalInitial) - (point.spaActual ?? 0);
       point.msActual = (point.msTotal ?? msTotalInitial) - (point.msActual ?? 0);
+      point.combinedActual = (point.spaActual ?? 0) + (point.msActual ?? 0);
+    });
+
+    // Initialize projected/expected placeholders
+    // We initialize projected fields here; they will be populated after metrics calculation when projectedCompletionTs is known.
+    series.forEach((p) => {
+      p.spaProjected = undefined;
+      p.msProjected = undefined;
+      p.combinedProjected = undefined;
+      p.combinedExpected = undefined;
     });
 
     result[envKey] = series;
@@ -252,6 +274,8 @@ function normalizeBurndownData(data: BurndownResponse): { data: { [key: string]:
 
   return { data: result, targets };
 }
+
+// removed unused projected completion logic since axis end rule is simplified
 
 function calculateEnvironmentMetrics(burndownData: { [key: string]: EnvBurndownPoint[] }, targets: { [key: string]: string }): EnvironmentProgress[] {
   const metrics: EnvironmentProgress[] = [];
@@ -280,6 +304,7 @@ function calculateEnvironmentMetrics(burndownData: { [key: string]: EnvBurndownP
     const latest = points[points.length - 1];
     const target = targets[envKey];
     const daysToTarget = calculateDaysToTarget(target);
+    const targetTs = new Date(target).getTime();
 
     const spaTotal = latest.spaTotal || 0;
     const msTotal = latest.msTotal || 0;
@@ -296,13 +321,115 @@ function calculateEnvironmentMetrics(burndownData: { [key: string]: EnvBurndownP
       : (spaTotal > 0) ? spaProgress : (msTotal > 0) ? msProgress : 0;
 
 
-    const isSpaOnTrack = spaProgress >= 95 || daysToTarget > 0 && latest.spaExpected != null && currentSpa <= latest.spaExpected;
-    const isMsOnTrack = msProgress >= 95 || daysToTarget > 0 && latest.msExpected != null && currentMs <= latest.msExpected;
+    const isSpaOnTrack = spaProgress >= 95 || (daysToTarget > 0 && latest.spaExpected != null && currentSpa <= latest.spaExpected);
+    const isMsOnTrack = msProgress >= 95 || (daysToTarget > 0 && latest.msExpected != null && currentMs <= latest.msExpected);
 
     const isOnTrack = (spaProgress >= 95 || isSpaOnTrack) && (msProgress >= 95 || isMsOnTrack);
+
+    // PM-friendly status logic
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const combinedSeries = points
+      .map((p) => ({
+        ts: p.ts ?? new Date(p.date).getTime(),
+        remaining: (p.spaActual ?? 0) + (p.msActual ?? 0),
+      }))
+      .filter((p) => Number.isFinite(p.ts) && Number.isFinite(p.remaining))
+      .sort((a, b) => a.ts - b.ts);
+
+    const recent = combinedSeries.slice(-4); // up to 3 intervals
+    // trend: remaining decreased in at least 2 of last 3 intervals
+    let decreasesCount = 0;
+    for (let i = 1; i < recent.length; i++) {
+      if (recent[i - 1].remaining > recent[i].remaining) decreasesCount++;
+    }
+    const trendImproving = decreasesCount >= 2;
+
+    // compute current burn rate (avg decrease per day over last intervals)
+    let intervals = 0;
+    let totalDecreasePerDay = 0;
+    for (let i = 1; i < recent.length; i++) {
+      const deltaRem = recent[i - 1].remaining - recent[i].remaining; // positive if decreasing
+      const deltaDays = Math.max(1e-6, (recent[i].ts - recent[i - 1].ts) / DAY_MS);
+      const rate = deltaRem / deltaDays;
+      if (rate > 0) {
+        totalDecreasePerDay += rate;
+        intervals++;
+      }
+    }
+    const currentBurnRate = intervals > 0 ? totalDecreasePerDay / intervals : 0;
+
+    const combinedRemaining = currentSpa + currentMs;
+    const requiredRate = daysToTarget > 0 ? combinedRemaining / daysToTarget : Infinity;
+
+    // projected completion date based on last segment
+    let projectedCompletionTs = Number.POSITIVE_INFINITY;
+    if (recent.length >= 2) {
+      const first = recent[0];
+      const last = recent[recent.length - 1];
+      const deltaRem = first.remaining - last.remaining; // positive if decreasing
+      const deltaDays = Math.max(1e-6, (last.ts - first.ts) / DAY_MS);
+      const burnRatePerDay = deltaRem / deltaDays;
+      if (burnRatePerDay > 0) {
+        const projDays = last.remaining / burnRatePerDay;
+        projectedCompletionTs = last.ts + projDays * DAY_MS;
+      }
+    }
+    const todayTs = Date.now();
+    const daysLate = Number.isFinite(projectedCompletionTs)
+      ? (projectedCompletionTs - targetTs) / DAY_MS
+      : Number.POSITIVE_INFINITY;
+
+    let status: 'completed' | 'on_track' | 'at_risk' | 'missed';
+    if (overallProgress >= 95) {
+      status = 'completed';
+    } else if (todayTs > targetTs && overallProgress < 95) {
+      status = 'missed';
+    } else if (Number.isFinite(projectedCompletionTs) && projectedCompletionTs <= targetTs && trendImproving) {
+      status = 'on_track';
+    } else if (
+      (Number.isFinite(projectedCompletionTs) && daysLate > 0 && daysLate <= 14) ||
+      (Number.isFinite(projectedCompletionTs) && projectedCompletionTs <= targetTs && currentBurnRate < requiredRate * 0.9) ||
+      !trendImproving
+    ) {
+      status = 'at_risk';
+    } else if (Number.isFinite(projectedCompletionTs) && daysLate > 14) {
+      status = 'missed';
+    } else {
+      status = 'at_risk';
+    }
     
     const trendSpa = determineTrend(points, 'spa');
     const trendMs = determineTrend(points, 'ms');
+
+    // Axis should end at target date unless the project has overshot the target date
+    const latestPointTs = points.reduce((maxTs, p) => {
+      const ts = p.ts ?? new Date(p.date).getTime();
+      return ts > maxTs ? ts : maxTs;
+    }, 0);
+    const axisEndTs = latestPointTs > targetTs ? latestPointTs : targetTs;
+
+    // Populate projected lines (spa/ms) to zero at projection for chart rendering
+    if (Number.isFinite(projectedCompletionTs)) {
+      const projTs = projectedCompletionTs as number;
+      const lastPoint = points[points.length - 1];
+      const lastSpa = lastPoint.spaActual ?? 0;
+      const lastMs = lastPoint.msActual ?? 0;
+      // const lastTs = lastPoint.ts ?? new Date(lastPoint.date).getTime();
+      // const spanDays = Math.max(1, Math.round((projTs - lastTs) / DAY_MS));
+      // Create or set projected values on existing series dates up to projection end
+      // We only add a single terminal point at projection with zeros for clarity
+      const projEndPoint: EnvBurndownPoint = {
+        date: new Date(projTs).toISOString().split('T')[0],
+        ts: projTs,
+        spaProjected: 0,
+        msProjected: 0,
+      };
+      // Append projected terminal point for rendering
+      points.push(projEndPoint);
+      // Set projected start values at last actual point
+      lastPoint.spaProjected = lastSpa;
+      lastPoint.msProjected = lastMs;
+    }
 
     metrics.push({
       env: envKey,
@@ -317,6 +444,9 @@ function calculateEnvironmentMetrics(burndownData: { [key: string]: EnvBurndownP
       daysToTarget,
       isOnTrack,
       trend: overallProgress >= 95 ? 'stable' : (trendSpa === 'improving' || trendMs === 'improving' ? 'improving' : 'declining'),
+      axisEndTs,
+      status,
+      projectedCompletionTs: Number.isFinite(projectedCompletionTs) ? projectedCompletionTs : null,
     });
   });
 
@@ -377,60 +507,7 @@ export function BurndownPageClient() {
     return calculateEnvironmentMetrics(burndown, targets);
   }, [burndown, targets]);
 
-  const burndownTotals = React.useMemo(() => {
-    if (!burndown || !targets) {
-      return {
-        overallProgress: 0,
-        spaTotal: 0,
-        msTotal: 0,
-        remainingServices: 0,
-        lastUpdated: "N/A",
-      };
-    }
-
-    const totalEnvironments = Object.keys(burndown).length;
-    const completedEnvironments = environmentMetrics.filter(env => env.overallProgress >= 95).length;
-    const overallProgress = totalEnvironments > 0 ? Math.round((completedEnvironments / totalEnvironments) * 100) : 0;
-
-    let totalSpaInOrg = 0;
-    let totalMsInOrg = 0;
-    let totalSpaMigrated = 0;
-    let totalMsMigrated = 0;
-    let lastUpdated = "N/A";
-
-    // Get total services from the organizationInventory (from the first environment's latest entry)
-    const firstEnvKey = Object.keys(burndown)[0];
-    const firstEnv = burndown[firstEnvKey];
-    if (firstEnv && firstEnv.length > 0) {
-      const latest = firstEnv[firstEnv.length - 1]; // Assuming the last point represents the latest overall totals for the org
-      totalSpaInOrg = latest.spaTotal ?? 0;
-      totalMsInOrg = latest.msTotal ?? 0;
-    }
-    
-    // Sum migrated services across all environments
-    environmentMetrics.forEach(({ totalSpa, currentSpa, totalMs, currentMs }) => {
-      totalSpaMigrated += (totalSpa - currentSpa); // Migrated = Total - Remaining
-      totalMsMigrated += (totalMs - currentMs);
-    });
-
-    const remainingServices = (totalSpaInOrg - totalSpaMigrated) + (totalMsInOrg - totalMsMigrated);
-
-    const latestUpdateTimestamp = Object.values(burndown)
-      .flatMap(envPoints => envPoints.map(p => new Date(p.date).getTime()))
-      .reduce((max, current) => Math.max(max, current), 0);
-
-    if (latestUpdateTimestamp > 0) {
-      lastUpdated = new Date(latestUpdateTimestamp).toLocaleDateString();
-    }
-
-    return {
-      overallProgress,
-      spaTotal: totalSpaInOrg,
-      msTotal: totalMsInOrg,
-      remainingServices: Math.max(0, remainingServices), // Ensure remaining is not negative
-      lastUpdated,
-    };
-  }, [burndown, targets, environmentMetrics]);
+  // summary cards removed; no overview totals needed
 
   if (loading) {
     return (
@@ -482,106 +559,9 @@ export function BurndownPageClient() {
   }
 
   return (
-    <TooltipProvider>
+    <TooltipProvider delayDuration={100}>
       <div className="space-y-6">
-        {/* Executive Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Overall Progress</CardTitle>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <CheckCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  Percentage of environments that have completed migration (95%+ migrated)
-                </TooltipContent>
-              </Tooltip>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{burndownTotals.overallProgress}%</div>
-              <Progress value={burndownTotals.overallProgress} className="mt-2" />
-              <p className="text-xs text-muted-foreground mt-2">
-                {environmentMetrics.filter(env => env.isOnTrack).length} of {environmentMetrics.length} environments on track
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Services</CardTitle>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Target className="h-4 w-4 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  Total unique SPAs and Microservices in the organization
-                </TooltipContent>
-              </Tooltip>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {burndownTotals.spaTotal + burndownTotals.msTotal}
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                SPAs: {burndownTotals.spaTotal}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Microservices: {burndownTotals.msTotal}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Remaining</CardTitle>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Clock className="h-4 w-4 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  Services that still need to be migrated to all environments
-                </TooltipContent>
-              </Tooltip>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {burndownTotals.remainingServices}
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                {environmentMetrics.reduce((max, env) => Math.max(max, Math.max(0, env.daysToTarget)), 0)} days to furthest target
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Status</CardTitle>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  {burndownTotals.overallProgress >= 75 ? (
-                    <CheckCircle className="h-4 w-4 text-green-600 cursor-help" />
-                  ) : burndownTotals.overallProgress >= 50 ? (
-                    <AlertCircle className="h-4 w-4 text-yellow-600 cursor-help" />
-                  ) : (
-                    <AlertCircle className="h-4 w-4 text-red-600 cursor-help" />
-                  )}
-                </TooltipTrigger>
-                <TooltipContent>
-                  Overall migration status based on completion percentage
-                </TooltipContent>
-              </Tooltip>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {burndownTotals.overallProgress >= 75 ? "On Track" : burndownTotals.overallProgress >= 50 ? "At Risk" : "Behind"}
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                {burndownTotals.overallProgress >= 75 ? "Targets achievable" : "Action required"}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Executive Summary Cards removed for simplicity */}
 
         {/* Environment Progress Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -590,8 +570,25 @@ export function BurndownPageClient() {
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-medium capitalize">{env.env.toUpperCase()}</CardTitle>
-                  <Badge variant={env.overallProgress >= 95 ? "secondary" : env.isOnTrack ? "default" : "destructive"} className={env.overallProgress >= 95 ? "bg-green-600 hover:bg-green-700 text-white" : ""}>
-                    {env.overallProgress >= 95 ? "Completed" : env.isOnTrack ? "On Track" : "At Risk"}
+                  <Badge
+                    variant={
+                      env.status === 'completed' ? 'secondary' : env.status === 'on_track' ? 'default' : 'destructive'
+                    }
+                    className={
+                      env.status === 'completed'
+                        ? 'bg-green-600 hover:bg-green-700 text-white'
+                        : env.status === 'missed'
+                        ? 'bg-red-600 hover:bg-red-700 text-white'
+                        : ''
+                    }
+                  >
+                    {env.status === 'completed'
+                      ? 'Completed'
+                      : env.status === 'on_track'
+                      ? 'On Track'
+                      : env.status === 'at_risk'
+                      ? 'At Risk'
+                      : 'Target Missed'}
                   </Badge>
                 </div>
                 <CardDescription className="text-xs">
@@ -606,7 +603,7 @@ export function BurndownPageClient() {
                       <TooltipTrigger asChild>
                         <span className="cursor-help">{env.spaProgress}%</span>
                       </TooltipTrigger>
-                      <TooltipContent>
+                      <TooltipContent side="top" align="center" sideOffset={8} className="z-50 rounded-md border border-border bg-background text-foreground shadow-lg px-3 py-2 bg-opacity-100 backdrop-blur-none">
                         Percentage of SPAs migrated in this environment
                       </TooltipContent>
                     </Tooltip>
@@ -623,7 +620,7 @@ export function BurndownPageClient() {
                       <TooltipTrigger asChild>
                         <span className="cursor-help">{env.msProgress}%</span>
                       </TooltipTrigger>
-                      <TooltipContent>
+                      <TooltipContent side="top" align="center" sideOffset={8} className="z-50 rounded-md border border-border bg-background text-foreground shadow-lg px-3 py-2 bg-opacity-100 backdrop-blur-none">
                         Percentage of Microservices migrated in this environment
                       </TooltipContent>
                     </Tooltip>
@@ -640,14 +637,20 @@ export function BurndownPageClient() {
                       <TooltipTrigger asChild>
                         <span className="font-medium cursor-help">{env.overallProgress}%</span>
                       </TooltipTrigger>
-                      <TooltipContent>
+                      <TooltipContent side="top" align="center" sideOffset={8} className="z-50 rounded-md border border-border bg-background text-foreground shadow-lg px-3 py-2 bg-opacity-100 backdrop-blur-none">
                         Combined progress of SPAs and Microservices in this environment
                       </TooltipContent>
                     </Tooltip>
                   </div>
                   <Progress value={env.overallProgress} className="h-2 mt-1" />
                   <div className="text-xs text-muted-foreground mt-1">
-                    {env.overallProgress >= 95 ? "Target achieved" : env.isOnTrack ? "On track for target" : "Off track for target"}
+                    {env.status === 'completed'
+                      ? 'Target achieved'
+                      : env.status === 'on_track'
+                      ? 'On track for target'
+                      : env.status === 'at_risk'
+                      ? 'At Risk'
+                      : 'Target missed'}
                   </div>
                 </div>
               </CardContent>
@@ -663,7 +666,8 @@ export function BurndownPageClient() {
             // Filter out points where all values are null or undefined
             const filteredChartData = chartData.filter(point => 
               point.spaActual != null || point.spaExpected != null || 
-              point.msActual != null || point.msExpected != null
+              point.msActual != null || point.msExpected != null ||
+              point.spaProjected != null || point.msProjected != null
             );
 
             console.log(`Filtered chart data for ${metrics.env}:`, JSON.stringify(filteredChartData, null, 2));
@@ -687,8 +691,25 @@ export function BurndownPageClient() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="capitalize">{metrics.env.toUpperCase()} Burndown</CardTitle>
-                    <Badge variant={metrics.overallProgress >= 95 ? "secondary" : metrics.isOnTrack ? "default" : "destructive"} className={metrics.overallProgress >= 95 ? "bg-green-600 hover:bg-green-700 text-white" : ""}>
-                      {metrics.overallProgress >= 95 ? "Completed" : metrics.isOnTrack ? "On Track" : "At Risk"}
+                    <Badge
+                      variant={
+                        metrics.status === 'completed' ? 'secondary' : metrics.status === 'on_track' ? 'default' : 'destructive'
+                      }
+                      className={
+                        metrics.status === 'completed'
+                          ? 'bg-green-600 hover:bg-green-700 text-white'
+                          : metrics.status === 'missed'
+                          ? 'bg-red-600 hover:bg-red-700 text-white'
+                          : ''
+                      }
+                    >
+                      {metrics.status === 'completed'
+                        ? 'Completed'
+                        : metrics.status === 'on_track'
+                        ? 'On Track'
+                        : metrics.status === 'at_risk'
+                        ? 'At Risk'
+                        : 'Target Missed'}
                     </Badge>
                   </div>
                   <CardDescription className="flex items-center gap-2">
@@ -702,16 +723,14 @@ export function BurndownPageClient() {
                     ) : (
                       <TrendingDown className="h-4 w-4 text-red-500" />
                     )}
-                    {" • "}
-                    {(() => {
-                      if (metrics.daysToTarget > 0) {
-                        return `${metrics.daysToTarget} days to target`;
-                      } else if (metrics.overallProgress >= 95) {
-                        return 'Target achieved';
-                      } else {
-                        return 'Target missed';
-                      }
-                    })()}
+                    
+                    {metrics.status === 'completed'
+                      ? 'Target achieved'
+                      : metrics.status === 'on_track'
+                      ? `${metrics.daysToTarget} days to target`
+                      : metrics.status === 'at_risk'
+                      ? 'At Risk'
+                      : 'Target missed'}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -728,11 +747,19 @@ export function BurndownPageClient() {
                     >
                       <CartesianGrid vertical={false} />
                       <XAxis
-                        dataKey="date"
+                        dataKey="ts"
+                        type="number"
+                        scale="time"
                         tickLine={false}
                         axisLine={false}
                         tickMargin={8}
-                        tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}
+                        domain={[ 'dataMin', metrics.axisEndTs ]}
+                        allowDuplicatedCategory={false}
+                        tickFormatter={(value) => {
+                          const ts = typeof value === 'number' ? value : Number(value);
+                          if (Number.isNaN(ts)) return '';
+                          return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
+                        }}
                         label={{ value: "Time", position: "bottom", offset: 15 }}
                       />
                       <YAxis
@@ -741,7 +768,11 @@ export function BurndownPageClient() {
                         tickMargin={8}
                         label={{ value: "Services Remaining", angle: -90, position: "left", offset: 0 }}
                       />
-                      <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                      <ChartTooltip
+                        cursor={false}
+                        wrapperStyle={{ background: 'transparent', border: 'none', opacity: 1 as unknown as number, backdropFilter: 'none' as unknown as string }}
+                        content={<ChartTooltipContent className="!bg-background !text-foreground !opacity-100 !backdrop-blur-none" />}
+                      />
                       <Line
                         type="monotone"
                         dataKey="spaActual"
@@ -762,6 +793,16 @@ export function BurndownPageClient() {
                       />
                       <Line
                         type="monotone"
+                        dataKey="spaProjected"
+                        stroke="var(--chart-1)"
+                        strokeWidth={2}
+                        strokeDasharray="2 6"
+                        connectNulls={true}
+                        name="SPAs Remaining (Projected)"
+                        opacity={0.8}
+                      />
+                      <Line
+                        type="monotone"
                         dataKey="msActual"
                         stroke="var(--chart-2)"
                         strokeWidth={2}
@@ -778,7 +819,25 @@ export function BurndownPageClient() {
                         name="Microservices Remaining (Expected)"
                         opacity={0.7}
                       />
+                      <Line
+                        type="monotone"
+                        dataKey="msProjected"
+                        stroke="var(--chart-2)"
+                        strokeWidth={2}
+                        strokeDasharray="2 6"
+                        connectNulls={true}
+                        name="Microservices Remaining (Projected)"
+                        opacity={0.8}
+                      />
                       <Legend verticalAlign="bottom" align="center" wrapperStyle={{ paddingTop: '35px' }} />
+                      {metrics.projectedCompletionTs && (
+                        <ReferenceLine
+                          x={metrics.projectedCompletionTs}
+                          stroke="var(--foreground)"
+                          strokeDasharray="3 3"
+                          label={{ value: 'Projected', position: 'top', fill: 'currentColor' }}
+                        />
+                      )}
                     </LineChart>
                   </ChartContainer>
                 </CardContent>

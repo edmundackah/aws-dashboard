@@ -115,44 +115,10 @@ export function NavigationBar() {
 
   return (
     <>
-      {/* Force glass morphism styles */}
-      <style jsx global>{`
-        /* Target the dialog portal directly */
-        [data-radix-popper-content-wrapper] {
-          backdrop-filter: blur(64px) !important;
-          -webkit-backdrop-filter: blur(64px) !important;
-        }
-        [data-radix-popper-content-wrapper] > div {
-          background: rgba(255, 255, 255, 0.2) !important;
-          backdrop-filter: blur(64px) !important;
-          -webkit-backdrop-filter: blur(64px) !important;
-        }
-        
-        /* Target dialog content specifically */
-        [role="dialog"] {
-          background: rgba(255, 255, 255, 0.2) !important;
-          backdrop-filter: blur(64px) !important;
-          -webkit-backdrop-filter: blur(64px) !important;
-        }
-        
-        /* Target command component specifically */
-        [data-slot="command"] {
-          background: rgba(255, 255, 255, 0.2) !important;
-          backdrop-filter: blur(64px) !important;
-          -webkit-backdrop-filter: blur(64px) !important;
-        }
-        
-        /* Force backdrop blur on all dialog elements */
-        .fixed.inset-0 {
-          backdrop-filter: blur(64px) !important;
-          -webkit-backdrop-filter: blur(64px) !important;
-        }
-      `}</style>
-      
       {/* Frosted Glass Navigation Bar */}
       <div className="sticky top-0 z-50 w-full">
         <div className="relative">
-          {/* Backdrop blur and glass effect */}
+          {/* Backdrop blur and glass effect only for nav */}
           <div className="absolute inset-0 bg-background/10 backdrop-blur-md border-b-2 border-border/60" />
           
           {/* Navigation content */}
@@ -202,7 +168,7 @@ export function NavigationBar() {
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Button
                   variant="outline"
-                  className="w-full justify-between rounded-xl pl-10 pr-4 h-10 bg-white/5 dark:bg-white/3 border border-border/60 backdrop-blur-xl hover:bg-white/10 dark:hover:bg-white/5 hover:border-border transition-all duration-200"
+                  className="w-full justify-between rounded-xl pl-10 pr-4 h-10 bg-white/5 dark:bg-white/3 border border-border/60 hover:bg-white/10 dark:hover:bg-white/5 hover:border-border transition-all duration-200"
                   onClick={() => setOpen(true)}
                 >
                   <div className="flex items-center gap-2">
@@ -227,7 +193,7 @@ export function NavigationBar() {
               {/* Last Updated */}
               {isMounted && data?.lastUpdate && (
                 <motion.div 
-                  className="flex items-center gap-2 px-3 py-2 bg-white/5 dark:bg-white/3 backdrop-blur-xl rounded-xl border border-border/60 hover:bg-white/10 dark:hover:bg-white/5 hover:border-border transition-all duration-200"
+                  className="flex items-center gap-2 px-3 py-2 bg-white/5 dark:bg-white/3 rounded-xl border border-border/60 hover:bg-white/10 dark:hover:bg-white/5 hover:border-border transition-all duration-200"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -255,7 +221,7 @@ export function NavigationBar() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-10 w-10 p-0 rounded-xl hover:bg-white/5 dark:hover:bg-white/3 transition-all duration-200 backdrop-blur-sm border border-transparent hover:border-white/20 dark:hover:border-white/10"
+                    className="h-10 w-10 p-0 rounded-xl hover:bg-white/5 dark:hover:bg-white/3 transition-all duration-200 border border-transparent hover:border-white/20 dark:hover:border-white/10"
                     onClick={toggleTheme}
                   >
                     <SunDim className="h-4 w-4" />
@@ -269,7 +235,7 @@ export function NavigationBar() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-10 w-10 p-0 rounded-xl hover:bg-white/5 dark:hover:bg-white/3 transition-all duration-200 backdrop-blur-sm border border-transparent hover:border-white/20 dark:hover:border-white/10"
+                className="h-10 w-10 p-0 rounded-xl hover:bg-white/5 dark:hover:bg-white/3 transition-all duration-200 border border-transparent hover:border-white/20 dark:hover:border-white/10"
                 onClick={handleSettings}
               >
                 <Settings className="h-4 w-4" />
