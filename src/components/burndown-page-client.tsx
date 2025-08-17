@@ -89,8 +89,12 @@ type EnvironmentProgress = {
   isOnTrack: boolean;
   trend: 'improving' | 'declining' | 'stable';
   axisEndTs: number;
-  status: 'completed' | 'on_track' | 'at_risk' | 'missed';
+  status: 'completed' | 'completed_late' | 'on_track' | 'at_risk' | 'missed';
   projectedCompletionTs: number | null;
+  projectedSpaTs: number | null;
+  projectedMsTs: number | null;
+  spaStatus: 'completed' | 'on_track' | 'at_risk' | 'missed';
+  msStatus: 'completed' | 'on_track' | 'at_risk' | 'missed';
 };
 
 const chartConfig = {
@@ -257,6 +261,7 @@ function normalizeBurndownData(data: BurndownResponse): { data: { [key: string]:
       point.spaActual = (point.spaTotal ?? spaTotalInitial) - (point.spaActual ?? 0);
       point.msActual = (point.msTotal ?? msTotalInitial) - (point.msActual ?? 0);
       point.combinedActual = (point.spaActual ?? 0) + (point.msActual ?? 0);
+      point.combinedExpected = (point.spaExpected ?? 0) + (point.msExpected ?? 0);
     });
 
     // Initialize projected/expected placeholders
@@ -361,7 +366,7 @@ function calculateEnvironmentMetrics(burndownData: { [key: string]: EnvBurndownP
     const combinedRemaining = currentSpa + currentMs;
     const requiredRate = daysToTarget > 0 ? combinedRemaining / daysToTarget : Infinity;
 
-    // projected completion date based on last segment
+    // projected completion date based on last segment (combined)
     let projectedCompletionTs = Number.POSITIVE_INFINITY;
     if (recent.length >= 2) {
       const first = recent[0];
@@ -374,29 +379,74 @@ function calculateEnvironmentMetrics(burndownData: { [key: string]: EnvBurndownP
         projectedCompletionTs = last.ts + projDays * DAY_MS;
       }
     }
+
+    // per-type projections for SPA and MS
+    function projectFromSeries(arr: { ts: number; value: number }[]): number | null {
+      if (arr.length < 2) return null;
+      const first = arr[0];
+      const last = arr[arr.length - 1];
+      const DAY_MS = 24 * 60 * 60 * 1000;
+      const delta = first.value - last.value;
+      const days = Math.max(1e-6, (last.ts - first.ts) / DAY_MS);
+      const rate = delta / days;
+      if (rate <= 0) return null;
+      const projDays = last.value / rate;
+      return Math.round(last.ts + projDays * DAY_MS);
+    }
+
+    const spaSeries = points
+      .filter(p => p.spaActual != null && p.ts != null)
+      .map(p => ({ ts: p.ts as number, value: p.spaActual as number }))
+      .slice(-4);
+    const msSeries = points
+      .filter(p => p.msActual != null && p.ts != null)
+      .map(p => ({ ts: p.ts as number, value: p.msActual as number }))
+      .slice(-4);
+
+    const projectedSpaTs = projectFromSeries(spaSeries);
+    const projectedMsTs = projectFromSeries(msSeries);
     const todayTs = Date.now();
     const daysLate = Number.isFinite(projectedCompletionTs)
       ? (projectedCompletionTs - targetTs) / DAY_MS
       : Number.POSITIVE_INFINITY;
 
-    let status: 'completed' | 'on_track' | 'at_risk' | 'missed';
-    if (overallProgress >= 95) {
+    // overall status
+    let status: 'completed' | 'completed_late' | 'on_track' | 'at_risk' | 'missed';
+    if (overallProgress >= 95 && todayTs > targetTs) {
+      status = 'completed_late';
+    } else if (overallProgress >= 95) {
       status = 'completed';
     } else if (todayTs > targetTs && overallProgress < 95) {
       status = 'missed';
     } else if (Number.isFinite(projectedCompletionTs) && projectedCompletionTs <= targetTs && trendImproving) {
       status = 'on_track';
     } else if (
-      (Number.isFinite(projectedCompletionTs) && daysLate > 0 && daysLate <= 14) ||
       (Number.isFinite(projectedCompletionTs) && projectedCompletionTs <= targetTs && currentBurnRate < requiredRate * 0.9) ||
+      (Number.isFinite(projectedCompletionTs) && daysLate > 0) ||
       !trendImproving
     ) {
       status = 'at_risk';
-    } else if (Number.isFinite(projectedCompletionTs) && daysLate > 14) {
-      status = 'missed';
     } else {
       status = 'at_risk';
     }
+
+    // type-specific statuses for PMs
+    const spaStatus: 'completed' | 'on_track' | 'at_risk' | 'missed' =
+      spaProgress >= 95
+        ? 'completed'
+        : (projectedSpaTs && projectedSpaTs <= targetTs)
+        ? 'on_track'
+        : (projectedSpaTs && (projectedSpaTs - targetTs) / (24 * 60 * 60 * 1000) <= 14)
+        ? 'at_risk'
+        : 'missed';
+    const msStatus: 'completed' | 'on_track' | 'at_risk' | 'missed' =
+      msProgress >= 95
+        ? 'completed'
+        : (projectedMsTs && projectedMsTs <= targetTs)
+        ? 'on_track'
+        : (projectedMsTs && (projectedMsTs - targetTs) / (24 * 60 * 60 * 1000) <= 14)
+        ? 'at_risk'
+        : 'missed';
     
     const trendSpa = determineTrend(points, 'spa');
     const trendMs = determineTrend(points, 'ms');
@@ -408,12 +458,13 @@ function calculateEnvironmentMetrics(burndownData: { [key: string]: EnvBurndownP
     }, 0);
     const axisEndTs = latestPointTs > targetTs ? latestPointTs : targetTs;
 
-    // Populate projected lines (spa/ms) to zero at projection for chart rendering
+    // Populate projected lines to zero at projection for chart rendering
     if (Number.isFinite(projectedCompletionTs)) {
       const projTs = projectedCompletionTs as number;
       const lastPoint = points[points.length - 1];
       const lastSpa = lastPoint.spaActual ?? 0;
       const lastMs = lastPoint.msActual ?? 0;
+      const lastCombined = (lastSpa + lastMs);
       // const lastTs = lastPoint.ts ?? new Date(lastPoint.date).getTime();
       // const spanDays = Math.max(1, Math.round((projTs - lastTs) / DAY_MS));
       // Create or set projected values on existing series dates up to projection end
@@ -423,12 +474,19 @@ function calculateEnvironmentMetrics(burndownData: { [key: string]: EnvBurndownP
         ts: projTs,
         spaProjected: 0,
         msProjected: 0,
+        combinedProjected: 0,
       };
-      // Append projected terminal point for rendering
+      // Append projected terminal point for rendering and resort chronologically
       points.push(projEndPoint);
+      points.sort((a, b) => {
+        const aTs = a.ts ?? new Date(a.date).getTime();
+        const bTs = b.ts ?? new Date(b.date).getTime();
+        return aTs - bTs;
+      });
       // Set projected start values at last actual point
       lastPoint.spaProjected = lastSpa;
       lastPoint.msProjected = lastMs;
+      lastPoint.combinedProjected = lastCombined;
     }
 
     metrics.push({
@@ -447,6 +505,10 @@ function calculateEnvironmentMetrics(burndownData: { [key: string]: EnvBurndownP
       axisEndTs,
       status,
       projectedCompletionTs: Number.isFinite(projectedCompletionTs) ? projectedCompletionTs : null,
+      projectedSpaTs: projectedSpaTs ?? null,
+      projectedMsTs: projectedMsTs ?? null,
+      spaStatus,
+      msStatus,
     });
   });
 
@@ -566,7 +628,7 @@ export function BurndownPageClient() {
         {/* Environment Progress Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {environmentMetrics.map((env) => (
-            <Card key={env.env} className={`${env.overallProgress >= 95 ? "rainbow-glow" : env.isOnTrack ? "" : "border-2 border-red-500"}`}>
+            <Card key={env.env} className={`${env.overallProgress >= 95 ? "rainbow-glow" : env.status === 'at_risk' || env.status === 'missed' ? "border-2 border-red-500" : ""}`}>
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-medium capitalize">{env.env.toUpperCase()}</CardTitle>
@@ -584,11 +646,13 @@ export function BurndownPageClient() {
                   >
                     {env.status === 'completed'
                       ? 'Completed'
+                      : env.status === 'completed_late'
+                      ? 'Completed'
                       : env.status === 'on_track'
                       ? 'On Track'
                       : env.status === 'at_risk'
                       ? 'At Risk'
-                      : 'Target Missed'}
+                      : 'At Risk'}
                   </Badge>
                 </div>
                 <CardDescription className="text-xs">
@@ -610,7 +674,7 @@ export function BurndownPageClient() {
                   </div>
                   <Progress value={env.spaProgress} className="h-2" />
                   <div className="text-xs text-muted-foreground mt-1">
-                    {env.currentSpa} of {env.totalSpa} remaining
+                    {env.currentSpa} of {env.totalSpa} remaining • {env.spaStatus === 'completed' ? 'Completed' : env.spaStatus === 'on_track' ? 'On Track' : env.spaStatus === 'at_risk' ? 'At Risk' : 'Target Missed'}
                   </div>
                 </div>
                 <div>
@@ -627,7 +691,7 @@ export function BurndownPageClient() {
                   </div>
                   <Progress value={env.msProgress} className="h-2" />
                   <div className="text-xs text-muted-foreground mt-1">
-                    {env.currentMs} of {env.totalMs} remaining
+                    {env.currentMs} of {env.totalMs} remaining • {env.msStatus === 'completed' ? 'Completed' : env.msStatus === 'on_track' ? 'On Track' : env.msStatus === 'at_risk' ? 'At Risk' : 'Target Missed'}
                   </div>
                 </div>
                 <div className="pt-2 border-t">
@@ -646,11 +710,13 @@ export function BurndownPageClient() {
                   <div className="text-xs text-muted-foreground mt-1">
                     {env.status === 'completed'
                       ? 'Target achieved'
+                      : env.status === 'completed_late'
+                      ? 'Completed'
                       : env.status === 'on_track'
                       ? 'On track for target'
                       : env.status === 'at_risk'
                       ? 'At Risk'
-                      : 'Target missed'}
+                      : 'At Risk'}
                   </div>
                 </div>
               </CardContent>
@@ -693,10 +759,10 @@ export function BurndownPageClient() {
                     <CardTitle className="capitalize">{metrics.env.toUpperCase()} Burndown</CardTitle>
                     <Badge
                       variant={
-                        metrics.status === 'completed' ? 'secondary' : metrics.status === 'on_track' ? 'default' : 'destructive'
+                        metrics.status === 'completed' || metrics.status === 'completed_late' ? 'secondary' : metrics.status === 'on_track' ? 'default' : 'destructive'
                       }
                       className={
-                        metrics.status === 'completed'
+                        metrics.status === 'completed' || metrics.status === 'completed_late'
                           ? 'bg-green-600 hover:bg-green-700 text-white'
                           : metrics.status === 'missed'
                           ? 'bg-red-600 hover:bg-red-700 text-white'
@@ -704,6 +770,8 @@ export function BurndownPageClient() {
                       }
                     >
                       {metrics.status === 'completed'
+                        ? 'Completed'
+                        : metrics.status === 'completed_late'
                         ? 'Completed'
                         : metrics.status === 'on_track'
                         ? 'On Track'
@@ -773,61 +841,65 @@ export function BurndownPageClient() {
                         wrapperStyle={{ background: 'transparent', border: 'none', opacity: 1 as unknown as number, backdropFilter: 'none' as unknown as string }}
                         content={<ChartTooltipContent className="!bg-background !text-foreground !opacity-100 !backdrop-blur-none" />}
                       />
+                      {/* Combined lines removed for simplicity */}
+                      {/* Re-enabled SPA/MS lines for detailed view */}
                       <Line
                         type="monotone"
                         dataKey="spaActual"
                         stroke="var(--chart-1)"
-                        strokeWidth={2}
+                        strokeWidth={1.5}
                         connectNulls={true}
                         name="SPAs Remaining (Actual)"
+                        opacity={0.6}
                       />
                       <Line
                         type="monotone"
                         dataKey="spaExpected"
                         stroke="var(--chart-1)"
-                        strokeWidth={2}
+                        strokeWidth={1.5}
                         strokeDasharray="5 5"
                         connectNulls={true}
                         name="SPAs Remaining (Expected)"
-                        opacity={0.7}
+                        opacity={0.5}
                       />
                       <Line
                         type="monotone"
                         dataKey="spaProjected"
                         stroke="var(--chart-1)"
-                        strokeWidth={2}
+                        strokeWidth={1.5}
                         strokeDasharray="2 6"
                         connectNulls={true}
                         name="SPAs Remaining (Projected)"
-                        opacity={0.8}
+                        opacity={0.6}
                       />
                       <Line
                         type="monotone"
                         dataKey="msActual"
                         stroke="var(--chart-2)"
-                        strokeWidth={2}
+                        strokeWidth={1.5}
                         connectNulls={true}
                         name="Microservices Remaining (Actual)"
+                        opacity={0.6}
                       />
                       <Line
                         type="monotone"
                         dataKey="msExpected"
                         stroke="var(--chart-2)"
-                        strokeWidth={2}
+                        strokeWidth={1.5}
                         strokeDasharray="5 5"
                         connectNulls={true}
                         name="Microservices Remaining (Expected)"
-                        opacity={0.7}
+                        opacity={0.5}
                       />
                       <Line
                         type="monotone"
                         dataKey="msProjected"
                         stroke="var(--chart-2)"
-                        strokeWidth={2}
+                        strokeWidth={1.5}
                         strokeDasharray="2 6"
                         connectNulls={true}
                         name="Microservices Remaining (Projected)"
-                        opacity={0.8}
+                        opacity={0.6}
                       />
                       <Legend verticalAlign="bottom" align="center" wrapperStyle={{ paddingTop: '35px' }} />
                       {metrics.projectedCompletionTs && (
@@ -872,3 +944,4 @@ export function BurndownPageClient() {
     </TooltipProvider>
   );
 }
+
