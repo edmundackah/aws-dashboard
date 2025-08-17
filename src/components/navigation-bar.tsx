@@ -201,9 +201,15 @@ export function NavigationBar() {
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Button
                   variant="outline"
-                  className="w-full justify-between rounded-xl pl-10 pr-4 h-10 bg-white/10 dark:bg-white/5 border border-border/50 hover:bg-white/20 dark:hover:bg-white/10 hover:border-border transition-all duration-200 backdrop-blur"
+                  className="group relative w-full justify-between rounded-full pl-10 pr-4 h-10 bg-white/10 dark:bg-white/5 border border-border/40 hover:bg-white/20 dark:hover:bg-white/10 hover:border-border transition-all duration-200 backdrop-blur focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                   onClick={() => setOpen(true)}
                 >
+                  <motion.span
+                    className="absolute inset-0 rounded-full border shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] bg-primary/20 border-primary/35 dark:bg-primary/20 dark:border-primary/30 opacity-45 group-hover:opacity-65"
+                    initial={false}
+                    animate={{ opacity: open ? 0.9 : undefined }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                  />
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground">Search...</span>
                   </div>
@@ -226,10 +232,11 @@ export function NavigationBar() {
               {/* Last Updated */}
               {isMounted && data?.lastUpdate && (
                 <motion.div 
-                  className="flex items-center gap-2 px-3 py-2 bg-white/10 dark:bg-white/5 rounded-xl border border-border/50 hover:bg-white/20 dark:hover:bg-white/10 hover:border-border transition-all duration-200 backdrop-blur"
+                  className="relative flex items-center gap-2 px-3 py-2 bg-white/10 dark:bg-white/5 rounded-xl border border-border/50 hover:bg-white/20 dark:hover:bg-white/10 hover:border-border transition-all duration-200 backdrop-blur"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
+                  <span className="pointer-events-none absolute inset-0 rounded-xl border bg-primary/15 border-primary/25 dark:bg-primary/20 dark:border-primary/30 opacity-70" />
                   <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                   <div className="flex flex-col">
                     <span className="text-xs text-muted-foreground font-medium">Last updated</span>
