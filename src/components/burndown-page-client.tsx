@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import {
-  Line,
-  LineChart,
+  Area,
+  AreaChart,
   CartesianGrid,
   XAxis,
   YAxis,
@@ -818,7 +818,7 @@ export function BurndownPageClient() {
                 </CardHeader>
                 <CardContent>
                   <ChartContainer config={chartConfig} className="min-h-[250px] w-full" >
-                    <LineChart
+                    <AreaChart
                       accessibilityLayer
                       data={filteredChartData}
                       margin={{
@@ -851,8 +851,18 @@ export function BurndownPageClient() {
                         tickMargin={8}
                         label={{ value: "Services Remaining", angle: -90, position: "left", offset: 0 }}
                       />
+                      <defs>
+                        <linearGradient id={`fillSpa-${metrics.env}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--chart-spa))" stopOpacity={0.35} />
+                          <stop offset="95%" stopColor="hsl(var(--chart-spa))" stopOpacity={0.05} />
+                        </linearGradient>
+                        <linearGradient id={`fillMs-${metrics.env}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--chart-ms))" stopOpacity={0.35} />
+                          <stop offset="95%" stopColor="hsl(var(--chart-ms))" stopOpacity={0.05} />
+                        </linearGradient>
+                      </defs>
                       <ChartTooltip
-                        cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '3 3' }}
+                        cursor={{ stroke: 'hsl(var(--foreground))', strokeWidth: 2 }}
                         content={({ active, payload, label }) => {
                           if (!active || !payload || payload.length === 0) return null;
                           const date = typeof label === 'number' ? new Date(label) : (typeof payload[0]?.payload?.ts === 'number' ? new Date(payload[0].payload.ts) : null);
@@ -871,9 +881,9 @@ export function BurndownPageClient() {
                               <div className="text-[12px] uppercase tracking-wide text-muted-foreground mb-2">{dateLabel}</div>
                               <div className="space-y-1.5">
                                 {rows.map((r) => (
-                                  <div key={r.key} className="flex items-start justify-between gap-3">
-                                    <div className="flex items-start gap-2">
-                                      <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: r.color || 'hsl(var(--muted-foreground))' }} />
+                                  <div key={r.key} className="flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-2">
+                                      <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: r.color || 'hsl(var(--muted-foreground))' }} />
                                       <span className="text-[13px] text-foreground whitespace-pre-wrap break-words leading-5">{r.label}</span>
                                     </div>
                                     <span className="text-[13px] font-mono tabular-nums leading-5">{r.value.toLocaleString()}</span>
@@ -884,46 +894,43 @@ export function BurndownPageClient() {
                           );
                         }}
                       />
-                      
-                      {/* Combined lines removed for simplicity */}
-                      {/* Re-enabled SPA/MS lines for detailed view */}
-                      <Line
+                      {/* Actual as areas with gradient fills */}
+                      <Area
                         type="monotone"
                         dataKey="spaActual"
                         stroke="hsl(var(--chart-spa))"
-                        strokeWidth={1.5}
+                        fill={`url(#fillSpa-${metrics.env})`}
+                        fillOpacity={1}
                         connectNulls={true}
-                        name="SPAs Remaining (Actual)"
-                        opacity={0.6}
+                        name="SPAs Remaining"
                       />
-                      <Line
-                        type="monotone"
-                        dataKey="spaProjected"
-                        stroke="hsl(var(--chart-spa))"
-                        strokeWidth={1.5}
-                        strokeDasharray="2 6"
-                        connectNulls={true}
-                        name="SPAs Remaining (Projected)"
-                        opacity={0.6}
-                      />
-                      <Line
+                      <Area
                         type="monotone"
                         dataKey="msActual"
                         stroke="hsl(var(--chart-ms))"
-                        strokeWidth={1.5}
+                        fill={`url(#fillMs-${metrics.env})`}
+                        fillOpacity={1}
                         connectNulls={true}
-                        name="Microservices Remaining (Actual)"
-                        opacity={0.6}
+                        name="Microservices Remaining"
                       />
-                      <Line
+                      {/* Projected as dashed strokes without fill */}
+                      <Area
+                        type="monotone"
+                        dataKey="spaProjected"
+                        stroke="hsl(var(--chart-spa))"
+                        fill="none"
+                        strokeDasharray="2 6"
+                        connectNulls={true}
+                        name="SPAs Remaining (Projected)"
+                      />
+                      <Area
                         type="monotone"
                         dataKey="msProjected"
                         stroke="hsl(var(--chart-ms))"
-                        strokeWidth={1.5}
+                        fill="none"
                         strokeDasharray="2 6"
                         connectNulls={true}
                         name="Microservices Remaining (Projected)"
-                        opacity={0.6}
                       />
                       
                       {metrics.projectedCompletionTs && (
@@ -934,7 +941,7 @@ export function BurndownPageClient() {
                           label={{ value: 'Projected', position: 'top', fill: 'currentColor', dy: 8, dx: -24 }}
                         />
                       )}
-                    </LineChart>
+                    </AreaChart>
                   </ChartContainer>
                 </CardContent>
                 <CardFooter className="pt-2">
