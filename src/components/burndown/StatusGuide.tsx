@@ -18,11 +18,11 @@ export function StatusGuide() {
           <div className="grid gap-3">
             <div className="flex items-center gap-3">
               <span className="inline-block h-2.5 w-2.5 rounded-sm bg-green-500" />
-              <div><span className="font-medium text-primary">Completed</span> — at least 95% complete by the target date</div>
+              <div><span className="font-medium text-primary">Completed</span> — zero remaining by the target date</div>
             </div>
             <div className="flex items-center gap-3">
               <span className="inline-block h-2.5 w-2.5 rounded-sm bg-blue-500" />
-              <div><span className="font-medium text-primary">On track</span> — projection indicates completion by the target date</div>
+              <div><span className="font-medium text-primary">On track</span> — trend indicates zero remaining by each service target (SPA/MS)</div>
             </div>
             <div className="flex items-center gap-3">
               <span className="inline-block h-2.5 w-2.5 rounded-sm bg-amber-500" />
@@ -30,10 +30,11 @@ export function StatusGuide() {
             </div>
             <div className="flex items-center gap-3">
               <span className="inline-block h-2.5 w-2.5 rounded-sm bg-red-500" />
-              <div><span className="font-medium text-primary">Target missed</span> — target passed and less than 95% complete (shown on charts)</div>
+              <div><span className="font-medium text-primary">Completed (Late)</span> — zero remaining achieved after the target date (still shown as green)</div>
+              <div><span className="font-medium text-primary">Target missed</span> — the relevant target (SPA or MS) passed without reaching zero remaining</div>
             </div>
             <div className="pt-2 text-sm text-primary/80 leading-6">
-              Projection logic: Dotted values bridge from the last known point to the projected end date using a few evenly-spaced points so it appears smooth. If that end date is past the target, the chart shows “Target missed”.
+              Planned vs actual: Dotted lines show planned remaining; solid lines show actual remaining. Two targets per environment: SPA and Microservices.
             </div>
           </div>
         </AccordionContent>

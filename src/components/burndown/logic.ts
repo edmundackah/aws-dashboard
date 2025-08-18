@@ -20,7 +20,7 @@ export function determineTrend(points: EnvBurndownPoint[], type: 'spa' | 'ms'): 
 
 export function calculateEnvironmentMetrics(
   burndownData: { [key: string]: EnvBurndownPoint[] },
-  targets: { [key: string]: string }
+  targets: { [key: string]: { spa: string; ms: string } }
 ): EnvironmentProgress[] {
   const metrics: EnvironmentProgress[] = []
   const desiredOrder = ["dev", "sit", "uat", "nft"]
@@ -38,13 +38,17 @@ export function calculateEnvironmentMetrics(
 
   orderedEnvData.forEach((points, envKey) => {
     if (points.length === 0) return
-    const target = targets[envKey]
-    const targetTs = new Date(target).getTime()
+    const targetSpa = targets[envKey]?.spa
+    const targetMs = targets[envKey]?.ms
+    const targetSpaTs = new Date(targetSpa).getTime()
+    const targetMsTs = new Date(targetMs).getTime()
     const latest = points[points.length - 1]
-    const spaTotal = latest.spaTotal || 0
-    const msTotal = latest.msTotal || 0
-    const currentSpa = latest.spaActual ?? spaTotal
-    const currentMs = latest.msActual ?? msTotal
+    const spaTotal = (points.slice().reverse().find(p => p.spaTotal != null)?.spaTotal) || latest.spaTotal || 0
+    const msTotal = (points.slice().reverse().find(p => p.msTotal != null)?.msTotal) || latest.msTotal || 0
+    const lastSpaActualPoint = points.slice().reverse().find(p => p.spaActual != null)
+    const lastMsActualPoint = points.slice().reverse().find(p => p.msActual != null)
+    const currentSpa = lastSpaActualPoint?.spaActual ?? spaTotal
+    const currentMs = lastMsActualPoint?.msActual ?? msTotal
     const spaProgress = spaTotal > 0 ? Math.round(((spaTotal - currentSpa) / spaTotal) * 100) : 0
     const msProgress = msTotal > 0 ? Math.round(((msTotal - currentMs) / msTotal) * 100) : 0
     const overallProgress = (spaTotal > 0 && msTotal > 0)
@@ -54,6 +58,7 @@ export function calculateEnvironmentMetrics(
     // compute trend/projection (simplified here to keep module small)
     const DAY_MS = 24 * 60 * 60 * 1000
     const combinedSeries = points
+      .filter(p => p.spaActual != null || p.msActual != null)
       .map(p => ({ ts: p.ts ?? new Date(p.date).getTime(), remaining: (p.spaActual ?? 0) + (p.msActual ?? 0) }))
       .filter(p => Number.isFinite(p.ts) && Number.isFinite(p.remaining))
       .sort((a, b) => a.ts - b.ts)
@@ -63,69 +68,43 @@ export function calculateEnvironmentMetrics(
       if (recent[i - 1].remaining > recent[i].remaining) decreasesCount++
     }
     const trendImproving = decreasesCount >= 2
-
-    let projectedCompletionTs = Number.POSITIVE_INFINITY
-    if (recent.length >= 2) {
-      const first = recent[0]
-      const last = recent[recent.length - 1]
-      const deltaRem = first.remaining - last.remaining
-      const deltaDays = Math.max(1e-6, (last.ts - first.ts) / DAY_MS)
-      const burnRatePerDay = deltaRem / deltaDays
-      if (burnRatePerDay > 0) {
-        const projDays = last.remaining / burnRatePerDay
-        projectedCompletionTs = last.ts + projDays * DAY_MS
-      }
-    }
     const todayTs = Date.now()
-    const status: EnvironmentProgress["status"] = overallProgress >= 95
-      ? ((combinedSeries.find(p => p.remaining <= 0)?.ts ?? null) && (combinedSeries.find(p => p.remaining <= 0)!.ts > targetTs) ? 'missed' : 'completed')
-      : (todayTs > targetTs ? 'missed' : (Number.isFinite(projectedCompletionTs) && projectedCompletionTs <= targetTs && trendImproving ? 'on_track' : 'at_risk'))
+    // Determine earliest of the two targets for reference if needed later
+    // const earliestTargetTs = Math.min(targetSpaTs, targetMsTs)
+    // overall status will be derived from per-type statuses below
 
-    // Inject projected points between last known and projected end for smoother dotted line
-    if (Number.isFinite(projectedCompletionTs)) {
-      const projTs = projectedCompletionTs as number
-      const lastPoint = points[points.length - 1]
-      const lastSpa = lastPoint.spaActual ?? 0
-      const lastMs = lastPoint.msActual ?? 0
-      const lastCombined = lastSpa + lastMs
-      const lastTs = lastPoint.ts ?? new Date(lastPoint.date).getTime()
-      const DAY_MS = 24 * 60 * 60 * 1000
-      const spanMs = Math.max(1, projTs - lastTs)
-      const desiredSteps = 8
-      const steps = Math.min(desiredSteps, Math.max(1, Math.floor(spanMs / DAY_MS)))
-      const intervalMs = spanMs / (steps + 1)
-      for (let i = 1; i <= steps; i++) {
-        const ts = Math.round(lastTs + intervalMs * i)
-        const t = i / (steps + 1)
-        const spaProj = Math.max(0, Math.round(lastSpa * (1 - t)))
-        const msProj = Math.max(0, Math.round(lastMs * (1 - t)))
-        const combinedProj = Math.max(0, Math.round(lastCombined * (1 - t)))
-        const mid: EnvBurndownPoint = {
-          date: new Date(ts).toISOString().split('T')[0],
-          ts,
-          spaProjected: spaProj,
-          msProjected: msProj,
-          combinedProjected: combinedProj,
-        }
-        points.push(mid)
-      }
-      const endPoint: EnvBurndownPoint = {
-        date: new Date(projTs).toISOString().split('T')[0],
-        ts: projTs,
-        spaProjected: 0,
-        msProjected: 0,
-        combinedProjected: 0,
-      }
-      points.push(endPoint)
-      points.sort((a, b) => (a.ts ?? new Date(a.date).getTime()) - (b.ts ?? new Date(b.date).getTime()))
-      lastPoint.spaProjected = lastSpa
-      lastPoint.msProjected = lastMs
-      lastPoint.combinedProjected = lastCombined
-    }
+    // Type-specific statuses vs their respective targets
+    const spaTrend = determineTrend(points, 'spa')
+    const msTrend = determineTrend(points, 'ms')
+    const spaRemaining = currentSpa
+    const msRemaining = currentMs
+    const spaStatus: EnvironmentProgress['spaStatus'] =
+      spaRemaining === 0
+        ? (todayTs > targetSpaTs ? 'completed_late' : 'completed')
+        : (todayTs > targetSpaTs
+            ? 'missed'
+            : (spaTrend === 'improving' ? 'on_track' : 'at_risk'))
+    const msStatus: EnvironmentProgress['msStatus'] =
+      msRemaining === 0
+        ? (todayTs > targetMsTs ? 'completed_late' : 'completed')
+        : (todayTs > targetMsTs
+            ? 'missed'
+            : (msTrend === 'improving' ? 'on_track' : 'at_risk'))
+
+    // Overall status: if both completed (even if late), treat as completed; else if any missed and not both completed, missed; else if both on_track, on_track; otherwise at_risk
+    const bothCompletedOrLate = (spaStatus === 'completed' || spaStatus === 'completed_late') && (msStatus === 'completed' || msStatus === 'completed_late')
+    const anyMissed = spaStatus === 'missed' || msStatus === 'missed'
+    const bothOnTrack = spaStatus === 'on_track' && msStatus === 'on_track'
+    const derivedOverallStatus: EnvironmentProgress['status'] = bothCompletedOrLate
+      ? (spaStatus === 'completed_late' || msStatus === 'completed_late' ? 'completed_late' : 'completed')
+      : anyMissed
+      ? 'missed'
+      : bothOnTrack
+      ? 'on_track'
+      : 'at_risk'
 
     metrics.push({
       env: envKey,
-      target,
       currentSpa,
       currentMs,
       totalSpa: spaTotal,
@@ -133,16 +112,15 @@ export function calculateEnvironmentMetrics(
       spaProgress,
       msProgress,
       overallProgress,
-      daysToTarget: Math.ceil((targetTs - Date.now()) / DAY_MS),
-      isOnTrack: status === 'on_track' || overallProgress >= 95,
+      daysToTarget: Math.max(0, Math.ceil((Math.min(targetSpaTs, targetMsTs) - Date.now()) / DAY_MS)),
+      isOnTrack: derivedOverallStatus === 'on_track' || overallProgress >= 95,
       trend: overallProgress >= 95 ? 'stable' : (trendImproving ? 'improving' : 'declining'),
-      axisEndTs: Math.max(targetTs, points.reduce((m, p) => Math.max(m, p.ts ?? new Date(p.date).getTime()), 0), Number.isFinite(projectedCompletionTs) ? (projectedCompletionTs as number) : 0),
-      status,
-      projectedCompletionTs: Number.isFinite(projectedCompletionTs) ? projectedCompletionTs : null,
-      projectedSpaTs: null,
-      projectedMsTs: null,
-      spaStatus: spaProgress >= 95 ? 'completed' : 'on_track',
-      msStatus: msProgress >= 95 ? 'completed' : 'on_track',
+      axisEndTs: Math.max(targetSpaTs, targetMsTs, points.reduce((m, p) => Math.max(m, p.ts ?? new Date(p.date).getTime()), 0)),
+      status: derivedOverallStatus,
+      spaStatus,
+      msStatus,
+      targetSpa,
+      targetMs,
     })
   })
 

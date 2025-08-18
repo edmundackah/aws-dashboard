@@ -2,16 +2,13 @@ export type EnvBurndownPoint = {
   date: string
   ts?: number
   spaActual?: number
-  spaExpected?: number
-  spaProjected?: number
+  spaPlanned?: number
   spaTotal?: number
   msActual?: number
-  msExpected?: number
-  msProjected?: number
+  msPlanned?: number
   msTotal?: number
   combinedActual?: number
-  combinedExpected?: number
-  combinedProjected?: number
+  combinedPlanned?: number
 }
 
 export type BurndownResponse = {
@@ -25,7 +22,7 @@ export type BurndownResponse = {
   }
   environments: Array<{
     env: string
-    target: string
+    target: string | { spa: string; microservice: string }
     scope?: {
       spa?: { inEnv: number }
       microservice?: { inEnv: number }
@@ -44,7 +41,8 @@ export type BurndownResponse = {
 
 export type EnvironmentProgress = {
   env: string
-  target: string
+  targetSpa: string
+  targetMs: string
   currentSpa: number
   currentMs: number
   totalSpa: number
@@ -56,12 +54,9 @@ export type EnvironmentProgress = {
   isOnTrack: boolean
   trend: 'improving' | 'declining' | 'stable'
   axisEndTs: number
-  status: 'completed' | 'on_track' | 'at_risk' | 'missed'
-  projectedCompletionTs: number | null
-  projectedSpaTs: number | null
-  projectedMsTs: number | null
-  spaStatus: 'completed' | 'on_track' | 'at_risk' | 'missed'
-  msStatus: 'completed' | 'on_track' | 'at_risk' | 'missed'
+  status: 'completed' | 'completed_late' | 'on_track' | 'at_risk' | 'missed'
+  spaStatus: 'completed' | 'completed_late' | 'on_track' | 'at_risk' | 'missed'
+  msStatus: 'completed' | 'completed_late' | 'on_track' | 'at_risk' | 'missed'
 }
 
 

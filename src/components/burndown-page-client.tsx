@@ -2,8 +2,6 @@
 
 import * as React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
 import { ErrorDisplay } from "@/components/error-display";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusExplainer } from "@/components/burndown/StatusExplainer";
@@ -16,7 +14,7 @@ import type { EnvBurndownPoint } from "@/components/burndown/types";
 
 export function BurndownPageClient() {
   const [burndown, setBurndown] = React.useState< { [key: string]: EnvBurndownPoint[] } | null >(null);
-  const [targets, setTargets] = React.useState< { [key: string]: string } | null >(null);
+  const [targets, setTargets] = React.useState< { [key: string]: { spa: string; ms: string } } | null >(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -60,6 +58,7 @@ export function BurndownPageClient() {
     if (!burndown || !targets) return [];
     return calculateEnvironmentMetrics(burndown, targets);
   }, [burndown, targets]);
+
 
   if (loading) {
     return (
@@ -105,7 +104,7 @@ export function BurndownPageClient() {
   }
 
   // Check if we have target dates for environments
-  const environmentsWithTargets = Object.keys(targets || {}).filter(env => targets && targets[env]);
+  const environmentsWithTargets = Object.keys(targets || {}).filter(env => targets && targets[env] && targets[env].spa && targets[env].ms);
   if (environmentsWithTargets.length === 0) {
     return <ErrorDisplay message="No target dates found in burndown data. Please ensure the API includes target dates for each environment." />;
   }
@@ -114,50 +113,7 @@ export function BurndownPageClient() {
       <div className="space-y-6">
         <StatusExplainer />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {environmentMetrics.map((env) => (
-                                        <Card key={env.env} className={`bg-card border ${env.overallProgress >= 95 ? 'rainbow-glow' : env.status === 'at_risk' ? 'border-2 border-amber-500' : ''}`}>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-medium capitalize">{env.env.toUpperCase()}</CardTitle>
-                  <Badge variant={env.status === 'completed' || env.status === 'missed' ? 'secondary' : env.status === 'on_track' ? 'default' : 'destructive'} className={env.status === 'completed' || env.status === 'missed' ? 'bg-green-600 hover:bg-green-700 text-white' : env.status === 'at_risk' ? 'bg-amber-500 hover:bg-amber-600 text-white' : ''}>
-                    {env.status === 'completed' || env.status === 'missed' ? 'Completed' : env.status === 'on_track' ? 'On Track' : 'At Risk'}
-                  </Badge>
-                </div>
-                <CardDescription className="text-xs">Target: {new Date(env.target).toLocaleDateString()}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <div className="flex items-center justify-between text-sm mb-1">
-                    <span>SPAs</span>
-                    <span>{env.spaProgress}%</span>
-                  </div>
-                  <Progress value={env.spaProgress} className="h-2" />
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {env.currentSpa} of {env.totalSpa} remaining
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between text-sm mb-1">
-                    <span>Microservices</span>
-                    <span>{env.msProgress}%</span>
-                  </div>
-                  <Progress value={env.msProgress} className="h-2" />
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {env.currentMs} of {env.totalMs} remaining
-                  </div>
-                </div>
-                <div className="pt-2 border-t">
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Overall</span>
-                    <span className="font-medium">{env.overallProgress}%</span>
-                  </div>
-                  <Progress value={env.overallProgress} className="h-2 mt-1" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {/* Summary cards removed to show only graphs */}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-4">
           {environmentMetrics.map((metrics) => {
@@ -166,13 +122,14 @@ export function BurndownPageClient() {
             const filteredChartData = chartData.filter(point =>
               point.spaActual != null ||
               point.msActual != null ||
-              point.spaProjected != null ||
-              point.msProjected != null
+              point.spaPlanned != null ||
+              point.msPlanned != null
             );
 
-            console.log(`Filtered chart data for ${metrics.env}:`, JSON.stringify(filteredChartData, null, 2));
+            // Use data as-is; no synthetic alignment to a global start date
+            const alignedChartData = filteredChartData;
 
-            if (filteredChartData.length === 0) {
+            if (alignedChartData.length === 0) {
               return (
                 <Card key={metrics.env}>
                   <CardHeader>
@@ -187,7 +144,7 @@ export function BurndownPageClient() {
             }
             
             return (
-              <BurndownEnvChartCard key={metrics.env} metrics={metrics} data={filteredChartData} />
+              <BurndownEnvChartCard key={metrics.env} metrics={metrics} data={alignedChartData} />
             );
           })}
         </div>

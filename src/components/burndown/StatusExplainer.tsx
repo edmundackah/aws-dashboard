@@ -15,7 +15,7 @@ function StatusItems() {
         </div>
         <div className="flex items-center gap-3">
           <span className="ml-2 inline-block h-2.5 w-2.5 rounded-sm bg-blue-500" />
-          <div className="text-sm leading-6"><span className="font-medium text-primary">On track</span> — projection indicates completion by the target date</div>
+          <div className="text-sm leading-6"><span className="font-medium text-primary">On track</span> — trend indicates zero remaining by the SPA/MS target dates</div>
         </div>
         <div className="flex items-center gap-3">
           <span className="ml-2 inline-block h-2.5 w-2.5 rounded-sm bg-amber-500" />
@@ -23,10 +23,10 @@ function StatusItems() {
         </div>
         <div className="flex items-center gap-3">
           <span className="ml-2 inline-block h-2.5 w-2.5 rounded-sm bg-red-500" />
-          <div className="text-sm leading-6"><span className="font-medium text-primary">Target missed</span> — target passed and less than 95% complete (shown on charts)</div>
+          <div className="text-sm leading-6"><span className="font-medium text-primary">Target missed</span> — SPA/MS target passed without reaching zero remaining</div>
         </div>
         <div className="pt-2 text-sm text-primary/80 leading-6">
-          Projection: Dotted values bridge from the last known point to the projected end date using a few evenly spaced points so it appears smooth. If that end date is past the target, the chart shows &quot;Target missed&quot;.
+          Planned vs Actual: Dotted lines show planned remaining; solid lines show actual remaining. Each environment has two targets (SPA and Microservices) which represent zero remaining.
         </div>
       </div>
   )
@@ -40,7 +40,7 @@ export function StatusExplainer() {
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" className="inline-flex items-center gap-2">
-              <span className="text-sm font-medium">Status & projections</span>
+              <span className="text-sm font-medium">Status & planned vs actual</span>
             </Button>
           </PopoverTrigger>
           <PopoverContent align="start" className="w-[min(92vw,32rem)] rounded-lg border border-primary/20 bg-card shadow-xl p-4">
@@ -60,7 +60,7 @@ export function StatusExplainer() {
         <Sheet>
           <SheetTrigger asChild>
             <Button variant="outline" size="sm" className="inline-flex items-center gap-2">
-              <span className="text-sm font-medium">Status & projections</span>
+              <span className="text-sm font-medium">Status & planned vs actual</span>
             </Button>
           </SheetTrigger>
           <SheetContent side="bottom" className="rounded-t-2xl border-primary/20">
