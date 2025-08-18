@@ -40,8 +40,10 @@ export function calculateEnvironmentMetrics(
     if (points.length === 0) return
     const targetSpa = targets[envKey]?.spa
     const targetMs = targets[envKey]?.ms
-    const targetSpaTs = new Date(targetSpa).getTime()
-    const targetMsTs = new Date(targetMs).getTime()
+    const parsedSpa = targetSpa ? new Date(targetSpa).getTime() : NaN
+    const parsedMs = targetMs ? new Date(targetMs).getTime() : NaN
+    const targetSpaTsFinite = Number.isFinite(parsedSpa) ? (parsedSpa as number) : NaN
+    const targetMsTsFinite = Number.isFinite(parsedMs) ? (parsedMs as number) : NaN
     const latest = points[points.length - 1]
     const spaTotal = (points.slice().reverse().find(p => p.spaTotal != null)?.spaTotal) || latest.spaTotal || 0
     const msTotal = (points.slice().reverse().find(p => p.msTotal != null)?.msTotal) || latest.msTotal || 0
@@ -69,8 +71,6 @@ export function calculateEnvironmentMetrics(
     }
     const trendImproving = decreasesCount >= 2
     const todayTs = Date.now()
-    // Determine earliest of the two targets for reference if needed later
-    // const earliestTargetTs = Math.min(targetSpaTs, targetMsTs)
     // overall status will be derived from per-type statuses below
 
     // Type-specific statuses vs their respective targets
@@ -80,14 +80,14 @@ export function calculateEnvironmentMetrics(
     const msRemaining = currentMs
     const spaStatus: EnvironmentProgress['spaStatus'] =
       spaRemaining === 0
-        ? (todayTs > targetSpaTs ? 'completed_late' : 'completed')
-        : (todayTs > targetSpaTs
+        ? (Number.isFinite(targetSpaTsFinite) && todayTs > targetSpaTsFinite ? 'completed_late' : 'completed')
+        : ((Number.isFinite(targetSpaTsFinite) && todayTs > targetSpaTsFinite)
             ? 'missed'
             : (spaTrend === 'improving' ? 'on_track' : 'at_risk'))
     const msStatus: EnvironmentProgress['msStatus'] =
       msRemaining === 0
-        ? (todayTs > targetMsTs ? 'completed_late' : 'completed')
-        : (todayTs > targetMsTs
+        ? (Number.isFinite(targetMsTsFinite) && todayTs > targetMsTsFinite ? 'completed_late' : 'completed')
+        : ((Number.isFinite(targetMsTsFinite) && todayTs > targetMsTsFinite)
             ? 'missed'
             : (msTrend === 'improving' ? 'on_track' : 'at_risk'))
 
@@ -112,15 +112,22 @@ export function calculateEnvironmentMetrics(
       spaProgress,
       msProgress,
       overallProgress,
-      daysToTarget: Math.max(0, Math.ceil((Math.min(targetSpaTs, targetMsTs) - Date.now()) / DAY_MS)),
+      daysToTarget: Math.max(0, Math.ceil(((Math.min(
+        Number.isFinite(targetSpaTsFinite) ? targetSpaTsFinite : Infinity,
+        Number.isFinite(targetMsTsFinite) ? targetMsTsFinite : Infinity
+      )) - Date.now()) / DAY_MS)),
       isOnTrack: derivedOverallStatus === 'on_track' || overallProgress >= 95,
       trend: overallProgress >= 95 ? 'stable' : (trendImproving ? 'improving' : 'declining'),
-      axisEndTs: Math.max(targetSpaTs, targetMsTs, points.reduce((m, p) => Math.max(m, p.ts ?? new Date(p.date).getTime()), 0)),
+      axisEndTs: Math.max(
+        Number.isFinite(targetSpaTsFinite) ? targetSpaTsFinite : 0,
+        Number.isFinite(targetMsTsFinite) ? targetMsTsFinite : 0,
+        points.reduce((m, p) => Math.max(m, p.ts ?? new Date(p.date).getTime()), 0)
+      ),
       status: derivedOverallStatus,
       spaStatus,
       msStatus,
-      targetSpa,
-      targetMs,
+      targetSpa: targetSpa ?? '',
+      targetMs: targetMs ?? '',
     })
   })
 

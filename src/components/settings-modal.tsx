@@ -1,5 +1,7 @@
 "use client";
 
+import * as React from "react";
+
 import {
   Dialog,
   DialogContent,
@@ -25,6 +27,7 @@ interface SettingsModalProps {
   onOpenChange: (isOpen: boolean) => void;
 }
 
+
 const cardVariants: Variants = {
   hidden: { y: 20, opacity: 0 },
   visible: (i: number) => ({
@@ -41,6 +44,7 @@ const cardVariants: Variants = {
 export function SettingsModal({ isOpen, onOpenChange }: SettingsModalProps) {
   const { theme, setTheme } = useTheme();
   const { clearData, fetchData } = useDashboardStore();
+  // burndown settings removed
 
   const handleClearCache = () => {
     clearData();
@@ -50,6 +54,8 @@ export function SettingsModal({ isOpen, onOpenChange }: SettingsModalProps) {
     });
     onOpenChange(false);
   };
+
+  // using .env targets only; no overrides
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>

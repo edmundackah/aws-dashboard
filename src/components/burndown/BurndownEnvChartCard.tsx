@@ -18,6 +18,10 @@ type Props = {
 export function BurndownEnvChartCard({ metrics, data }: Props) {
   const spaTargetTs = new Date(metrics.targetSpa).getTime()
   const msTargetTs = new Date(metrics.targetMs).getTime()
+  const spaDateValid = metrics.targetSpa && !Number.isNaN(Date.parse(metrics.targetSpa))
+  const msDateValid = metrics.targetMs && !Number.isNaN(Date.parse(metrics.targetMs))
+  const spaDateLabel = spaDateValid ? new Date(metrics.targetSpa).toLocaleDateString() : null
+  const msDateLabel = msDateValid ? new Date(metrics.targetMs).toLocaleDateString() : null
   const yMax = React.useMemo(() => {
     let maxTotal = 0
     for (const p of data) {
@@ -52,7 +56,7 @@ export function BurndownEnvChartCard({ metrics, data }: Props) {
                 : ''
             }
           >
-            SPA · {metrics.spaStatus === 'missed' ? 'Missed' : metrics.spaStatus === 'completed_late' ? 'Completed (Late)' : metrics.spaStatus === 'completed' ? 'Completed' : metrics.spaStatus === 'on_track' ? 'On Track' : 'At Risk'} · {new Date(metrics.targetSpa).toLocaleDateString()}
+            SPA · {metrics.spaStatus === 'missed' ? 'Missed' : metrics.spaStatus === 'completed_late' ? 'Completed (Late)' : metrics.spaStatus === 'completed' ? 'Completed' : metrics.spaStatus === 'on_track' ? 'On Track' : 'At Risk'}{spaDateLabel ? ` · ${spaDateLabel}` : ''}
           </Badge>
           <Badge
             variant={metrics.msStatus === 'completed' || metrics.msStatus === 'completed_late' ? 'secondary' : metrics.msStatus === 'on_track' ? 'default' : 'destructive'}
@@ -66,7 +70,7 @@ export function BurndownEnvChartCard({ metrics, data }: Props) {
                 : ''
             }
           >
-            MS · {metrics.msStatus === 'missed' ? 'Missed' : metrics.msStatus === 'completed_late' ? 'Completed (Late)' : metrics.msStatus === 'completed' ? 'Completed' : metrics.msStatus === 'on_track' ? 'On Track' : 'At Risk'} · {new Date(metrics.targetMs).toLocaleDateString()}
+            MS · {metrics.msStatus === 'missed' ? 'Missed' : metrics.msStatus === 'completed_late' ? 'Completed (Late)' : metrics.msStatus === 'completed' ? 'Completed' : metrics.msStatus === 'on_track' ? 'On Track' : 'At Risk'}{msDateLabel ? ` · ${msDateLabel}` : ''}
           </Badge>
         </div>
         {/* Overall status removed in favor of per-type statuses above */}
@@ -102,8 +106,12 @@ export function BurndownEnvChartCard({ metrics, data }: Props) {
               domain={[0, yMax]}
               label={{ value: "Services Remaining", angle: -90, position: "left", offset: 0 }}
             />
-            <ReferenceLine x={spaTargetTs} stroke="hsl(var(--chart-spa))" strokeDasharray="3 3" label={{ value: 'SPA Target', position: 'top', fill: 'currentColor', dy: 8 }} />
-            <ReferenceLine x={msTargetTs} stroke="hsl(var(--chart-ms))" strokeDasharray="3 3" label={{ value: 'MS Target', position: 'top', fill: 'currentColor', dy: 8 }} />
+            {spaDateValid && (
+              <ReferenceLine x={spaTargetTs} stroke="hsl(var(--chart-spa))" strokeDasharray="3 3" label={{ value: 'SPA Target', position: 'top', fill: 'currentColor', dy: 8 }} />
+            )}
+            {msDateValid && (
+              <ReferenceLine x={msTargetTs} stroke="hsl(var(--chart-ms))" strokeDasharray="3 3" label={{ value: 'MS Target', position: 'top', fill: 'currentColor', dy: 8 }} />
+            )}
             <ChartTooltip
               cursor={{ stroke: 'hsl(var(--foreground))', strokeWidth: 2 }}
               content={({ active, payload, label }) => {

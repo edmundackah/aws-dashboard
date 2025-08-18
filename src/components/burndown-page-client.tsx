@@ -103,11 +103,7 @@ export function BurndownPageClient() {
     return <ErrorDisplay message="No burndown data available" />;
   }
 
-  // Check if we have target dates for environments
-  const environmentsWithTargets = Object.keys(targets || {}).filter(env => targets && targets[env] && targets[env].spa && targets[env].ms);
-  if (environmentsWithTargets.length === 0) {
-    return <ErrorDisplay message="No target dates found in burndown data. Please ensure the API includes target dates for each environment." />;
-  }
+  // Targets are optional (read from .env); proceed even if none found
 
   return (
       <div className="space-y-6">
