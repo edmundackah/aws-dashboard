@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { ErrorDisplay } from "@/components/error-display";
 import { Skeleton } from "@/components/ui/skeleton";
-import { StatusGuide } from "@/components/burndown/StatusGuide";
+import { StatusExplainer } from "@/components/burndown/StatusExplainer";
 import { normalizeBurndownData } from "@/components/burndown/data";
 import { calculateEnvironmentMetrics } from "@/components/burndown/logic";
 import type { BurndownResponse } from "@/components/burndown/types";
@@ -112,11 +112,11 @@ export function BurndownPageClient() {
 
   return (
       <div className="space-y-6">
-        <StatusGuide />
+        <StatusExplainer />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {environmentMetrics.map((env) => (
-            <Card key={env.env} className={`bg-muted ${env.overallProgress >= 95 ? 'rainbow-glow border' : env.status === 'at_risk' ? 'border-2 border-amber-500' : 'border'}`}>
+                                        <Card key={env.env} className={`bg-card border ${env.overallProgress >= 95 ? 'rainbow-glow' : env.status === 'at_risk' ? 'border-2 border-amber-500' : ''}`}>
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-medium capitalize">{env.env.toUpperCase()}</CardTitle>

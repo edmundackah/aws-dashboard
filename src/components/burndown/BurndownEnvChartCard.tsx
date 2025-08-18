@@ -30,7 +30,7 @@ type Props = {
 
 export function BurndownEnvChartCard({ metrics, data }: Props) {
   return (
-    <Card className="bg-muted border">
+    <Card className="bg-card border">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="capitalize">{metrics.env.toUpperCase()} Burndown</CardTitle>
