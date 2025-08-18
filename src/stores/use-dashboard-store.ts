@@ -6,7 +6,11 @@ import {
 } from "@/lib/data";
 import { Microservice, Spa, TeamStat } from "@/app/data/schema";
 
-export type Page = "overview" | "spas" | "microservices" | "teams";
+export type Page = "overview" | "spas" | "microservices" | "teams" | "burndown";
+
+type EnvKey = "dev" | "sit" | "uat" | "nft"
+
+type TargetOverrides = Record<EnvKey, { spa?: string; ms?: string }>
 
 interface DashboardData {
   spaData: Spa[];
@@ -23,6 +27,8 @@ interface DashboardState {
   lastFetched: number | null;
   currentPage: Page;
   rawMainData: MainDataApiResponse | null;
+  burndownTargetOverrides: TargetOverrides;
+  setBurndownTarget: (env: EnvKey, kind: 'spa' | 'ms', value?: string) => void;
   fetchData: () => Promise<void>;
   clearData: () => void;
   setCurrentPage: (page: Page) => void;
@@ -37,6 +43,21 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   lastFetched: null,
   currentPage: "overview",
   rawMainData: null,
+  burndownTargetOverrides: {
+    dev: { spa: process.env.NEXT_PUBLIC_BURNDOWN_DEFAULT_SPA_DEV, ms: process.env.NEXT_PUBLIC_BURNDOWN_DEFAULT_MS_DEV },
+    sit: { spa: process.env.NEXT_PUBLIC_BURNDOWN_DEFAULT_SPA_SIT, ms: process.env.NEXT_PUBLIC_BURNDOWN_DEFAULT_MS_SIT },
+    uat: { spa: process.env.NEXT_PUBLIC_BURNDOWN_DEFAULT_SPA_UAT, ms: process.env.NEXT_PUBLIC_BURNDOWN_DEFAULT_MS_UAT },
+    nft: { spa: process.env.NEXT_PUBLIC_BURNDOWN_DEFAULT_SPA_NFT, ms: process.env.NEXT_PUBLIC_BURNDOWN_DEFAULT_MS_NFT },
+  },
+
+  setBurndownTarget: (env, kind, value) => {
+    set((state) => ({
+      burndownTargetOverrides: {
+        ...state.burndownTargetOverrides,
+        [env]: { ...state.burndownTargetOverrides[env], [kind]: value },
+      },
+    }))
+  },
 
   fetchData: async () => {
     const state = get();
