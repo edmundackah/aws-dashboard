@@ -1,5 +1,7 @@
 "use client"
 
+import * as React from "react"
+
 import { CartesianGrid, XAxis, YAxis, LineChart, Line, ReferenceLine } from "recharts"
 
 import { Badge } from "@/components/ui/badge"
@@ -16,6 +18,21 @@ type Props = {
 export function BurndownEnvChartCard({ metrics, data }: Props) {
   const spaTargetTs = new Date(metrics.targetSpa).getTime()
   const msTargetTs = new Date(metrics.targetMs).getTime()
+  const yMax = React.useMemo(() => {
+    let maxTotal = 0
+    for (const p of data) {
+      if (typeof p.spaTotal === 'number') maxTotal = Math.max(maxTotal, p.spaTotal)
+      if (typeof p.msTotal === 'number') maxTotal = Math.max(maxTotal, p.msTotal)
+    }
+    // Fallback to data maxima if totals missing
+    if (maxTotal === 0) {
+      for (const p of data) {
+        if (typeof p.spaActual === 'number') maxTotal = Math.max(maxTotal, p.spaActual)
+        if (typeof p.msActual === 'number') maxTotal = Math.max(maxTotal, p.msActual)
+      }
+    }
+    return maxTotal
+  }, [data])
   return (
     <Card className={`bg-card border ${((metrics.spaStatus === 'completed' || metrics.spaStatus === 'completed_late') && (metrics.msStatus === 'completed' || metrics.msStatus === 'completed_late')) ? 'rainbow-glow' : ''}`}>
       <CardHeader>
@@ -82,6 +99,7 @@ export function BurndownEnvChartCard({ metrics, data }: Props) {
               tickLine={false}
               axisLine={false}
               tickMargin={8}
+              domain={[0, yMax]}
               label={{ value: "Services Remaining", angle: -90, position: "left", offset: 0 }}
             />
             <ReferenceLine x={spaTargetTs} stroke="hsl(var(--chart-spa))" strokeDasharray="3 3" label={{ value: 'SPA Target', position: 'top', fill: 'currentColor', dy: 8 }} />
