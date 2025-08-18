@@ -159,7 +159,8 @@ export const DashboardPageClient = ({
 
     const spaPct = envCounts.spaTotal > 0 ? (envCounts.spaMigrated / envCounts.spaTotal) * 100 : 0;
     const msPct = envCounts.msTotal > 0 ? (envCounts.msMigrated / envCounts.msTotal) * 100 : 0;
-    const meets = Math.max(spaPct, msPct) >= thresholdPct;
+    // Require BOTH SPA and MS to meet or exceed the threshold before triggering confetti
+    const meets = spaPct >= thresholdPct && msPct >= thresholdPct;
     if (!meets) return;
 
     // Tune for low-performance (Citrix, low cores) and configurable modes
