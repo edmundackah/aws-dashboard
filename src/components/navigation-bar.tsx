@@ -334,11 +334,6 @@ export function NavigationBar() {
                 <item.icon className="mr-2 h-4 w-4" />
                 {item.name}
                 <CommandShortcut>
-                  {isMac ? (
-                    <span className="mr-2">⌘</span>
-                  ) : (
-                    <span className="mr-2">Ctrl</span>
-                  )}
                   <span>K</span>
                 </CommandShortcut>
               </CommandItem>
@@ -352,11 +347,6 @@ export function NavigationBar() {
               <Download className="mr-2 h-4 w-4" />
               Export All Data
               <CommandShortcut>
-                {isMac ? (
-                  <span className="mr-2">⌘</span>
-                ) : (
-                  <span className="mr-2">Ctrl</span>
-                )}
                 <span>E</span>
               </CommandShortcut>
             </CommandItem>
@@ -387,11 +377,6 @@ export function NavigationBar() {
               <Settings className="mr-2 h-4 w-4" />
               Settings
               <CommandShortcut>
-                {isMac ? (
-                  <span className="mr-2">⌘</span>
-                ) : (
-                  <span className="mr-2">Ctrl</span>
-                )}
                 <span>S</span>
               </CommandShortcut>
             </CommandItem>

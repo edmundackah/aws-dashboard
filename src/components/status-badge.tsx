@@ -1,7 +1,7 @@
 "use client";
 
 import {Badge} from "@/components/ui/badge";
-import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface StatusBadgeProps {
   status?: string;
@@ -16,11 +16,11 @@ export function StatusBadge({ status, tooltipContent }: StatusBadgeProps) {
   return (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger>
+        <TooltipTrigger asChild>
           <Badge variant="destructive">Not Migrated</Badge>
         </TooltipTrigger>
         <TooltipContent>
-          <p>{tooltipContent || "This team has not migrated their services."}</p>
+          <p>{tooltipContent || "This service has not been migrated yet."}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

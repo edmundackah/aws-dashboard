@@ -199,7 +199,7 @@ export function DataTable<TData, TValue>({
 
             {getPaginationRange(table.getPageCount(), table.getState().pagination.pageIndex).map((page, index) => {
               if (typeof page === 'string') {
-                return <PaginationItem key={`ellipsis-${index}`}><PaginationEllipsis /></PaginationItem>;
+                return <PaginationItem key={`ellipsis-${index}`}><PaginationEllipsis className="hover:cursor-not-allowed"/></PaginationItem>;
               }
               return (
                 <PaginationItem key={page}>
