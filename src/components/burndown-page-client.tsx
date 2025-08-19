@@ -106,12 +106,13 @@ export function BurndownPageClient() {
   // Targets are optional (read from .env); proceed even if none found
 
   return (
-      <div className="space-y-6">
-        <StatusExplainer />
+      <div className="space-y-1">
+        <div className="md:hidden">
+          <StatusExplainer />
+        </div>
 
-        {/* Summary cards removed to show only graphs */}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-3 items-stretch content-stretch min-h-[calc(100vh-7rem)] grid-rows-[repeat(2,minmax(0,1fr))]">
           {environmentMetrics.map((metrics) => {
             const chartData = burndown?.[metrics.env] || [];
             

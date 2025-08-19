@@ -38,22 +38,22 @@ export function BurndownEnvChartCard({ metrics, data }: Props) {
     return maxTotal
   }, [data])
   return (
-    <Card className={`bg-card border ${((metrics.spaStatus === 'completed' || metrics.spaStatus === 'completed_late') && (metrics.msStatus === 'completed' || metrics.msStatus === 'completed_late')) ? 'rainbow-glow' : ''}`}>
-      <CardHeader>
+    <Card className={`bg-card border ${((metrics.spaStatus === 'completed' || metrics.spaStatus === 'completed_late') && (metrics.msStatus === 'completed' || metrics.msStatus === 'completed_late')) ? 'rainbow-glow' : ''} py-1.5 gap-1.5 h-full`}>
+      <CardHeader className="py-0.5 px-2.5">
         <div className="flex items-center justify-between">
-          <CardTitle className="capitalize">{metrics.env.toUpperCase()} Burndown</CardTitle>
+          <CardTitle className="capitalize text-[13px]">{metrics.env.toUpperCase()} Burndown</CardTitle>
         </div>
-        <div className="flex flex-wrap gap-2 items-center">
+        <div className="flex flex-wrap gap-1 items-center text-[11px]">
           <Badge
             variant={metrics.spaStatus === 'completed' || metrics.spaStatus === 'completed_late' ? 'secondary' : metrics.spaStatus === 'on_track' ? 'default' : 'destructive'}
             className={
               metrics.spaStatus === 'completed' || metrics.spaStatus === 'completed_late'
-                ? 'bg-green-600 hover:bg-green-700 text-white'
+                ? 'bg-green-600 hover:bg-green-700 text-white px-2 py-0.5'
                 : metrics.spaStatus === 'missed'
-                ? 'bg-red-600 hover:bg-red-700 text-white'
+                ? 'bg-red-600 hover:bg-red-700 text-white px-2 py-0.5'
                 : metrics.spaStatus === 'at_risk'
-                ? 'bg-amber-500 hover:bg-amber-600 text-white'
-                : ''
+                ? 'bg-amber-500 hover:bg-amber-600 text-white px-2 py-0.5'
+                : 'px-2 py-0.5'
             }
           >
             SPA · {metrics.spaStatus === 'missed' ? 'Missed' : metrics.spaStatus === 'completed_late' ? 'Completed (Late)' : metrics.spaStatus === 'completed' ? 'Completed' : metrics.spaStatus === 'on_track' ? 'On Track' : 'At Risk'}{spaDateLabel ? ` · ${spaDateLabel}` : ''}
@@ -62,12 +62,12 @@ export function BurndownEnvChartCard({ metrics, data }: Props) {
             variant={metrics.msStatus === 'completed' || metrics.msStatus === 'completed_late' ? 'secondary' : metrics.msStatus === 'on_track' ? 'default' : 'destructive'}
             className={
               metrics.msStatus === 'completed' || metrics.msStatus === 'completed_late'
-                ? 'bg-green-600 hover:bg-green-700 text-white'
+                ? 'bg-green-600 hover:bg-green-700 text-white px-2 py-0.5'
                 : metrics.msStatus === 'missed'
-                ? 'bg-red-600 hover:bg-red-700 text-white'
+                ? 'bg-red-600 hover:bg-red-700 text-white px-2 py-0.5'
                 : metrics.msStatus === 'at_risk'
-                ? 'bg-amber-500 hover:bg-amber-600 text-white'
-                : ''
+                ? 'bg-amber-500 hover:bg-amber-600 text-white px-2 py-0.5'
+                : 'px-2 py-0.5'
             }
           >
             MS · {metrics.msStatus === 'missed' ? 'Missed' : metrics.msStatus === 'completed_late' ? 'Completed (Late)' : metrics.msStatus === 'completed' ? 'Completed' : metrics.msStatus === 'on_track' ? 'On Track' : 'At Risk'}{msDateLabel ? ` · ${msDateLabel}` : ''}
@@ -75,12 +75,12 @@ export function BurndownEnvChartCard({ metrics, data }: Props) {
         </div>
         {/* Overall status removed in favor of per-type statuses above */}
       </CardHeader>
-      <CardContent>
-        <ChartContainer config={{}} className="min-h-[250px] w-full" >
+      <CardContent className="px-3 flex-1">
+        <ChartContainer config={{}} className="h-full w-full text-[10px] aspect-auto" >
           <LineChart
             accessibilityLayer
             data={data}
-            margin={{ left: 12, right: 48, top: 40, bottom: 36 }}
+            margin={{ left: 8, right: 12, top: 10, bottom: 10 }}
           >
             <CartesianGrid vertical={false} />
             <XAxis
@@ -89,7 +89,7 @@ export function BurndownEnvChartCard({ metrics, data }: Props) {
               scale="time"
               tickLine={false}
               axisLine={false}
-              tickMargin={8}
+              tickMargin={4}
               domain={[ 'dataMin', metrics.axisEndTs ]}
               allowDuplicatedCategory={false}
               tickFormatter={(value) => {
@@ -97,20 +97,18 @@ export function BurndownEnvChartCard({ metrics, data }: Props) {
                 if (Number.isNaN(ts)) return ''
                 return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: '2-digit' })
               }}
-              label={{ value: "Time", position: "bottom", offset: 12 }}
             />
             <YAxis
               tickLine={false}
               axisLine={false}
-              tickMargin={8}
+              tickMargin={4}
               domain={[0, yMax]}
-              label={{ value: "Services Remaining", angle: -90, position: "left", offset: 0 }}
             />
             {spaDateValid && (
-              <ReferenceLine x={spaTargetTs} stroke="hsl(var(--chart-spa))" strokeDasharray="3 3" label={{ value: 'SPA Target', position: 'top', fill: 'currentColor', dy: 8 }} />
+              <ReferenceLine x={spaTargetTs} stroke="hsl(var(--chart-spa))" strokeDasharray="3 3" />
             )}
             {msDateValid && (
-              <ReferenceLine x={msTargetTs} stroke="hsl(var(--chart-ms))" strokeDasharray="3 3" label={{ value: 'MS Target', position: 'top', fill: 'currentColor', dy: 8 }} />
+              <ReferenceLine x={msTargetTs} stroke="hsl(var(--chart-ms))" strokeDasharray="3 3" />
             )}
             <ChartTooltip
               cursor={{ stroke: 'hsl(var(--foreground))', strokeWidth: 2 }}
@@ -186,11 +184,7 @@ export function BurndownEnvChartCard({ metrics, data }: Props) {
           </LineChart>
         </ChartContainer>
       </CardContent>
-      <CardFooter className="pt-2">
-        <div className="w-full">
-          <div className="mt-2 text-xs text-muted-foreground">Legend: Planned (dotted)</div>
-        </div>
-      </CardFooter>
+      <CardFooter className="hidden" />
     </Card>
   )
 }
