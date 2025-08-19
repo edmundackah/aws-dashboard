@@ -92,7 +92,6 @@ export function BurndownEnvChartCard({ metrics, data }: Props) {
           </Tooltip>
           </TooltipProvider>
         </div>
-        {/* Overall status removed in favor of per-type statuses above */}
       </CardHeader>
       <CardContent className="px-3 flex-1">
         <ChartContainer config={{}} className="h-full w-full text-[12px] aspect-auto" >
