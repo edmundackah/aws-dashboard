@@ -1,6 +1,9 @@
 "use client";
 
 import * as React from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { HelpCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ErrorDisplay } from "@/components/error-display";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -112,7 +115,7 @@ export function BurndownPageClient() {
         </div>
 
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-3 items-stretch content-stretch min-h-[calc(100vh-7rem)] grid-rows-[repeat(2,minmax(0,1fr))]">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-2 items-stretch content-stretch min-h-[calc(100vh-7rem)] grid-rows-[repeat(2,minmax(0,1fr))]">
           {environmentMetrics.map((metrics) => {
             const chartData = burndown?.[metrics.env] || [];
             
@@ -145,7 +148,51 @@ export function BurndownPageClient() {
             );
           })}
         </div>
+        <BurndownHelpFab />
       </div>
+  );
+}
+
+function BurndownHelpFab() {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <div className="fixed bottom-6 right-6 z-50">
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button size="icon" aria-label="Open status guide" className="h-10 w-10 rounded-full shadow-lg">
+            <HelpCircle className="h-5 w-5" />
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Status guide</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid gap-3">
+              <div className="flex items-center gap-3">
+                <span className="inline-block size-2.5 rounded-full bg-blue-500" />
+                <div><span className="font-medium text-primary">Completed</span> — zero remaining by the target date</div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="inline-block size-2.5 rounded-full bg-green-500" />
+                <div><span className="font-medium text-primary">On track</span> — trend indicates zero remaining by each service target (SPA/MS)</div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="inline-block size-2.5 rounded-full bg-amber-500" />
+                <div><span className="font-medium text-primary">At risk</span> — trend/burn rate suggests slipping or close to the target</div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="inline-block size-2.5 rounded-full bg-red-500" />
+                <div><span className="font-medium text-primary">Target missed</span> — the relevant target (SPA or MS) passed without reaching zero remaining</div>
+              </div>
+              <div className="pt-2 text-sm text-primary/80 leading-6">
+                Planned vs actual: Dotted lines show planned remaining; solid lines show actual remaining. Two targets per environment: SPA and Microservices.
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
 

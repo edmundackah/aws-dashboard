@@ -5,6 +5,7 @@ import * as React from "react"
 import { CartesianGrid, XAxis, YAxis, LineChart, Line, ReferenceLine } from "recharts"
 
 import { Badge } from "@/components/ui/badge"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
 
@@ -41,46 +42,64 @@ export function BurndownEnvChartCard({ metrics, data }: Props) {
     <Card className={`bg-card border ${((metrics.spaStatus === 'completed' || metrics.spaStatus === 'completed_late') && (metrics.msStatus === 'completed' || metrics.msStatus === 'completed_late')) ? 'rainbow-glow' : ''} py-1.5 gap-1.5 h-full`}>
       <CardHeader className="py-0.5 px-2.5">
         <div className="flex items-center justify-between">
-          <CardTitle className="capitalize text-[13px]">{metrics.env.toUpperCase()} Burndown</CardTitle>
+          <CardTitle className="capitalize text-sm">{metrics.env.toUpperCase()} Burndown</CardTitle>
         </div>
         <div className="flex flex-wrap gap-1 items-center text-[11px]">
+          <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
           <Badge
-            variant={metrics.spaStatus === 'completed' || metrics.spaStatus === 'completed_late' ? 'secondary' : metrics.spaStatus === 'on_track' ? 'default' : 'destructive'}
+            variant={metrics.spaStatus === 'completed' || metrics.spaStatus === 'completed_late' ? 'default' : metrics.spaStatus === 'on_track' ? 'secondary' : 'destructive'}
             className={
               metrics.spaStatus === 'completed' || metrics.spaStatus === 'completed_late'
-                ? 'bg-green-600 hover:bg-green-700 text-white px-2 py-0.5'
+                ? 'bg-blue-600 hover:bg-blue-700 text-white px-2 py-0.5'
                 : metrics.spaStatus === 'missed'
                 ? 'bg-red-600 hover:bg-red-700 text-white px-2 py-0.5'
                 : metrics.spaStatus === 'at_risk'
                 ? 'bg-amber-500 hover:bg-amber-600 text-white px-2 py-0.5'
-                : 'px-2 py-0.5'
+                : 'bg-green-600 hover:bg-green-700 text-white px-2 py-0.5'
             }
           >
             SPA · {metrics.spaStatus === 'missed' ? 'Missed' : metrics.spaStatus === 'completed_late' ? 'Completed (Late)' : metrics.spaStatus === 'completed' ? 'Completed' : metrics.spaStatus === 'on_track' ? 'On Track' : 'At Risk'}{spaDateLabel ? ` · ${spaDateLabel}` : ''}
           </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>SPA status: {metrics.spaStatus.replace('_',' ')}{spaDateLabel ? ` · Target: ${spaDateLabel}` : ''}</p>
+            </TooltipContent>
+          </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
           <Badge
-            variant={metrics.msStatus === 'completed' || metrics.msStatus === 'completed_late' ? 'secondary' : metrics.msStatus === 'on_track' ? 'default' : 'destructive'}
+            variant={metrics.msStatus === 'completed' || metrics.msStatus === 'completed_late' ? 'default' : metrics.msStatus === 'on_track' ? 'secondary' : 'destructive'}
             className={
               metrics.msStatus === 'completed' || metrics.msStatus === 'completed_late'
-                ? 'bg-green-600 hover:bg-green-700 text-white px-2 py-0.5'
+                ? 'bg-blue-600 hover:bg-blue-700 text-white px-2 py-0.5'
                 : metrics.msStatus === 'missed'
                 ? 'bg-red-600 hover:bg-red-700 text-white px-2 py-0.5'
                 : metrics.msStatus === 'at_risk'
                 ? 'bg-amber-500 hover:bg-amber-600 text-white px-2 py-0.5'
-                : 'px-2 py-0.5'
+                : 'bg-green-600 hover:bg-green-700 text-white px-2 py-0.5'
             }
           >
             MS · {metrics.msStatus === 'missed' ? 'Missed' : metrics.msStatus === 'completed_late' ? 'Completed (Late)' : metrics.msStatus === 'completed' ? 'Completed' : metrics.msStatus === 'on_track' ? 'On Track' : 'At Risk'}{msDateLabel ? ` · ${msDateLabel}` : ''}
           </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Microservices status: {metrics.msStatus.replace('_',' ')}{msDateLabel ? ` · Target: ${msDateLabel}` : ''}</p>
+            </TooltipContent>
+          </Tooltip>
+          </TooltipProvider>
         </div>
         {/* Overall status removed in favor of per-type statuses above */}
       </CardHeader>
       <CardContent className="px-3 flex-1">
-        <ChartContainer config={{}} className="h-full w-full text-[10px] aspect-auto" >
+        <ChartContainer config={{}} className="h-full w-full text-[12px] aspect-auto" >
           <LineChart
             accessibilityLayer
             data={data}
-            margin={{ left: 8, right: 12, top: 10, bottom: 10 }}
+            margin={{ left: 24, right: 24, top: 10, bottom: 10 }}
           >
             <CartesianGrid vertical={false} />
             <XAxis
@@ -103,6 +122,7 @@ export function BurndownEnvChartCard({ metrics, data }: Props) {
               axisLine={false}
               tickMargin={4}
               domain={[0, yMax]}
+              label={{ value: "Services Remaining", angle: -90, position: "left", offset: 0, style: { fontSize: 12 } }}
             />
             {spaDateValid && (
               <ReferenceLine x={spaTargetTs} stroke="hsl(var(--chart-spa))" strokeDasharray="3 3" />

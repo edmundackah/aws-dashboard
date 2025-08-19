@@ -10,19 +10,19 @@ function StatusItems() {
   return (
           <div className="grid gap-3">
         <div className="flex items-center gap-3">
-          <span className="ml-2 inline-block h-2.5 w-2.5 rounded-sm bg-green-500" />
+          <span className="ml-2 inline-block size-2.5 rounded-full bg-blue-500" />
           <div className="text-sm leading-6"><span className="font-medium text-primary">Completed</span> — at least 95% complete by the target date</div>
         </div>
         <div className="flex items-center gap-3">
-          <span className="ml-2 inline-block h-2.5 w-2.5 rounded-sm bg-blue-500" />
+          <span className="ml-2 inline-block size-2.5 rounded-full bg-green-500" />
           <div className="text-sm leading-6"><span className="font-medium text-primary">On track</span> — trend indicates zero remaining by the SPA/MS target dates</div>
         </div>
         <div className="flex items-center gap-3">
-          <span className="ml-2 inline-block h-2.5 w-2.5 rounded-sm bg-amber-500" />
+          <span className="ml-2 inline-block size-2.5 rounded-full bg-amber-500" />
           <div className="text-sm leading-6"><span className="font-medium text-primary">At risk</span> — trend/burn rate suggests slipping or close to the target</div>
         </div>
         <div className="flex items-center gap-3">
-          <span className="ml-2 inline-block h-2.5 w-2.5 rounded-sm bg-red-500" />
+          <span className="ml-2 inline-block size-2.5 rounded-full bg-red-500" />
           <div className="text-sm leading-6"><span className="font-medium text-primary">Target missed</span> — SPA/MS target passed without reaching zero remaining</div>
         </div>
         <div className="pt-2 text-sm text-primary/80 leading-6">
