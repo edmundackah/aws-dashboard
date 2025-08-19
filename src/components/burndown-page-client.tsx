@@ -170,19 +170,19 @@ function BurndownHelpFab() {
           <div className="space-y-4">
             <div className="grid gap-3">
               <div className="flex items-center gap-3">
-                <span className="inline-block size-2.5 rounded-full bg-blue-500" />
+                <span className="inline-block size-2.5 rounded-full bg-blue-500 flex-shrink-0" />
                 <div><span className="font-medium text-primary">Completed</span> — zero remaining by the target date</div>
               </div>
               <div className="flex items-center gap-3">
-                <span className="inline-block size-2.5 rounded-full bg-green-500" />
+                <span className="inline-block size-2.5 rounded-full bg-green-500 flex-shrink-0" />
                 <div><span className="font-medium text-primary">On track</span> — trend indicates zero remaining by each service target (SPA/MS)</div>
               </div>
               <div className="flex items-center gap-3">
-                <span className="inline-block size-2.5 rounded-full bg-amber-500" />
+                <span className="inline-block size-2.5 rounded-full bg-amber-500 flex-shrink-0" />
                 <div><span className="font-medium text-primary">At risk</span> — trend/burn rate suggests slipping or close to the target</div>
               </div>
               <div className="flex items-center gap-3">
-                <span className="inline-block size-2.5 rounded-full bg-red-500" />
+                <span className="inline-block size-2.5 rounded-full bg-red-500 flex-shrink-0" />
                 <div><span className="font-medium text-primary">Target missed</span> — the relevant target (SPA or MS) passed without reaching zero remaining</div>
               </div>
               <div className="pt-2 text-sm text-primary/80 leading-6">
