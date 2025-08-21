@@ -246,17 +246,17 @@ export const DashboardPageClient = ({
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
       {allEnvStats.meetsThreshold ? (
-        <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 flex items-center justify-between">
+        <div className="rounded-lg p-4 flex items-center justify-between border border-emerald-500/30 dark:border-emerald-400/25 bg-emerald-500/10 dark:bg-emerald-400/10 backdrop-blur">
           <div className="flex items-center gap-4">
-            <div className="bg-green-500/20 p-2 rounded-full">
-              <Trophy className="h-6 w-6 text-green-600 dark:text-green-400" />
+            <div className="p-2 rounded-full bg-emerald-600/15 dark:bg-emerald-400/15">
+              <Trophy className="h-6 w-6 text-emerald-700 dark:text-emerald-300" />
             </div>
             <div>
-              <h3 className="font-bold text-base text-black dark:text-black">Milestone reached! 🎉</h3>
-              <p className="text-sm text-black/80 dark:text-black/80">Across all environments, migration has surpassed {thresholdPct}% for SPAs and Microservices.</p>
+              <h3 className="font-bold text-base text-foreground">Milestone reached! 🎉</h3>
+              <p className="text-sm text-muted-foreground">Across all environments, migration has surpassed {thresholdPct}% for SPAs and Microservices.</p>
             </div>
           </div>
-          <div className="text-xs text-black/80 dark:text-black/80 whitespace-nowrap">
+          <div className="text-xs text-muted-foreground whitespace-nowrap">
             {allEnvStats.spaMigratedAll + allEnvStats.msMigratedAll} of {spaData.length + msData.length} migrated
           </div>
         </div>
