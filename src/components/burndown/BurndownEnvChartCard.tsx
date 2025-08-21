@@ -49,15 +49,12 @@ export function BurndownEnvChartCard({ metrics, data }: Props) {
           <Tooltip>
             <TooltipTrigger asChild>
           <Badge
-            variant={metrics.spaStatus === 'completed' || metrics.spaStatus === 'completed_late' ? 'default' : metrics.spaStatus === 'on_track' ? 'secondary' : 'destructive'}
             className={
-              metrics.spaStatus === 'completed' || metrics.spaStatus === 'completed_late'
-                ? 'bg-blue-600 hover:bg-blue-700 text-white px-2 py-0.5'
-                : metrics.spaStatus === 'missed'
-                ? 'bg-red-600 hover:bg-red-700 text-white px-2 py-0.5'
+              metrics.spaStatus === 'missed'
+                ? 'px-2 py-0.5 text-white bg-red-600 hover:bg-red-700 dark:text-red-100 dark:bg-red-400/45 dark:hover:bg-red-400/55'
                 : metrics.spaStatus === 'at_risk'
-                ? 'bg-amber-500 hover:bg-amber-600 text-white px-2 py-0.5'
-                : 'bg-green-600 hover:bg-green-700 text-white px-2 py-0.5'
+                ? 'px-2 py-0.5 text-white bg-amber-500 hover:bg-amber-600 dark:text-amber-50 dark:bg-amber-300/45 dark:hover:bg-amber-300/55'
+                : 'px-2 py-0.5 text-white bg-[hsl(var(--chart-spa))] hover:opacity-95 dark:bg-[hsl(var(--chart-spa)/0.55)]'
             }
           >
             SPA · {metrics.spaStatus === 'missed' ? 'Missed' : metrics.spaStatus === 'completed_late' ? 'Completed (Late)' : metrics.spaStatus === 'completed' ? 'Completed' : metrics.spaStatus === 'on_track' ? 'On Track' : 'At Risk'}{spaDateLabel ? ` · ${spaDateLabel}` : ''}
@@ -72,15 +69,12 @@ export function BurndownEnvChartCard({ metrics, data }: Props) {
           <Tooltip>
             <TooltipTrigger asChild>
           <Badge
-            variant={metrics.msStatus === 'completed' || metrics.msStatus === 'completed_late' ? 'default' : metrics.msStatus === 'on_track' ? 'secondary' : 'destructive'}
             className={
-              metrics.msStatus === 'completed' || metrics.msStatus === 'completed_late'
-                ? 'bg-blue-600 hover:bg-blue-700 text-white px-2 py-0.5'
-                : metrics.msStatus === 'missed'
-                ? 'bg-red-600 hover:bg-red-700 text-white px-2 py-0.5'
+              metrics.msStatus === 'missed'
+                ? 'px-2 py-0.5 text-white bg-red-600 hover:bg-red-700 dark:text-red-100 dark:bg-red-400/45 dark:hover:bg-red-400/55'
                 : metrics.msStatus === 'at_risk'
-                ? 'bg-amber-500 hover:bg-amber-600 text-white px-2 py-0.5'
-                : 'bg-green-600 hover:bg-green-700 text-white px-2 py-0.5'
+                ? 'px-2 py-0.5 text-white bg-amber-500 hover:bg-amber-600 dark:text-amber-50 dark:bg-amber-300/45 dark:hover:bg-amber-300/55'
+                : 'px-2 py-0.5 text-white bg-[hsl(var(--chart-ms))] hover:opacity-95 dark:bg-[hsl(var(--chart-ms)/0.55)]'
             }
           >
             MS · {metrics.msStatus === 'missed' ? 'Missed' : metrics.msStatus === 'completed_late' ? 'Completed (Late)' : metrics.msStatus === 'completed' ? 'Completed' : metrics.msStatus === 'on_track' ? 'On Track' : 'At Risk'}{msDateLabel ? ` · ${msDateLabel}` : ''}
