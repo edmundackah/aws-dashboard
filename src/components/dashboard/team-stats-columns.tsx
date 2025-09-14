@@ -1,17 +1,13 @@
 "use client";
 
-import { Column, ColumnDef } from "@tanstack/react-table";
-import { TeamStat, Spa, Microservice } from "@/app/data/schema";
-import { Button } from "@/components/ui/button";
-import { ArrowUpDown, User, Mail } from "lucide-react";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "../ui/hover-card";
-import { Separator } from "../ui/separator";
-import { ServicePopover } from "./service-popover";
-import { useDashboardStore } from "@/stores/use-dashboard-store";
+import {Column, ColumnDef} from "@tanstack/react-table";
+import {Microservice, Spa, TeamStat} from "@/app/data/schema";
+import {Button} from "@/components/ui/button";
+import {ArrowUpDown, Mail, User} from "lucide-react";
+import {HoverCard, HoverCardContent, HoverCardTrigger,} from "../ui/hover-card";
+import {Separator} from "../ui/separator";
+import {ServicePopover} from "./service-popover";
+import {useDashboardStore} from "@/stores/use-dashboard-store";
 
 const SortableHeader = <TData,>({
   column,

@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
-import { TeamStat, Spa, Microservice } from "@/app/data/schema";
-import { DataTable } from "@/components/dashboard/data-table";
-import { columns as teamStatsColumns } from "@/components/dashboard/team-stats-columns";
-import { EnvironmentCombobox } from "@/components/ui/EnvironmentCombobox";
+import {useEffect, useMemo, useState} from "react";
+import {Microservice, Spa, TeamStat} from "@/app/data/schema";
+import {DataTable} from "@/components/dashboard/data-table";
+import {columns as teamStatsColumns} from "@/components/dashboard/team-stats-columns";
+import {EnvironmentCombobox} from "@/components/ui/EnvironmentCombobox";
 
 type EnvKey = "dev" | "sit" | "uat" | "nft";
 

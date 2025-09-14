@@ -1,19 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { HelpCircle } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ErrorDisplay } from "@/components/error-display";
-import { Skeleton } from "@/components/ui/skeleton";
-import { StatusExplainer } from "@/components/burndown/StatusExplainer";
-import { normalizeBurndownData } from "@/components/burndown/data";
-import { calculateEnvironmentMetrics } from "@/components/burndown/logic";
-import type { BurndownResponse } from "@/components/burndown/types";
-import { BurndownEnvChartCard } from "@/components/burndown/BurndownEnvChartCard";
-
-import type { EnvBurndownPoint } from "@/components/burndown/types";
+import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger} from "@/components/ui/dialog";
+import {Button} from "@/components/ui/button";
+import {HelpCircle} from "lucide-react";
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
+import {ErrorDisplay} from "@/components/error-display";
+import {Skeleton} from "@/components/ui/skeleton";
+import {StatusExplainer} from "@/components/burndown/StatusExplainer";
+import {normalizeBurndownData} from "@/components/burndown/data";
+import {calculateEnvironmentMetrics} from "@/components/burndown/logic";
+import type {BurndownResponse, EnvBurndownPoint} from "@/components/burndown/types";
+import {BurndownEnvChartCard} from "@/components/burndown/BurndownEnvChartCard";
 
 export function BurndownPageClient() {
   const [burndown, setBurndown] = React.useState< { [key: string]: EnvBurndownPoint[] } | null >(null);

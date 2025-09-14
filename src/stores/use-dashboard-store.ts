@@ -1,10 +1,6 @@
-import { create } from "zustand";
-import {
-  MainDataApiResponse,
-  processDashboardData,
-  ServiceSummaryItem,
-} from "@/lib/data";
-import { Microservice, Spa, TeamStat } from "@/app/data/schema";
+import {create} from "zustand";
+import {MainDataApiResponse, processDashboardData, ServiceSummaryItem,} from "@/lib/data";
+import {Microservice, Spa, TeamStat} from "@/app/data/schema";
 
 type EnvKey = "dev" | "sit" | "uat" | "nft"
 

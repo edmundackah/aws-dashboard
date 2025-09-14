@@ -1,4 +1,4 @@
-import { test as base, expect as baseExpect } from "@playwright/test";
+import {expect as baseExpect, test as base} from "@playwright/test";
 import fs from "fs";
 import path from "path";
 

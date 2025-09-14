@@ -1,22 +1,15 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
-import { Microservice } from "@/app/data/schema";
-import { DataTable } from "@/components/dashboard/data-table";
-import { columns as msColumns } from "@/components/dashboard/ms-columns";
-import { TeamCombobox } from "@/components/team-combobox";
-import { EnvironmentCombobox } from "@/components/ui/EnvironmentCombobox";
-import { VersionCombobox } from "@/components/ui/VersionCombobox";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Filter, X } from "lucide-react";
-import { StatusCombobox, StatusValue } from "@/components/ui/StatusCombobox";
+import {useEffect, useMemo, useState} from "react";
+import {Microservice} from "@/app/data/schema";
+import {DataTable} from "@/components/dashboard/data-table";
+import {columns as msColumns} from "@/components/dashboard/ms-columns";
+import {Button} from "@/components/ui/button";
+import {Badge} from "@/components/ui/badge";
+import {Separator} from "@/components/ui/separator";
+import {X} from "lucide-react";
+import {StatusValue} from "@/components/ui/StatusCombobox";
+import {ServiceFiltersPopover} from "@/components/filters/ServiceFiltersPopover";
 
 type EnvKey = "dev" | "sit" | "uat" | "nft";
 type EnvFilter = EnvKey | "all";
@@ -165,81 +158,29 @@ export function MicroservicesPageClient({
     setMssdkFilter(null);
   };
 
-  const [filtersOpen, setFiltersOpen] = useState(false);
-
   return (
     <div className="flex flex-col gap-4 w-full max-w-none">
       <div className="flex flex-col gap-3 w-full">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Filter className="mr-2 h-4 w-4" /> Filters
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[560px] p-4" align="start">
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-medium">Filter microservices</div>
-                      <div className="text-xs text-muted-foreground">Refine by team, status, environment, and versions.</div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <div className="text-xs font-medium text-muted-foreground">Team</div>
-                      <TeamCombobox
-                        teams={allTeams}
-                        value={teamFilter}
-                        onChange={setTeamFilter}
-                        className="w-full"
-                      />
-                      <div className="text-xs font-medium text-muted-foreground mt-3">Show by migration completion</div>
-                      <StatusCombobox
-                        value={statusFilter}
-                        onChange={setStatusFilter}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <div className="text-xs font-medium text-muted-foreground">Environment</div>
-                      <EnvironmentCombobox
-                        value={environmentFilter}
-                        onChange={(v) => setEnvironmentFilter(v as EnvFilter)}
-                      />
-                      <div className="text-xs font-medium text-muted-foreground mt-3">OTel version</div>
-                      <VersionCombobox
-                        value={otelFilter}
-                        onChange={setOtelFilter}
-                        options={otelVersionValues}
-                        placeholder="OTel version..."
-                      />
-                      <div className="text-xs font-medium text-muted-foreground mt-3">MSSDK version</div>
-                      <VersionCombobox
-                        value={mssdkFilter}
-                        onChange={setMssdkFilter}
-                        options={mssdkVersionValues}
-                        placeholder="MSSDK version..."
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between pt-2">
-                    <Button
-                      variant="destructive-outline"
-                      size="sm"
-                      onClick={() => {
-                        clearAll();
-                        setFiltersOpen(false);
-                      }}
-                      disabled={!hasActiveFilters}
-                    >
-                      Clear all
-                    </Button>
-                    <Button size="sm" onClick={() => setFiltersOpen(false)}>Done</Button>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+            <ServiceFiltersPopover
+              title="Filter microservices"
+              teams={allTeams}
+              teamFilter={teamFilter}
+              onTeamChange={setTeamFilter}
+              statusFilter={statusFilter}
+              onStatusChange={setStatusFilter}
+              environmentFilter={environmentFilter}
+              onEnvironmentChange={(v) => setEnvironmentFilter(v as EnvFilter)}
+              otelVersionOptions={otelVersionValues}
+              otelVersion={otelFilter}
+              onOtelVersionChange={setOtelFilter}
+              mssdkVersionOptions={mssdkVersionValues}
+              mssdkVersion={mssdkFilter}
+              onMssdkVersionChange={setMssdkFilter}
+              hasActiveFilters={hasActiveFilters}
+              onClearAll={clearAll}
+            />
           </div>
           <div className="text-sm text-muted-foreground">
             Showing {filteredData.length} of {msData.length}

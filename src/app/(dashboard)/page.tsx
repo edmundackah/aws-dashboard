@@ -1,10 +1,10 @@
 "use client";
 
-import { ErrorDisplay } from "@/components/error-display";
-import { DashboardPageClient } from "@/components/dashboard/page";
-import { useDashboardStore } from "@/stores/use-dashboard-store";
-import { useEffect } from "react";
-import { LoadingScreen } from "@/components/loading-screen";
+import {ErrorDisplay} from "@/components/error-display";
+import {DashboardPageClient} from "@/components/dashboard/page";
+import {useDashboardStore} from "@/stores/use-dashboard-store";
+import {useEffect} from "react";
+import {LoadingScreen} from "@/components/loading-screen";
 
 export default function Page() {
   const { data, loading, error, fetchData } = useDashboardStore();

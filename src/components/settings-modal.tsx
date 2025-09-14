@@ -2,25 +2,13 @@
 
 import * as React from "react";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { useTheme } from "next-themes";
-import { useDashboardStore } from "@/stores/use-dashboard-store";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
-import { toast } from "sonner";
-import { motion, Variants } from "framer-motion";
+import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,} from "@/components/ui/dialog";
+import {Button} from "@/components/ui/button";
+import {useTheme} from "next-themes";
+import {useDashboardStore} from "@/stores/use-dashboard-store";
+import {Card, CardContent, CardDescription, CardHeader, CardTitle,} from "@/components/ui/card";
+import {toast} from "sonner";
+import {motion, Variants} from "framer-motion";
 
 interface SettingsModalProps {
   isOpen: boolean;

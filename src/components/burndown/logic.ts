@@ -1,4 +1,4 @@
-import type { EnvBurndownPoint, EnvironmentProgress } from "./types"
+import type {EnvBurndownPoint, EnvironmentProgress} from "./types"
 
 export function calculateDaysToTarget(target: string): number {
   const targetDate = new Date(target)

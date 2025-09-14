@@ -1,4 +1,4 @@
-import { test as setup, expect } from './test-fixtures';
+import {expect, test as setup} from './test-fixtures';
 
 const authFile = 'playwright/.auth/user.json';
 

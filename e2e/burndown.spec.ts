@@ -1,5 +1,4 @@
-import { test, expect } from './test-fixtures';
-import type { Page } from '@playwright/test';
+import {expect, test} from './test-fixtures';
 
 // Mock burndown API data (new shape: planned and actual per service type)
 const mockBurndownData = {

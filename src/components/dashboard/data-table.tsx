@@ -9,19 +9,9 @@ import {
   SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import {
-  useState,
-  useEffect,
-} from "react";
+import {useEffect, useState,} from "react";
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/components/ui/table";
 
 import {
   Pagination,
@@ -33,15 +23,9 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from "@/components/ui/select";
+import {Button} from "@/components/ui/button";
+import {HoverCard, HoverCardContent, HoverCardTrigger} from "@/components/ui/hover-card";
 
 
 interface DataTableProps<TData, TValue> {

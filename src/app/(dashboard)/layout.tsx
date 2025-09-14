@@ -1,8 +1,8 @@
 "use client";
 
-import { NavigationBar } from "@/components/navigation-bar";
-import { ScrollToTop } from "@/components/scroll-to-top";
-import { ReactNode } from "react";
+import {NavigationBar} from "@/components/navigation-bar";
+import {ScrollToTop} from "@/components/scroll-to-top";
+import {ReactNode} from "react";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (

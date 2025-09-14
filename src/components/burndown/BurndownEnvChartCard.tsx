@@ -2,14 +2,14 @@
 
 import * as React from "react"
 
-import { CartesianGrid, XAxis, YAxis, LineChart, Line, ReferenceLine } from "recharts"
+import {CartesianGrid, Line, LineChart, ReferenceLine, XAxis, YAxis} from "recharts"
 
-import { Badge } from "@/components/ui/badge"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
+import {Badge} from "@/components/ui/badge"
+import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/components/ui/tooltip"
+import {Card, CardContent, CardFooter, CardHeader, CardTitle} from "@/components/ui/card"
+import {ChartContainer, ChartTooltip} from "@/components/ui/chart"
 
-import type { EnvironmentProgress, EnvBurndownPoint } from "./types"
+import type {EnvBurndownPoint, EnvironmentProgress} from "./types"
 
 type Props = {
   metrics: EnvironmentProgress

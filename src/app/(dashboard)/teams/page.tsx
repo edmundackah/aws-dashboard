@@ -1,10 +1,10 @@
 "use client";
 
-import { TeamsPageClient } from "@/components/teams-page-client";
-import { useDashboardStore } from "@/stores/use-dashboard-store";
-import { useEffect } from "react";
-import { LoadingScreen } from "@/components/loading-screen";
-import { ErrorDisplay } from "@/components/error-display";
+import {TeamsPageClient} from "@/components/teams-page-client";
+import {useDashboardStore} from "@/stores/use-dashboard-store";
+import {useEffect} from "react";
+import {LoadingScreen} from "@/components/loading-screen";
+import {ErrorDisplay} from "@/components/error-display";
 
 export default function TeamsPage() {
   const { data, loading, error, fetchData } = useDashboardStore();

@@ -1,11 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { useTheme } from "next-themes";
+import {useTheme} from "next-themes";
 
-import { Button } from "@/components/ui/button";
-import { SunIcon } from "@/components/sun-icon";
-import { MoonIcon } from "@/components/moon-icon";
+import {Button} from "@/components/ui/button";
+import {SunIcon} from "@/components/sun-icon";
+import {MoonIcon} from "@/components/moon-icon";
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();

@@ -1,35 +1,12 @@
 "use client";
 
 import * as React from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-} from "recharts";
-import { motion } from "framer-motion";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  ChartConfig,
-  ChartContainer,
-  ChartLegend,
-  ChartTooltip,
-} from "@/components/ui/chart";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { TeamStat } from "@/app/data/schema";
+import {Bar, BarChart, CartesianGrid, XAxis, YAxis,} from "recharts";
+import {motion} from "framer-motion";
+import {Card, CardContent, CardDescription, CardHeader, CardTitle,} from "@/components/ui/card";
+import {ChartConfig, ChartContainer, ChartLegend, ChartTooltip,} from "@/components/ui/chart";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from "@/components/ui/select";
+import {TeamStat} from "@/app/data/schema";
 
 interface TeamProgressChartProps {
   teamStats: TeamStat[]; // filtered (per selected environment)

@@ -12,7 +12,6 @@ import {
   LayoutDashboard,
   Command,
   Download,
-  Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
@@ -33,6 +32,7 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from "./ui/command";
+import { LastUpdatedIndicator } from "@/components/last-updated";
 
 const navItems = [
   {
@@ -47,14 +47,14 @@ const navItems = [
     icon: Server,
   },
   { name: "Teams", href: "/teams", icon: User },
-  { name: "Burndown", href: "/burndown", icon: Clock },
+  { name: "Burndown", href: "/burndown", icon: Command },
 ] as const;
 
 export function NavigationBar() {
   const [open, setOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const { theme, setTheme } = useTheme();
-  const { data } = useDashboardStore();
+  const { data, fetchData } = useDashboardStore();
   const router = useRouter();
   const pathname = usePathname();
   const [isMounted, setIsMounted] = useState(false);
@@ -96,17 +96,6 @@ export function NavigationBar() {
     }
   }, [pathname])
 
-  const formatTimestamp = (isoString: string) => {
-    return new Date(isoString).toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
-  };
-
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
@@ -145,6 +134,10 @@ export function NavigationBar() {
 
   const toggleTheme = () => {
     setTheme(theme === "light" ? "dark" : "light");
+  };
+
+  const handleRefresh = async () => {
+    await fetchData();
   };
 
   return (
@@ -236,20 +229,7 @@ export function NavigationBar() {
             <div className="flex items-center gap-3 ml-auto">
               {/* Last Updated */}
               {isMounted && data?.lastUpdate && (
-                <motion.div 
-                  className="relative flex items-center gap-2 px-3 py-2 bg-white/10 dark:bg-white/5 rounded-xl border border-border/50 hover:bg-white/20 dark:hover:bg-white/10 hover:border-border transition-all duration-200 backdrop-blur"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <span className="pointer-events-none absolute inset-0 rounded-xl border bg-primary/15 border-primary/25 dark:bg-primary/20 dark:border-primary/30 opacity-70" />
-                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                  <div className="flex flex-col">
-                    <span className="text-xs text-muted-foreground font-medium">Last updated</span>
-                    <span className="text-xs text-foreground font-semibold">
-                      {formatTimestamp(data.lastUpdate)}
-                    </span>
-                  </div>
-                </motion.div>
+                <LastUpdatedIndicator lastUpdate={data.lastUpdate} onRefresh={handleRefresh} />
               )}
 
               {/* Theme Toggle */}

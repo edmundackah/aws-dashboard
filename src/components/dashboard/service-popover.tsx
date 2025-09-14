@@ -1,11 +1,7 @@
 "use client";
 
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Spa, Microservice } from "@/app/data/schema";
+import {Popover, PopoverContent, PopoverTrigger,} from "@/components/ui/popover";
+import {Microservice, Spa} from "@/app/data/schema";
 
 interface ServicePopoverProps {
   teamName: string;

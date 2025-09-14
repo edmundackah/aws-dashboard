@@ -1,14 +1,14 @@
 "use client";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TeamProgressChart } from "@/components/team-progress-chart";
-import { MigrationBanner } from "@/components/migration-banner";
-import { AnimatedNumber } from "@/components/animated-number";
-import { useDashboardStore } from "@/stores/use-dashboard-store";
-import { useEffect, useMemo, useState, useCallback } from "react";
-import { Trophy } from "lucide-react";
+import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
+import {TeamProgressChart} from "@/components/team-progress-chart";
+import {MigrationBanner} from "@/components/migration-banner";
+import {AnimatedNumber} from "@/components/animated-number";
+import {useDashboardStore} from "@/stores/use-dashboard-store";
+import {useCallback, useEffect, useMemo, useState} from "react";
+import {Trophy} from "lucide-react";
 import confetti from "canvas-confetti";
-import { Microservice, Spa, TeamStat } from "@/app/data/schema";
+import {Microservice, Spa, TeamStat} from "@/app/data/schema";
 
 interface DashboardPageClientProps {
   teamsData: TeamStat[];
