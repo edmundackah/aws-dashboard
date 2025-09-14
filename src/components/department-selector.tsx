@@ -102,7 +102,7 @@ export function DepartmentSelector({ departments, value, onChange }: DepartmentS
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "relative inline-flex h-10 w-[160px] items-center justify-between gap-2 overflow-hidden rounded-xl border border-border",
+          "relative inline-flex h-10 w-[160px] cursor-pointer items-center justify-between gap-2 overflow-hidden rounded-xl border border-border",
           "bg-white/10 px-2.5 text-sm backdrop-blur transition-colors hover:bg-white/20 dark:bg-white/5 dark:hover:bg-white/10"
         )}
         aria-haspopup="listbox"
