@@ -27,7 +27,7 @@ export function TeamCombobox({ teams, value, onChange }: TeamComboboxProps) {
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full md:w-[250px] justify-between"
+          className="w-[240px] justify-between"
         >
           {value === "all"
             ? "Select a team..."
@@ -35,7 +35,7 @@ export function TeamCombobox({ teams, value, onChange }: TeamComboboxProps) {
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[250px] p-0">
+      <PopoverContent className="w-[240px] p-0">
         <Command>
           <CommandInput placeholder="Search team..." />
           <CommandList>

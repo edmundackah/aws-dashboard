@@ -5,17 +5,23 @@ import { Microservice } from "@/app/data/schema";
 import { DataTable } from "@/components/dashboard/data-table";
 import { columns as msColumns } from "@/components/dashboard/ms-columns";
 import { TeamCombobox } from "@/components/team-combobox";
-import { EnvironmentDropdown } from "@/components/ui/EnvironmentDropdown";
+import { EnvironmentCombobox } from "@/components/ui/EnvironmentCombobox";
+import { VersionCombobox } from "@/components/ui/VersionCombobox";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Filter, X } from "lucide-react";
+import { StatusCombobox, StatusValue } from "@/components/ui/StatusCombobox";
 
 type EnvKey = "dev" | "sit" | "uat" | "nft";
 type EnvFilter = EnvKey | "all";
+
+type VersionValue = string | null;
 
 interface MicroservicesPageClientProps {
   msData: Microservice[];
@@ -43,7 +49,7 @@ export function MicroservicesPageClient({
     "ms_teamFilter",
     "all",
   );
-  const [statusFilter, setStatusFilter] = usePersistentState(
+  const [statusFilter, setStatusFilter] = usePersistentState<StatusValue>(
     "ms_statusFilter",
     "all",
   );
@@ -51,9 +57,14 @@ export function MicroservicesPageClient({
     "ms_environmentFilter",
     "all",
   );
-  const [otelFilter, setOtelFilter] = usePersistentState("ms_otelFilter", "all");
-  const [mssdkFilter, setMssdkFilter] =
-    usePersistentState("ms_mssdkFilter", "all");
+  const [otelFilter, setOtelFilter] = usePersistentState<VersionValue>(
+    "ms_otelFilter",
+    null,
+  );
+  const [mssdkFilter, setMssdkFilter] = usePersistentState<VersionValue>(
+    "ms_mssdkFilter",
+    null,
+  );
 
   const otelVersionValues = useMemo(() => {
     const versions = new Set<string>();
@@ -108,7 +119,7 @@ export function MicroservicesPageClient({
           !!item.environments?.[environmentFilter as EnvKey],
       )
       .filter((item) => {
-        if (otelFilter === "all") return true;
+        if (!otelFilter) return true;
         const value = item.otel as unknown;
         if (typeof value === "string") return value === otelFilter;
         if (value && typeof value === "object") {
@@ -118,7 +129,7 @@ export function MicroservicesPageClient({
         return false;
       })
       .filter((item) => {
-        if (mssdkFilter === "all") return true;
+        if (!mssdkFilter) return true;
         const value = item.mssdk as unknown;
         if (typeof value === "string") return value === mssdkFilter;
         if (value && typeof value === "object") {
@@ -136,68 +147,156 @@ export function MicroservicesPageClient({
     mssdkFilter,
   ]);
 
-  const otelOptions = otelVersionValues.map((v) => ({ label: v, value: v }));
-  const mssdkOptions = mssdkVersionValues.map((v) => ({ label: v, value: v }));
+  const hasActiveFilters = useMemo(() => {
+    return (
+      teamFilter !== "all" ||
+      statusFilter !== "all" ||
+      environmentFilter !== "all" ||
+      !!otelFilter ||
+      !!mssdkFilter
+    );
+  }, [teamFilter, statusFilter, environmentFilter, otelFilter, mssdkFilter]);
+
+  const clearAll = () => {
+    setTeamFilter("all");
+    setStatusFilter("all");
+    setEnvironmentFilter("all");
+    setOtelFilter(null);
+    setMssdkFilter(null);
+  };
 
   return (
     <div className="flex flex-col gap-4 w-full max-w-none">
-      <div className="flex flex-col md:flex-row md:items-end gap-4 w-full">
-        <div>
-          <TeamCombobox
-            teams={allTeams}
-            value={teamFilter}
-            onChange={setTeamFilter}
-          />
+      <div className="flex flex-col gap-3 w-full">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Filter className="mr-2 h-4 w-4" /> Filters
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[360px] p-4" align="start">
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Filter microservices</span>
+                    {hasActiveFilters && (
+                      <Button variant="destructive-outline" size="sm" onClick={clearAll}>
+                        Clear all
+                      </Button>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    <TeamCombobox
+                      teams={allTeams}
+                      value={teamFilter}
+                      onChange={setTeamFilter}
+                    />
+                    <StatusCombobox
+                      value={statusFilter}
+                      onChange={setStatusFilter}
+                    />
+                    <EnvironmentCombobox
+                      value={environmentFilter}
+                      onChange={(v) => setEnvironmentFilter(v as EnvFilter)}
+                    />
+                    <VersionCombobox
+                      value={otelFilter}
+                      onChange={setOtelFilter}
+                      options={otelVersionValues}
+                      placeholder="OTel version..."
+                    />
+                    <VersionCombobox
+                      value={mssdkFilter}
+                      onChange={setMssdkFilter}
+                      options={mssdkVersionValues}
+                      placeholder="MSSDK version..."
+                    />
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Showing {filteredData.length} of {msData.length}
+          </div>
         </div>
-        <div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-[180px] font-medium">
-              <SelectValue placeholder="Select status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Show All</SelectItem>
-              <SelectItem value="migrated">Migrated</SelectItem>
-              <SelectItem value="not_migrated">Not Migrated</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <EnvironmentDropdown
-            value={environmentFilter}
-            onChange={(v) => setEnvironmentFilter(v as EnvFilter)}
-          />
-        </div>
-        <div>
-          <Select value={otelFilter} onValueChange={setOtelFilter}>
-            <SelectTrigger className="w-full sm:w-[200px] font-medium">
-              <SelectValue placeholder="Select OTel version" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All OTel versions</SelectItem>
-              {otelOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Select value={mssdkFilter} onValueChange={setMssdkFilter}>
-            <SelectTrigger className="w-full sm:w-[200px] font-medium">
-              <SelectValue placeholder="Select MSSDK version" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All MSSDK versions</SelectItem>
-              {mssdkOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+
+        {hasActiveFilters && (
+          <div className="flex flex-wrap items-center gap-2">
+            {teamFilter !== "all" && (
+              <Badge variant="outline" className="bg-accent/40 h-8 px-3">
+                Team: {teamFilter}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="ml-1 h-5 w-5"
+                  onClick={() => setTeamFilter("all")}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </Badge>
+            )}
+            {statusFilter !== "all" && (
+              <Badge variant="outline" className="bg-accent/40 h-8 px-3">
+                Status: {statusFilter}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="ml-1 h-5 w-5"
+                  onClick={() => setStatusFilter("all")}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </Badge>
+            )}
+            {environmentFilter !== "all" && (
+              <Badge variant="outline" className="bg-accent/40 h-8 px-3">
+                Env: {environmentFilter}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="ml-1 h-5 w-5"
+                  onClick={() => setEnvironmentFilter("all")}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </Badge>
+            )}
+            {otelFilter && (
+              <Badge variant="outline" className="bg-accent/40 h-8 px-3">
+                OTel: {otelFilter}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="ml-1 h-5 w-5"
+                  onClick={() => setOtelFilter(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </Badge>
+            )}
+            {mssdkFilter && (
+              <Badge variant="outline" className="bg-accent/40 h-8 px-3">
+                MSSDK: {mssdkFilter}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="ml-1 h-5 w-5"
+                  onClick={() => setMssdkFilter(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </Badge>
+            )}
+            <Separator className="mx-1 h-4" orientation="vertical" />
+            <Button variant="destructive-outline" size="sm" onClick={clearAll}>
+              Clear all
+            </Button>
+          </div>
+        )}
       </div>
+
       <div className="w-full">
         <DataTable columns={msColumns} data={filteredData} tabId="microservices" />
       </div>

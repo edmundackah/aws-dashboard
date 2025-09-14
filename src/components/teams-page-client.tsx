@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect } from "react";
 import { TeamStat, Spa, Microservice } from "@/app/data/schema";
 import { DataTable } from "@/components/dashboard/data-table";
 import { columns as teamStatsColumns } from "@/components/dashboard/team-stats-columns";
-import { EnvironmentDropdown } from "@/components/ui/EnvironmentDropdown";
+import { EnvironmentCombobox } from "@/components/ui/EnvironmentCombobox";
 
 type EnvKey = "dev" | "sit" | "uat" | "nft";
 
@@ -78,7 +78,7 @@ export function TeamsPageClient({
     <div className="flex flex-col gap-4 w-full max-w-none">
       <div className="flex items-center gap-4 w-full">
         <div>
-          <EnvironmentDropdown
+          <EnvironmentCombobox
             value={environmentFilter}
             onChange={(v) => setEnvironmentFilter(v as EnvKey)}
             includeAllOption={false}
