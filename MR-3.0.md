@@ -57,6 +57,7 @@ This release delivers multi-tenant support, a major filters UX overhaul, a redes
 - Standardised combobox widths (~240px) for a uniform look.
 - Department selector uses uppercase labels and always shows a Building icon.
 - Removed confetti on selection for a cleaner UX.
+- Introduced a new segmented Theme Toggle (Light/System/Dark) with animated pill, improved accessibility, and enhanced light-mode edge contrast.
 
 #### 7) Tables & Interactions
 - `DataTable` pagination ellipsis shows `HoverCard` quick-jump interactions.
@@ -73,6 +74,9 @@ This release delivers multi-tenant support, a major filters UX overhaul, a redes
 #### 10) Framework Upgrade
 - Upgraded to Next.js `15.5.3` via codemod.
 - Rebuilt successfully; static prerendering validated for app routes.
+
+#### 11) URL State Consistency
+- Department is preserved alongside page filters on SPAs, Microservices, and Teams so links remain tenant-specific across navigation.
 
 ---
 
