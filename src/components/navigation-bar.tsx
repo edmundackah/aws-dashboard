@@ -5,8 +5,6 @@ import {
   Search,
   Settings,
   User,
-  SunDim,
-  MoonStar,
   Server,
   Grid,
   LayoutDashboard,
@@ -34,6 +32,7 @@ import {
 } from "./ui/command";
 import { LastUpdatedIndicator } from "@/components/last-updated";
 import { DepartmentSelector } from "@/components/department-selector";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const navItems = [
   {
@@ -278,41 +277,7 @@ export function NavigationBar() {
               {isMounted && data?.lastUpdate && (
                 <LastUpdatedIndicator lastUpdate={data.lastUpdate} onRefresh={handleRefresh} />
               )}
-
-              {/* Theme Toggle */}
-              {isMounted && (
-                <motion.div
-                  initial={false}
-                  animate={theme === "light" ? "light" : "dark"}
-                  variants={{
-                    light: { rotate: 0 },
-                    dark: { rotate: 180 },
-                  }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-10 w-10 p-0 rounded-xl hover:bg-white/10 dark:hover:bg-white/5 transition-all duration-200 border border-white/10"
-                    onClick={toggleTheme}
-                  >
-                    <SunDim className="h-4 w-4" />
-                    <MoonStar className="absolute h-4 w-4" />
-                    <span className="sr-only">Toggle theme</span>
-                  </Button>
-                </motion.div>
-              )}
-
-              {/* Settings */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-10 w-10 p-0 rounded-xl hover:bg-white/10 dark:hover:bg-white/5 transition-all duration-200 border border-white/10"
-                onClick={handleSettings}
-              >
-                <Settings className="h-4 w-4" />
-                <span className="sr-only">Settings</span>
-              </Button>
+              {isMounted && <ThemeToggle />}
             </div>
           </div>
         </div>
