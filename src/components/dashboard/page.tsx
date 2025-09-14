@@ -4,7 +4,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TeamProgressChart } from "@/components/team-progress-chart";
 import { MigrationBanner } from "@/components/migration-banner";
 import { AnimatedNumber } from "@/components/animated-number";
-import { useDashboardStore } from "@/stores/use-dashboard-store";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { Trophy } from "lucide-react";
 import confetti from "canvas-confetti";
@@ -16,27 +15,33 @@ interface DashboardPageClientProps {
   msData: Microservice[];
 }
 
+type EnvKey = "dev" | "sit" | "uat" | "nft";
+
+const isEnvValue = (value: string): value is "all" | EnvKey =>
+  value === "all" || value === "dev" || value === "sit" || value === "uat" || value === "nft";
+
 export const DashboardPageClient = ({
   teamsData,
   spaData,
   msData,
 }: DashboardPageClientProps) => {
-  const { fetchData } = useDashboardStore();
+  // Totals are computed contextually per environment below
+  const ENV_STORAGE_KEY = "dashboard.selectedEnv";
+  
+  // Defensive defaults in case API fields are missing
+  const safeTeamsData = useMemo(() => (Array.isArray(teamsData) ? teamsData : []), [teamsData]);
+  const safeSpaData = useMemo(() => (Array.isArray(spaData) ? spaData : []), [spaData]);
+  const safeMsData = useMemo(() => (Array.isArray(msData) ? msData : []), [msData]);
+  
+  const [selectedEnv, setSelectedEnv] = useState<"all" | EnvKey>("dev");
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  // Totals are computed contextually per environment below
-  type EnvKey = "dev" | "sit" | "uat" | "nft";
-  const ENV_STORAGE_KEY = "dashboard.selectedEnv";
-  const isEnvValue = (value: string): value is "all" | EnvKey =>
-    value === "all" || value === "dev" || value === "sit" || value === "uat" || value === "nft";
-  const [selectedEnv, setSelectedEnv] = useState<"all" | EnvKey>(() => {
-    if (typeof window === "undefined") return "dev";
     const saved = window.localStorage.getItem(ENV_STORAGE_KEY);
-    return saved && isEnvValue(saved) ? saved : "dev";
-  });
+    if (saved && isEnvValue(saved)) {
+      setSelectedEnv(saved);
+    }
+  }, []);
+  
   const handleEnvChange = (value: string) => {
     if (isEnvValue(value)) {
       setSelectedEnv(value);
@@ -83,30 +88,30 @@ export const DashboardPageClient = ({
   );
 
   const envCounts = useMemo(() => {
-    const spaTotalAll = spaData.length;
-    const msTotalAll = msData.length;
+    const spaTotalAll = safeSpaData.length;
+    const msTotalAll = safeMsData.length;
 
-    const spaInEnv = spaData.filter((s) => inSelectedEnv(s.environments)).length;
-    const msInEnv = msData.filter((m) => inSelectedEnv(m.environments)).length;
+    const spaInEnv = safeSpaData.filter((s) => inSelectedEnv(s.environments)).length;
+    const msInEnv = safeMsData.filter((m) => inSelectedEnv(m.environments)).length;
 
-    const spaMigratedInEnv = spaData.filter(
+    const spaMigratedInEnv = safeSpaData.filter(
       (s) => inSelectedEnv(s.environments) && s.status === "MIGRATED",
     ).length;
-    const msMigratedInEnv = msData.filter(
+    const msMigratedInEnv = safeMsData.filter(
       (m) => inSelectedEnv(m.environments) && m.status === "MIGRATED",
     ).length;
 
     return {
-      spaTotal: spaData.length, // overall totals to make stats comparable
+      spaTotal: safeSpaData.length, // overall totals to make stats comparable
       spaMigrated: spaMigratedInEnv,
-      msTotal: msData.length,
+      msTotal: safeMsData.length,
       msMigrated: msMigratedInEnv,
       spaCoveragePct: spaTotalAll > 0 ? (spaInEnv / spaTotalAll) * 100 : 0,
       msCoveragePct: msTotalAll > 0 ? (msInEnv / msTotalAll) * 100 : 0,
       spaPresent: spaInEnv,
       msPresent: msInEnv,
     };
-  }, [inSelectedEnv, spaData, msData]);
+  }, [inSelectedEnv, safeSpaData, safeMsData]);
 
   // Debounce the glow to avoid brief flickers on mount/data hydration
   const [glowSpa, setGlowSpa] = useState(false);
@@ -129,15 +134,15 @@ export const DashboardPageClient = ({
     const inAll = (env?: { dev?: boolean; sit?: boolean; uat?: boolean; nft?: boolean }) =>
       Boolean(env?.dev && env?.sit && env?.uat && env?.nft);
 
-    const spaMigratedAll = spaData.filter(
+    const spaMigratedAll = safeSpaData.filter(
       (s) => inAll(s.environments) && s.status === "MIGRATED",
     ).length;
-    const msMigratedAll = msData.filter(
+    const msMigratedAll = safeMsData.filter(
       (m) => inAll(m.environments) && m.status === "MIGRATED",
     ).length;
 
-    const spaPct = spaData.length > 0 ? (spaMigratedAll / spaData.length) * 100 : 0;
-    const msPct = msData.length > 0 ? (msMigratedAll / msData.length) * 100 : 0;
+    const spaPct = safeSpaData.length > 0 ? (spaMigratedAll / safeSpaData.length) * 100 : 0;
+    const msPct = safeMsData.length > 0 ? (msMigratedAll / safeMsData.length) * 100 : 0;
     const meetsThreshold = spaPct >= thresholdPct && msPct >= thresholdPct;
 
     return {
@@ -147,7 +152,7 @@ export const DashboardPageClient = ({
       msPct,
       meetsThreshold,
     };
-  }, [spaData, msData, thresholdPct]);
+  }, [safeSpaData, safeMsData, thresholdPct]);
 
   // Fire confetti when threshold met on every tab change
   useEffect(() => {
@@ -202,7 +207,7 @@ export const DashboardPageClient = ({
     const teamMap = new Map<string, TeamStat>();
 
     // Seed all known teams so 0% teams still appear
-    teamsData.forEach((t) => {
+    safeTeamsData.forEach((t) => {
       teamMap.set(t.teamName, {
         teamName: t.teamName,
         migratedSpaCount: 0,
@@ -225,7 +230,7 @@ export const DashboardPageClient = ({
       return teamMap.get(teamName)!;
     };
 
-    spaData.forEach((s) => {
+    safeSpaData.forEach((s) => {
       if (inSelectedEnv(s.environments)) {
         const team = ensureTeam(s.subgroupName);
         if (s.status === "MIGRATED") team.migratedSpaCount += 1;
@@ -233,7 +238,7 @@ export const DashboardPageClient = ({
       }
     });
 
-    msData.forEach((m) => {
+    safeMsData.forEach((m) => {
       if (inSelectedEnv(m.environments)) {
         const team = ensureTeam(m.subgroupName);
         if (m.status === "MIGRATED") team.migratedMsCount += 1;
@@ -242,7 +247,7 @@ export const DashboardPageClient = ({
     });
 
     return Array.from(teamMap.values());
-  }, [inSelectedEnv, spaData, msData, teamsData]);
+  }, [inSelectedEnv, safeSpaData, safeMsData, safeTeamsData]);
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
       {allEnvStats.meetsThreshold ? (
@@ -257,7 +262,7 @@ export const DashboardPageClient = ({
             </div>
           </div>
           <div className="text-xs text-muted-foreground whitespace-nowrap">
-            {allEnvStats.spaMigratedAll + allEnvStats.msMigratedAll} of {spaData.length + msData.length} migrated
+            {allEnvStats.spaMigratedAll + allEnvStats.msMigratedAll} of {safeSpaData.length + safeMsData.length} migrated
           </div>
         </div>
       ) : (
@@ -350,7 +355,7 @@ export const DashboardPageClient = ({
         <div className="col-span-7">
           <TeamProgressChart
             teamStats={displayTeamStats ?? []}
-            overallTeamStats={teamsData}
+            overallTeamStats={safeTeamsData}
             contextLabel={
               selectedEnv === "all" ? "All envs deployed" : envLabels[selectedEnv as EnvKey]
             }

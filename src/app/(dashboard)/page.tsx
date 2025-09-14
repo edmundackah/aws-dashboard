@@ -2,18 +2,22 @@
 
 import { ErrorDisplay } from "@/components/error-display";
 import { DashboardPageClient } from "@/components/dashboard/page";
-import { useDashboardStore } from "@/stores/use-dashboard-store";
-import { useEffect } from "react";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { LoadingScreen } from "@/components/loading-screen";
+import { getFaro } from '@/lib/faro';
+import { useEffect } from 'react';
 
 export default function Page() {
-  const { data, loading, error, fetchData } = useDashboardStore();
+  const { data, isLoading, error } = useDashboardData();
+  const faro = getFaro();
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (faro && data) {
+      faro.api.pushLog(['Dashboard data loaded']);
+    }
+  }, [data, faro]);
 
-  if (loading) {
+  if (isLoading) {
     return <LoadingScreen />;
   }
 
@@ -22,7 +26,7 @@ export default function Page() {
   }
 
   if (!data) {
-    return <ErrorDisplay message="No data available" />;
+    return <ErrorDisplay message="Failed to load dashboard data. Please try again later." />;
   }
 
   return (

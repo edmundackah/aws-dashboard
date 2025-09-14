@@ -1,0 +1,378 @@
+{
+  "datasource": {
+    "type": "prometheus",
+    "uid": "${datasource}"
+  },
+  "description": "Session details matching Faro UI layout",
+  "fieldConfig": {
+    "defaults": {
+      "color": {
+        "mode": "thresholds"
+      },
+      "custom": {
+        "align": "auto",
+        "cellOptions": {
+          "type": "auto"
+        },
+        "inspect": false,
+        "filterable": true
+      },
+      "mappings": [],
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          {
+            "color": "green",
+            "value": null
+          }
+        ]
+      }
+    },
+    "overrides": [
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "Timestamp"
+        },
+        "properties": [
+          {
+            "id": "unit",
+            "value": "dateTimeAsLocal"
+          },
+          {
+            "id": "custom.width",
+            "value": 180
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "Errors"
+        },
+        "properties": [
+          {
+            "id": "custom.width",
+            "value": 70
+          },
+          {
+            "id": "color",
+            "value": {
+              "mode": "thresholds"
+            }
+          },
+          {
+            "id": "thresholds",
+            "value": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "text",
+                  "value": null
+                },
+                {
+                  "color": "green",
+                  "value": 0
+                },
+                {
+                  "color": "yellow",
+                  "value": 1
+                },
+                {
+                  "color": "red",
+                  "value": 5
+                }
+              ]
+            }
+          },
+          {
+            "id": "custom.cellOptions",
+            "value": {
+              "type": "color-text"
+            }
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "Session ID"
+        },
+        "properties": [
+          {
+            "id": "custom.width",
+            "value": 120
+          },
+          {
+            "id": "custom.cellOptions",
+            "value": {
+              "type": "auto"
+            }
+          },
+          {
+            "id": "links",
+            "value": [
+              {
+                "targetBlank": false,
+                "title": "View Details",
+                "url": "#"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "Page ID"
+        },
+        "properties": [
+          {
+            "id": "custom.width",
+            "value": 200
+          },
+          {
+            "id": "color",
+            "value": {
+              "mode": "fixed",
+              "fixedColor": "blue"
+            }
+          },
+          {
+            "id": "custom.cellOptions",
+            "value": {
+              "type": "color-text"
+            }
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "Browser Name"
+        },
+        "properties": [
+          {
+            "id": "custom.width",
+            "value": 150
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "Browser Version"
+        },
+        "properties": [
+          {
+            "id": "custom.width",
+            "value": 100
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "Platform"
+        },
+        "properties": [
+          {
+            "id": "custom.width",
+            "value": 120
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "Session Lifecycle"
+        },
+        "properties": [
+          {
+            "id": "custom.width",
+            "value": 120
+          },
+          {
+            "id": "mappings",
+            "value": [
+              {
+                "type": "value",
+                "options": {
+                  "1": {
+                    "text": "Start",
+                    "color": "green"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "id": "custom.cellOptions",
+            "value": {
+              "type": "color-background",
+              "mode": "basic"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "gridPos": {
+    "h": 14,
+    "w": 24,
+    "x": 0,
+    "y": 0
+  },
+  "id": 100,
+  "options": {
+    "cellHeight": "sm",
+    "footer": {
+      "countRows": false,
+      "enablePagination": true,
+      "fields": "",
+      "reducer": [
+        "sum"
+      ],
+      "show": false
+    },
+    "showHeader": true,
+    "sortBy": [
+      {
+        "desc": true,
+        "displayName": "Timestamp"
+      }
+    ]
+  },
+  "pluginVersion": "10.2.0",
+  "targets": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "editorMode": "code",
+      "expr": "group by (session_id)(loki_process_custom_faro_session_events_total{app_name=\"$app\"})",
+      "format": "table",
+      "instant": true,
+      "refId": "Sessions"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "editorMode": "code",
+      "expr": "sum by (session_id)(increase(loki_process_custom_faro_session_errors_total{app_name=\"$app\"}[$__range])) or (group by (session_id)(loki_process_custom_faro_session_events_total{app_name=\"$app\"}) * 0)",
+      "format": "table",
+      "instant": true,
+      "refId": "Errors"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "editorMode": "code",
+      "expr": "topk by (session_id) (1, max by (session_id, page_id)(loki_process_custom_faro_session_pageviews_total{app_name=\"$app\"}))",
+      "format": "table",
+      "instant": true,
+      "refId": "Page"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "editorMode": "code",
+      "expr": "topk by (session_id) (1, max by (session_id, browser_name)(loki_process_custom_faro_session_events_total{app_name=\"$app\"}))",
+      "format": "table",
+      "instant": true,
+      "refId": "Browser"
+    }
+  ],
+  "title": "Sessions",
+  "transformations": [
+    {
+      "id": "merge",
+      "options": {}
+    },
+    {
+      "id": "organize",
+      "options": {
+        "excludeByName": {
+          "Value #Browser": true,
+          "Value #Page": true,
+          "Value #Sessions": true
+        },
+        "indexByName": {
+          "Time": 0,
+          "Value #Errors": 1,
+          "session_id": 2,
+          "page_id": 3,
+          "browser_name": 4
+        },
+        "renameByName": {
+          "Time": "Timestamp",
+          "Value #Errors": "Errors",
+          "browser_name": "Browser Name",
+          "page_id": "Page ID",
+          "session_id": "Session ID"
+        }
+      }
+    },
+    {
+      "id": "calculateField",
+      "options": {
+        "alias": "Browser Version",
+        "mode": "reduceRow",
+        "reduce": {
+          "reducer": "allValues",
+          "include": ["Browser Name"]
+        },
+        "replaceFields": false
+      }
+    },
+    {
+      "id": "calculateField",
+      "options": {
+        "alias": "Platform",
+        "mode": "reduceRow",
+        "reduce": {
+          "reducer": "allValues",
+          "include": ["Browser Name"]
+        },
+        "replaceFields": false
+      }
+    },
+    {
+      "id": "calculateField",
+      "options": {
+        "alias": "Session Lifecycle",
+        "mode": "constant",
+        "reduce": {
+          "reducer": "sum"
+        },
+        "replaceFields": false
+      }
+    },
+    {
+      "id": "filterFieldsByName",
+      "options": {
+        "include": {
+          "names": [
+            "Timestamp",
+            "Errors",
+            "Session ID",
+            "Page ID",
+            "Browser Name",
+            "Browser Version",
+            "Platform",
+            "Session Lifecycle"
+          ]
+        }
+      }
+    }
+  ],
+  "type": "table"
+}
+

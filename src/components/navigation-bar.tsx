@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { useTheme } from "next-themes";
 import { motion } from "framer-motion";
-import { useDashboardStore, Page } from "@/stores/use-dashboard-store";
+import { useDashboardStore } from "@/stores/use-dashboard-store";
 import { exportData } from "@/lib/export-utils";
 import { toast } from "sonner";
 import { SettingsModal } from "@/components/settings-modal";
@@ -32,41 +32,52 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from "./ui/command";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const navItems = [
   {
     name: "Overview",
     page: "overview",
+    href: "/",
     icon: LayoutDashboard,
   },
-  { name: "SPAs", page: "spas", icon: Grid },
+  { name: "SPAs", page: "spas", href: "/spas", icon: Grid },
   {
     name: "Microservices",
     page: "microservices",
+    href: "/microservices",
     icon: Server,
   },
-  { name: "Teams", page: "teams", icon: User },
-  { name: "Burndown", page: "burndown", icon: Clock },
+  { name: "Teams", page: "teams", href: "/teams", icon: User },
+  { name: "Burndown", page: "burndown", href: "/burndown", icon: Clock },
 ] as const;
 
 export function NavigationBar() {
   const [open, setOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const { theme, setTheme } = useTheme();
-  const { data, currentPage, setCurrentPage } = useDashboardStore();
+  const { data } = useDashboardStore();
+  const pathname = usePathname();
   const [isMounted, setIsMounted] = useState(false);
   const [isMac, setIsMac] = useState(false);
   const navRef = useRef<HTMLDivElement | null>(null)
   const itemRefs = useRef<Record<string, HTMLAnchorElement | null>>({})
   const [pill, setPill] = useState<{ left: number; width: number } | null>(null)
   const dockRef = useRef<HTMLDivElement | null>(null)
-  const dockItemRefs = useRef<Record<string, HTMLButtonElement | null>>({})
+  const dockItemRefs = useRef<Record<string, HTMLAnchorElement | null>>({})
   const [dockPill, setDockPill] = useState<{ left: number; width: number } | null>(null)
 
   useEffect(() => {
     setIsMounted(true);
     setIsMac(navigator.platform.toUpperCase().indexOf("MAC") >= 0);
   }, []);
+
+  const getCurrentPage = () => {
+    if (pathname === "/") return "overview";
+    return pathname?.substring(1) ?? "";
+  };
+  const currentPage = getCurrentPage();
 
   // Measure active tab for animated pill
   useLayoutEffect(() => {
@@ -118,9 +129,11 @@ export function NavigationBar() {
     return () => document.removeEventListener("keydown", down);
   }, []);
 
-  const handleNavigation = (page: Page) => {
-    setCurrentPage(page);
+  const handleCommandNavigation = (href: string) => {
     setOpen(false);
+    // This feels hacky, but router.push wasn't working as expected.
+    // A simple link click works fine.
+    (document.querySelector(`a[href="${href}"]`) as HTMLElement)?.click();
   };
 
   const handleExport = async (type: "spa" | "ms" | "teams" | "all") => {
@@ -154,15 +167,16 @@ export function NavigationBar() {
           {/* Navigation content */}
           <div className="relative flex h-16 items-center gap-6 px-4 sm:px-6 lg:px-8">
             {/* Logo */}
-            <motion.a
-              onClick={() => handleNavigation("overview")}
+            <motion.div
               className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-primary/90 to-primary/70 text-lg font-semibold text-primary-foreground cursor-pointer transition-all duration-300 hover:scale-105 shadow-[0_8px_24px_rgba(0,0,0,0.15)]"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
+            <Link href="/" className="flex items-center justify-center w-full h-full">
               <Server className="h-5 w-5 transition-all group-hover:rotate-12" />
               <span className="sr-only">Migration Tracker</span>
-            </motion.a>
+            </Link>
+            </motion.div>
 
             {/* Navigation Links with animated pill */}
             <nav ref={navRef} className="relative hidden md:flex items-center gap-1">
@@ -178,19 +192,23 @@ export function NavigationBar() {
               {navItems.map((item) => {
                 const isActive = currentPage === item.page
                 return (
-                  <motion.a
+                  <motion.div
                     key={item.name}
-                    ref={(el) => { itemRefs.current[item.page] = el }}
-                    onClick={() => handleNavigation(item.page)}
-                    className={cn(
-                      "relative z-10 px-3.5 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer rounded-xl",
-                      isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground",
-                    )}
+                    className="relative"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
+                  <Link
+                    href={item.href}
+                    ref={(el) => { itemRefs.current[item.page] = el }}
+                    className={cn(
+                      "relative z-10 block px-3.5 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer rounded-xl",
+                      isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
                     {item.name}
-                  </motion.a>
+                  </Link>
+                  </motion.div>
                 )
               })}
             </nav>
@@ -302,18 +320,33 @@ export function NavigationBar() {
             const ActiveIcon = item.icon
             const isActive = currentPage === item.page
             return (
-              <motion.button
+              <motion.div
                 key={item.name}
+                whileTap={{ scale: 0.96 }}
+                className="relative"
+              >
+              <Link
+                href={item.href}
                 ref={(el) => { dockItemRefs.current[item.page] = el }}
-                onClick={() => handleNavigation(item.page)}
+                onClick={() => {
+                  // Eagerly update pill for smoother animation
+                  const activeEl = dockItemRefs.current[item.page]
+                  const container = dockRef.current
+                  if (activeEl && container) {
+                    const rect = activeEl.getBoundingClientRect()
+                    const parentRect = container.getBoundingClientRect()
+                    const next = { left: rect.left - parentRect.left, width: rect.width }
+                    setDockPill(next)
+                  }
+                }}
                 className={cn(
                   "relative mx-1 inline-flex h-10 w-10 items-center justify-center rounded-xl transition-colors z-10",
                   isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                 )}
-                whileTap={{ scale: 0.96 }}
               >
                 <ActiveIcon className="h-5 w-5" />
-              </motion.button>
+              </Link>
+              </motion.div>
             )
           })}
         </div>
@@ -329,7 +362,7 @@ export function NavigationBar() {
               <CommandItem
                 key={item.name}
                 value={item.name}
-                onSelect={() => handleNavigation(item.page)}
+                onSelect={() => handleCommandNavigation(item.href)}
               >
                 <item.icon className="mr-2 h-4 w-4" />
                 {item.name}

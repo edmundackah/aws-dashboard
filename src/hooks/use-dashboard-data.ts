@@ -2,12 +2,14 @@
 
 import {useEffect, useState} from 'react';
 import axios from 'axios';
-import {Microservice, Spa} from '@/app/data/schema';
+import {Microservice, Spa, TeamStat} from '@/app/data/schema';
 
 interface DashboardData {
   spaData: Spa[];
   msData: Microservice[];
   lastUpdate: string;
+  allTeamStats: TeamStat[];
+  allTeams: string[];
 }
 
 interface ServiceSummaryItem {
@@ -72,10 +74,20 @@ export function useDashboardData() {
             environments: { dev: false, sit: false, uat: false, nft: false },
           }));
 
+        const allTeams = [...new Set(
+          [
+            ...mainData.spaData.map((s: Spa) => s.subgroupName),
+            ...mainData.msData.map((m: Microservice) => m.subgroupName),
+            ...summaryData.map((item) => item.subgroupName),
+          ].filter(Boolean)
+        )].sort();
+
         setData({
           spaData: [...migratedSpas, ...notMigratedSpas],
           msData: [...migratedMs, ...notMigratedMs],
           lastUpdate: mainData.lastUpdate,
+          allTeamStats: mainData.allTeamStats,
+          allTeams,
         });
 
       } catch (err) {
