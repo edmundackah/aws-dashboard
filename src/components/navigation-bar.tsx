@@ -12,6 +12,8 @@ import {
   LayoutDashboard,
   Command,
   Download,
+  ChevronsUpDown,
+  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
@@ -33,6 +35,8 @@ import {
   CommandShortcut,
 } from "./ui/command";
 import { LastUpdatedIndicator } from "@/components/last-updated";
+import { useMemo } from "react";
+import { DepartmentSelector } from "@/components/department-selector";
 
 const navItems = [
   {
@@ -54,7 +58,25 @@ export function NavigationBar() {
   const [open, setOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const { theme, setTheme } = useTheme();
-  const { data, fetchData } = useDashboardStore();
+  const { data, fetchData, departments, selectedDepartment, setDepartment } = useDashboardStore();
+  useEffect(() => {
+    // hydrate selection from localStorage
+    const saved = localStorage.getItem("dashboard.selectedDepartment");
+    if (saved && departments.includes(saved)) {
+      setDepartment(saved);
+    } else if (!selectedDepartment && departments.length > 0) {
+      setDepartment(departments[0]);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [departments.length]);
+
+  useEffect(() => {
+    if (selectedDepartment) {
+      localStorage.setItem("dashboard.selectedDepartment", selectedDepartment);
+    }
+  }, [selectedDepartment]);
+
+  const deptLabel = useMemo(() => selectedDepartment || "Select department", [selectedDepartment]);
   const router = useRouter();
   const pathname = usePathname();
   const [isMounted, setIsMounted] = useState(false);
@@ -227,6 +249,14 @@ export function NavigationBar() {
 
             {/* Right side actions */}
             <div className="flex items-center gap-3 ml-auto">
+              {/* Department Selector */}
+              {isMounted && departments.length > 0 && (
+                <DepartmentSelector
+                  departments={departments}
+                  value={selectedDepartment}
+                  onChange={async (dept) => { setDepartment(dept); await fetchData(); }}
+                />
+              )}
               {/* Last Updated */}
               {isMounted && data?.lastUpdate && (
                 <LastUpdatedIndicator lastUpdate={data.lastUpdate} onRefresh={handleRefresh} />

@@ -1,10 +1,12 @@
 "use client";
 
 import {useEffect, useState} from "react";
-import {Clock, RefreshCcw} from "lucide-react";
+import { RefreshCcw, CalendarDays } from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {cn} from "@/lib/utils";
 import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/components/ui/tooltip";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { Separator } from "@/components/ui/separator";
 
 interface LastUpdatedIndicatorProps {
   lastUpdate: string;
@@ -49,12 +51,10 @@ export function LastUpdatedIndicator({ lastUpdate, onRefresh }: LastUpdatedIndic
   const freshnessColor = (isoString: string) => {
     const updated = new Date(isoString).getTime();
     const diffMin = (now - updated) / 60000;
-    if (diffMin <= 5) return { dot: "bg-emerald-500", ping: "bg-emerald-500" };
-    if (diffMin <= 30) return { dot: "bg-amber-500", ping: "bg-amber-500" };
-    return { dot: "bg-rose-500", ping: "bg-rose-500" };
+    if (diffMin <= 5) return { dot: "bg-emerald-500", ping: "bg-emerald-500", label: "Fresh" };
+    if (diffMin <= 30) return { dot: "bg-amber-500", ping: "bg-amber-500", label: "Stale" };
+    return { dot: "bg-rose-500", ping: "bg-rose-500", label: "Outdated" };
   };
-
-  const freshnessLegend = () => "Green: ≤5m • Amber: ≤30m • Red: >30m";
 
   const handleRefresh = async () => {
     try {
@@ -67,51 +67,77 @@ export function LastUpdatedIndicator({ lastUpdate, onRefresh }: LastUpdatedIndic
     }
   };
 
+  const color = freshnessColor(lastUpdate);
+
   return (
-    <div className="relative flex items-center gap-3 px-3 py-2 bg-white/10 dark:bg-white/5 rounded-xl border border-border/50 hover:bg-white/20 dark:hover:bg-white/10 hover:border-border transition-all duration-200 backdrop-blur">
-      <span className="pointer-events-none absolute inset-0 rounded-xl border bg-primary/15 border-primary/25 dark:bg-primary/20 dark:border-primary/30 opacity-50" />
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className="relative flex items-center cursor-help">
-              <span className={cn("relative inline-flex h-2.5 w-2.5 rounded-full", freshnessColor(lastUpdate).dot)} />
-              <span className={cn("absolute inline-flex h-2.5 w-2.5 rounded-full opacity-40 animate-ping", freshnessColor(lastUpdate).ping)} />
+    <HoverCard openDelay={100} closeDelay={100}>
+      <HoverCardTrigger asChild>
+        <Button variant="ghost" className="h-9 w-9 p-0 rounded-full">
+          <span className="relative flex h-3 w-3">
+            <span className={cn("absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping", color.ping)} />
+            <span className={cn("relative inline-flex rounded-full h-3 w-3", color.dot)} />
+          </span>
+        </Button>
+      </HoverCardTrigger>
+      <HoverCardContent className="w-80 p-4" side="bottom" align="end">
+        <div className="flex justify-between items-center mb-3">
+          <h4 className="text-sm font-bold tracking-wide">Data Status</h4>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="-mr-2 h-8 w-8 p-0 rounded-full hover:bg-accent/50 active:scale-95 transition"
+                  onClick={handleRefresh}
+                  disabled={refreshing}
+                  aria-label="Refresh data"
+                >
+                  <RefreshCcw className={cn("h-4 w-4", (refreshing || spinOnClick) && "animate-spin")} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Refresh</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex items-center">
+            <span className={cn("h-2.5 w-2.5 rounded-full mr-2.5", color.dot)} />
+            <span className="text-sm font-semibold">{color.label}</span>
+            <span className="text-sm text-muted-foreground ml-auto">{formatRelative(lastUpdate)}</span>
+          </div>
+
+          <div className="flex items-center text-xs text-muted-foreground">
+            <CalendarDays className="h-3.5 w-3.5 mr-2.5" />
+            <span>{formatTimestamp(lastUpdate)}</span>
+          </div>
+        </div>
+
+        <Separator className="my-3" />
+
+        <div className="space-y-2 text-xs text-muted-foreground">
+          <div className="font-semibold text-foreground/80 mb-2">Legend</div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 mr-2"/> Fresh
             </div>
-          </TooltipTrigger>
-          <TooltipContent>
-            <div className="text-xs">
-              <div className="font-medium mb-0.5">Data freshness</div>
-              <div>{freshnessLegend()}</div>
-              <div className="text-muted-foreground">Current: {formatRelative(lastUpdate)}</div>
+            <span>&lt; 5 min</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <span className="inline-block h-2 w-2 rounded-full bg-amber-500 mr-2"/> Stale
             </div>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-      <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-      <div className="flex flex-col">
-        <span className="text-xs text-muted-foreground font-medium">Last updated</span>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="text-xs text-foreground font-semibold cursor-default">
-                {formatRelative(lastUpdate)}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>{formatTimestamp(lastUpdate)}</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="ml-1 h-8 w-8 p-0 rounded-lg hover:bg-white/20 active:scale-95 transition"
-        onClick={handleRefresh}
-        disabled={refreshing}
-        aria-label="Refresh data"
-        title="Refresh"
-      >
-        <RefreshCcw className={cn("h-4 w-4", (refreshing || spinOnClick) && "animate-spin")} />
-      </Button>
-    </div>
+            <span>&lt; 30 min</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <span className="inline-block h-2 w-2 rounded-full bg-rose-500 mr-2"/> Outdated
+            </div>
+            <span>&gt; 30 min</span>
+          </div>
+        </div>
+      </HoverCardContent>
+    </HoverCard>
   );
 }
