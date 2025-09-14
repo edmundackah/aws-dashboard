@@ -20,7 +20,7 @@ import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { useTheme } from "next-themes";
 import { motion } from "framer-motion";
 import { useDashboardStore } from "@/stores/use-dashboard-store";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { exportData } from "@/lib/export-utils";
 import { toast } from "sonner";
 import { SettingsModal } from "@/components/settings-modal";
@@ -58,27 +58,48 @@ export function NavigationBar() {
   const [open, setOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const { theme, setTheme } = useTheme();
-  const { data, fetchData, departments, selectedDepartment, setDepartment } = useDashboardStore();
-  useEffect(() => {
-    // hydrate selection from localStorage
-    const saved = localStorage.getItem("dashboard.selectedDepartment");
-    if (saved && departments.includes(saved)) {
-      setDepartment(saved);
-    } else if (!selectedDepartment && departments.length > 0) {
-      setDepartment(departments[0]);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [departments.length]);
-
-  useEffect(() => {
-    if (selectedDepartment) {
-      localStorage.setItem("dashboard.selectedDepartment", selectedDepartment);
-    }
-  }, [selectedDepartment]);
-
-  const deptLabel = useMemo(() => selectedDepartment || "Select department", [selectedDepartment]);
+  const {
+    data,
+    fetchData,
+    departments,
+    selectedDepartment,
+    setDepartment,
+    initializeDepartment,
+  } = useDashboardStore();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Initialize department once on mount
+  useEffect(() => {
+    const deptFromUrl = searchParams.get("department");
+    const deptFromStorage = localStorage.getItem("selectedDepartment");
+    const defaultDept = departments.length > 0 ? departments[0] : "";
+
+    let initialDept = defaultDept;
+    if (deptFromUrl && departments.includes(deptFromUrl)) {
+      initialDept = deptFromUrl;
+    } else if (deptFromStorage && departments.includes(deptFromStorage)) {
+      initialDept = deptFromStorage;
+    }
+    
+    initializeDepartment(initialDept);
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once
+
+  // Sync state changes to URL
+  useEffect(() => {
+    if (selectedDepartment) {
+      const params = new URLSearchParams(searchParams);
+      if (params.get("department") !== selectedDepartment) {
+        params.set("department", selectedDepartment);
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      }
+    }
+  }, [selectedDepartment, pathname, router, searchParams]);
+
+  const deptLabel = useMemo(() => selectedDepartment || "Select department", [selectedDepartment]);
   const [isMounted, setIsMounted] = useState(false);
   const [isMac, setIsMac] = useState(false);
   const navRef = useRef<HTMLDivElement | null>(null)
@@ -254,7 +275,7 @@ export function NavigationBar() {
                 <DepartmentSelector
                   departments={departments}
                   value={selectedDepartment}
-                  onChange={async (dept) => { setDepartment(dept); await fetchData(); }}
+                  onChange={setDepartment}
                 />
               )}
               {/* Last Updated */}

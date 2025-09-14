@@ -1,6 +1,7 @@
 "use client";
 
 import {useEffect, useMemo, useState} from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {Spa} from "@/app/data/schema";
 import {DataTable} from "@/components/dashboard/data-table";
 import {columns as spaColumns} from "@/components/dashboard/spa-columns";
@@ -19,32 +20,29 @@ interface SpasPageClientProps {
   allTeams: string[];
 }
 
-const usePersistentState = <T,>(key: string, defaultValue: T) => {
-  const [state, setState] = useState<T>(() => {
-    const storedValue = localStorage.getItem(key);
-    return storedValue ? JSON.parse(storedValue) : defaultValue;
-  });
-
-  useEffect(() => {
-    localStorage.setItem(key, JSON.stringify(state));
-  }, [key, state]);
-
-  return [state, setState] as const;
-};
-
 export function SpasPageClient({ spaData, allTeams }: SpasPageClientProps) {
-  const [teamFilter, setTeamFilter] = usePersistentState(
-    "spa_teamFilter",
-    "all",
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const [teamFilter, setTeamFilter] = useState(
+    () => searchParams.get("team") ?? "all",
   );
-  const [statusFilter, setStatusFilter] = usePersistentState<StatusValue>(
-    "spa_statusFilter",
-    "all",
+  const [statusFilter, setStatusFilter] = useState<StatusValue>(
+    () => (searchParams.get("status") as StatusValue) ?? "all",
   );
-  const [environmentFilter, setEnvironmentFilter] = usePersistentState<EnvFilter>(
-    "spa_environmentFilter",
-    "all",
+  const [environmentFilter, setEnvironmentFilter] = useState<EnvFilter>(
+    () => (searchParams.get("env") as EnvFilter) ?? "all",
   );
+  
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    if (teamFilter !== "all") params.set("team", teamFilter); else params.delete("team");
+    if (statusFilter !== "all") params.set("status", statusFilter); else params.delete("status");
+    if (environmentFilter !== "all") params.set("env", environmentFilter); else params.delete("env");
+    
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [teamFilter, statusFilter, environmentFilter, pathname, router, searchParams]);
 
   const filteredData = useMemo(() => {
     return spaData

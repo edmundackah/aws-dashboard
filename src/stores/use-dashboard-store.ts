@@ -24,7 +24,8 @@ interface DashboardState {
   // Multi-tenant departments
   departments: string[];
   selectedDepartment: string | null;
-  setDepartment: (dept: string) => void;
+  initializeDepartment: (dept: string) => void;
+  setDepartment: (dept: string) => Promise<void>;
 
   fetchData: () => Promise<void>;
   clearData: () => void;
@@ -67,13 +68,26 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     .map((s) => s.trim())
     .filter(Boolean),
   selectedDepartment: null,
-  setDepartment: (dept) => {
-    set({ selectedDepartment: dept, lastFetched: null, data: null, rawMainData: null });
+  initializeDepartment: (dept) => {
+    set({ selectedDepartment: dept });
+    localStorage.setItem("selectedDepartment", dept);
+  },
+  setDepartment: async (dept) => {
+    const state = get();
+    if (state.selectedDepartment === dept) return;
+    set({ selectedDepartment: dept, lastFetched: null, data: null, rawMainData: null, loading: true });
+    localStorage.setItem("selectedDepartment", dept);
+    await state.fetchData();
   },
 
   fetchData: async () => {
     const state = get();
     const now = Date.now();
+    
+    if (!state.selectedDepartment) {
+      set({ loading: false });
+      return; // Don't fetch if no department is selected
+    }
 
     if (state.data && state.lastFetched && now - state.lastFetched < CACHE_DURATION) {
       set({ loading: false }); // If we have cached data, we're not loading.

@@ -1,6 +1,7 @@
 "use client";
 
 import {useEffect, useMemo, useState} from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {Microservice, Spa, TeamStat} from "@/app/data/schema";
 import {DataTable} from "@/components/dashboard/data-table";
 import {columns as teamStatsColumns} from "@/components/dashboard/team-stats-columns";
@@ -14,35 +15,30 @@ interface TeamsPageClientProps {
   msData: Microservice[];
 }
 
-const usePersistentState = <T,>(key: string, defaultValue: T) => {
-  const [state, setState] = useState<T>(() => {
-    const storedValue = localStorage.getItem(key);
-    return storedValue ? JSON.parse(storedValue) : defaultValue;
-  });
-
-  useEffect(() => {
-    localStorage.setItem(key, JSON.stringify(state));
-  }, [key, state]);
-
-  return [state, setState] as const;
-};
-
 export function TeamsPageClient({
   teamsData = [],
   spaData = [],
   msData = [],
 }: TeamsPageClientProps) {
-  const [environmentFilter, setEnvironmentFilter] = usePersistentState<EnvKey>(
-    "teams_environmentFilter",
-    "dev",
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  
+  const [environmentFilter, setEnvironmentFilter] = useState<EnvKey>(
+    () => {
+      const env = searchParams.get("env");
+      if (env === "dev" || env === "sit" || env === "uat" || env === "nft") {
+        return env;
+      }
+      return "dev";
+    }
   );
 
-  // Sanitize legacy 'all' values if present
   useEffect(() => {
-    if (environmentFilter === ("all" as unknown as EnvKey)) {
-      setEnvironmentFilter("dev");
-    }
-  }, [environmentFilter, setEnvironmentFilter]);
+    const params = new URLSearchParams(searchParams);
+    if (environmentFilter !== "dev") params.set("env", environmentFilter); else params.delete("env");
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [environmentFilter, pathname, router, searchParams]);
 
   const rows = useMemo(() => {
     // Recompute counts per team based on selected environment

@@ -1,6 +1,7 @@
 "use client";
 
 import {useEffect, useMemo, useState} from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {Microservice} from "@/app/data/schema";
 import {DataTable} from "@/components/dashboard/data-table";
 import {columns as msColumns} from "@/components/dashboard/ms-columns";
@@ -21,43 +22,40 @@ interface MicroservicesPageClientProps {
   allTeams: string[];
 }
 
-const usePersistentState = <T,>(key: string, defaultValue: T) => {
-  const [state, setState] = useState<T>(() => {
-    const storedValue = localStorage.getItem(key);
-    return storedValue ? JSON.parse(storedValue) : defaultValue;
-  });
-
-  useEffect(() => {
-    localStorage.setItem(key, JSON.stringify(state));
-  }, [key, state]);
-
-  return [state, setState] as const;
-};
-
 export function MicroservicesPageClient({
   msData,
   allTeams,
 }: MicroservicesPageClientProps) {
-  const [teamFilter, setTeamFilter] = usePersistentState(
-    "ms_teamFilter",
-    "all",
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const [teamFilter, setTeamFilter] = useState(
+    () => searchParams.get("team") ?? "all",
   );
-  const [statusFilter, setStatusFilter] = usePersistentState<StatusValue>(
-    "ms_statusFilter",
-    "all",
+  const [statusFilter, setStatusFilter] = useState<StatusValue>(
+    () => (searchParams.get("status") as StatusValue) ?? "all",
   );
-  const [environmentFilter, setEnvironmentFilter] = usePersistentState<EnvFilter>(
-    "ms_environmentFilter",
-    "all",
+  const [environmentFilter, setEnvironmentFilter] = useState<EnvFilter>(
+    () => (searchParams.get("env") as EnvFilter) ?? "all",
   );
-  const [otelFilter, setOtelFilter] = usePersistentState<VersionValue>(
-    "ms_otelFilter",
-    null,
+  const [otelFilter, setOtelFilter] = useState<VersionValue>(
+    () => searchParams.get("otel"),
   );
-  const [mssdkFilter, setMssdkFilter] = usePersistentState<VersionValue>(
-    "ms_mssdkFilter",
-    null,
+  const [mssdkFilter, setMssdkFilter] = useState<VersionValue>(
+    () => searchParams.get("mssdk"),
   );
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    if (teamFilter !== "all") params.set("team", teamFilter); else params.delete("team");
+    if (statusFilter !== "all") params.set("status", statusFilter); else params.delete("status");
+    if (environmentFilter !== "all") params.set("env", environmentFilter); else params.delete("env");
+    if (otelFilter) params.set("otel", otelFilter); else params.delete("otel");
+    if (mssdkFilter) params.set("mssdk", mssdkFilter); else params.delete("mssdk");
+
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [teamFilter, statusFilter, environmentFilter, otelFilter, mssdkFilter, pathname, router, searchParams]);
 
   const otelVersionValues = useMemo(() => {
     const versions = new Set<string>();
