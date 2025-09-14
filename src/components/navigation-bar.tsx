@@ -18,7 +18,8 @@ import { cn } from "@/lib/utils";
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { useTheme } from "next-themes";
 import { motion } from "framer-motion";
-import { useDashboardStore, Page } from "@/stores/use-dashboard-store";
+import { useDashboardStore } from "@/stores/use-dashboard-store";
+import { usePathname, useRouter } from "next/navigation";
 import { exportData } from "@/lib/export-utils";
 import { toast } from "sonner";
 import { SettingsModal } from "@/components/settings-modal";
@@ -36,24 +37,26 @@ import {
 const navItems = [
   {
     name: "Overview",
-    page: "overview",
+    href: "/",
     icon: LayoutDashboard,
   },
-  { name: "SPAs", page: "spas", icon: Grid },
+  { name: "SPAs", href: "/spas", icon: Grid },
   {
     name: "Microservices",
-    page: "microservices",
+    href: "/microservices",
     icon: Server,
   },
-  { name: "Teams", page: "teams", icon: User },
-  { name: "Burndown", page: "burndown", icon: Clock },
+  { name: "Teams", href: "/teams", icon: User },
+  { name: "Burndown", href: "/burndown", icon: Clock },
 ] as const;
 
 export function NavigationBar() {
   const [open, setOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const { theme, setTheme } = useTheme();
-  const { data, currentPage, setCurrentPage } = useDashboardStore();
+  const { data } = useDashboardStore();
+  const router = useRouter();
+  const pathname = usePathname();
   const [isMounted, setIsMounted] = useState(false);
   const [isMac, setIsMac] = useState(false);
   const navRef = useRef<HTMLDivElement | null>(null)
@@ -70,7 +73,8 @@ export function NavigationBar() {
 
   // Measure active tab for animated pill
   useLayoutEffect(() => {
-    const activeEl = itemRefs.current[currentPage]
+    const activeKey = navItems.find((n) => n.href === pathname)?.href ?? "/";
+    const activeEl = itemRefs.current[activeKey]
     const container = navRef.current
     if (activeEl && container) {
       const rect = activeEl.getBoundingClientRect()
@@ -78,10 +82,11 @@ export function NavigationBar() {
       const next = { left: rect.left - parentRect.left, width: rect.width }
       setPill(next)
     }
-  }, [currentPage])
+  }, [pathname])
 
   useLayoutEffect(() => {
-    const activeEl = dockItemRefs.current[currentPage]
+    const activeKey = navItems.find((n) => n.href === pathname)?.href ?? "/";
+    const activeEl = dockItemRefs.current[activeKey]
     const container = dockRef.current
     if (activeEl && container) {
       const rect = activeEl.getBoundingClientRect()
@@ -89,7 +94,7 @@ export function NavigationBar() {
       const next = { left: rect.left - parentRect.left, width: rect.width }
       setDockPill(next)
     }
-  }, [currentPage])
+  }, [pathname])
 
   const formatTimestamp = (isoString: string) => {
     return new Date(isoString).toLocaleString("en-US", {
@@ -118,8 +123,8 @@ export function NavigationBar() {
     return () => document.removeEventListener("keydown", down);
   }, []);
 
-  const handleNavigation = (page: Page) => {
-    setCurrentPage(page);
+  const handleNavigation = (href: string) => {
+    router.push(href);
     setOpen(false);
   };
 
@@ -155,7 +160,7 @@ export function NavigationBar() {
           <div className="relative flex h-16 items-center gap-6 px-4 sm:px-6 lg:px-8">
             {/* Logo */}
             <motion.a
-              onClick={() => handleNavigation("overview")}
+              onClick={() => handleNavigation("/")}
               className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-primary/90 to-primary/70 text-lg font-semibold text-primary-foreground cursor-pointer transition-all duration-300 hover:scale-105 shadow-[0_8px_24px_rgba(0,0,0,0.15)]"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -176,12 +181,12 @@ export function NavigationBar() {
                 />
               )}
               {navItems.map((item) => {
-                const isActive = currentPage === item.page
+                const isActive = pathname === item.href
                 return (
                   <motion.a
                     key={item.name}
-                    ref={(el) => { itemRefs.current[item.page] = el }}
-                    onClick={() => handleNavigation(item.page)}
+                    ref={(el) => { itemRefs.current[item.href] = el }}
+                    onClick={() => handleNavigation(item.href)}
                     className={cn(
                       "relative z-10 px-3.5 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer rounded-xl",
                       isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground",
@@ -300,12 +305,12 @@ export function NavigationBar() {
           )}
           {navItems.map((item) => {
             const ActiveIcon = item.icon
-            const isActive = currentPage === item.page
+            const isActive = pathname === item.href
             return (
               <motion.button
                 key={item.name}
-                ref={(el) => { dockItemRefs.current[item.page] = el }}
-                onClick={() => handleNavigation(item.page)}
+                ref={(el) => { dockItemRefs.current[item.href] = el }}
+                onClick={() => handleNavigation(item.href)}
                 className={cn(
                   "relative mx-1 inline-flex h-10 w-10 items-center justify-center rounded-xl transition-colors z-10",
                   isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
@@ -329,7 +334,7 @@ export function NavigationBar() {
               <CommandItem
                 key={item.name}
                 value={item.name}
-                onSelect={() => handleNavigation(item.page)}
+                onSelect={() => handleNavigation(item.href)}
               >
                 <item.icon className="mr-2 h-4 w-4" />
                 {item.name}

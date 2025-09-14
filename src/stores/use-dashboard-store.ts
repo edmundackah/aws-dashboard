@@ -6,8 +6,6 @@ import {
 } from "@/lib/data";
 import { Microservice, Spa, TeamStat } from "@/app/data/schema";
 
-export type Page = "overview" | "spas" | "microservices" | "teams" | "burndown";
-
 type EnvKey = "dev" | "sit" | "uat" | "nft"
 
 type TargetOverrides = Record<EnvKey, { spa?: string; ms?: string }>
@@ -25,13 +23,11 @@ interface DashboardState {
   loading: boolean;
   error: string | null;
   lastFetched: number | null;
-  currentPage: Page;
   rawMainData: MainDataApiResponse | null;
   burndownTargetOverrides: TargetOverrides;
   setBurndownTarget: (env: EnvKey, kind: 'spa' | 'ms', value?: string) => void;
   fetchData: () => Promise<void>;
   clearData: () => void;
-  setCurrentPage: (page: Page) => void;
 }
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -41,7 +37,6 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   loading: true, // Start in a loading state
   error: null,
   lastFetched: null,
-  currentPage: "overview",
   rawMainData: null,
   burndownTargetOverrides: {
     dev: { spa: process.env.NEXT_PUBLIC_BURNDOWN_DEFAULT_SPA_DEV, ms: process.env.NEXT_PUBLIC_BURNDOWN_DEFAULT_MS_DEV },
@@ -113,9 +108,5 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       lastFetched: null,
       rawMainData: null,
     });
-  },
-
-  setCurrentPage: (page: Page) => {
-    set({ currentPage: page });
   },
 }));
