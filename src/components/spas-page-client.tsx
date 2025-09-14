@@ -86,41 +86,65 @@ export function SpasPageClient({ spaData, allTeams }: SpasPageClientProps) {
     setEnvironmentFilter("all");
   };
 
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
   return (
     <div className="flex flex-col gap-4 w-full max-w-none">
       <div className="flex flex-col gap-3 w-full">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Popover>
+            <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm">
                   <Filter className="mr-2 h-4 w-4" /> Filters
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[360px] p-4" align="start">
+              <PopoverContent className="w-[560px] p-4" align="start">
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Filter SPAs</span>
-                    {hasActiveFilters && (
-                      <Button variant="destructive-outline" size="sm" onClick={clearAll}>
-                        Clear all
-                      </Button>
-                    )}
+                    <div>
+                      <div className="text-sm font-medium">Filter SPAs</div>
+                      <div className="text-xs text-muted-foreground">Refine by team, status, and environment.</div>
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-3">
-                    <TeamCombobox
-                      teams={allTeams}
-                      value={teamFilter}
-                      onChange={setTeamFilter}
-                    />
-                    <StatusCombobox
-                      value={statusFilter}
-                      onChange={(v: StatusValue) => setStatusFilter(v)}
-                    />
-                    <EnvironmentCombobox
-                      value={environmentFilter}
-                      onChange={(v) => setEnvironmentFilter(v as EnvFilter)}
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <div className="text-xs font-medium text-muted-foreground">Team</div>
+                      <TeamCombobox
+                        teams={allTeams}
+                        value={teamFilter}
+                        onChange={setTeamFilter}
+                        className="w-full"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="text-xs font-medium text-muted-foreground">Show by migration completion</div>
+                      <StatusCombobox
+                        value={statusFilter}
+                        onChange={(v: StatusValue) => setStatusFilter(v)}
+                      />
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                      <div className="text-xs font-medium text-muted-foreground">Environment</div>
+                      <EnvironmentCombobox
+                        value={environmentFilter}
+                        onChange={(v) => setEnvironmentFilter(v as EnvFilter)}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between pt-2">
+                    <Button
+                      variant="destructive-outline"
+                      size="sm"
+                      onClick={() => {
+                        clearAll();
+                        setFiltersOpen(false);
+                      }}
+                      disabled={!hasActiveFilters}
+                    >
+                      Clear all
+                    </Button>
+                    <Button size="sm" onClick={() => setFiltersOpen(false)}>Done</Button>
                   </div>
                 </div>
               </PopoverContent>

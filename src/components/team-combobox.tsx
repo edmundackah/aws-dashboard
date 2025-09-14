@@ -12,9 +12,10 @@ interface TeamComboboxProps {
   teams: string[];
   value: string;
   onChange: (value: string) => void;
+  className?: string;
 }
 
-export function TeamCombobox({ teams, value, onChange }: TeamComboboxProps) {
+export function TeamCombobox({ teams, value, onChange, className }: TeamComboboxProps) {
   const [open, setOpen] = React.useState(false)
 
   // Add "All Teams" to the beginning of the list for selection
@@ -27,7 +28,7 @@ export function TeamCombobox({ teams, value, onChange }: TeamComboboxProps) {
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-[240px] justify-between"
+          className={cn("justify-between w-[240px]", className)}
         >
           {value === "all"
             ? "Select a team..."
