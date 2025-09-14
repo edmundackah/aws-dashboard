@@ -6,6 +6,7 @@ import {Microservice, Spa, TeamStat} from "@/app/data/schema";
 import {DataTable} from "@/components/dashboard/data-table";
 import {columns as teamStatsColumns} from "@/components/dashboard/team-stats-columns";
 import {EnvironmentCombobox} from "@/components/ui/EnvironmentCombobox";
+import { useDashboardStore } from "@/stores/use-dashboard-store";
 
 type EnvKey = "dev" | "sit" | "uat" | "nft";
 
@@ -23,6 +24,7 @@ export function TeamsPageClient({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { selectedDepartment } = useDashboardStore();
   
   const [environmentFilter, setEnvironmentFilter] = useState<EnvKey>(
     () => {
@@ -38,8 +40,9 @@ export function TeamsPageClient({
     if (!searchParams) return;
     const params = new URLSearchParams(searchParams);
     if (environmentFilter !== "dev") params.set("env", environmentFilter); else params.delete("env");
+    if (selectedDepartment) params.set("department", selectedDepartment);
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  }, [environmentFilter, pathname, router, searchParams]);
+  }, [environmentFilter, selectedDepartment, pathname, router, searchParams]);
 
   const rows = useMemo(() => {
     // Recompute counts per team based on selected environment

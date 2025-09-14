@@ -11,6 +11,7 @@ import {Badge} from "@/components/ui/badge";
 import {Separator} from "@/components/ui/separator";
 import {X} from "lucide-react";
 import {ServiceFiltersPopover} from "@/components/filters/ServiceFiltersPopover";
+import { useDashboardStore } from "@/stores/use-dashboard-store";
 
 type EnvKey = "dev" | "sit" | "uat" | "nft";
 type EnvFilter = EnvKey | "all";
@@ -24,6 +25,7 @@ export function SpasPageClient({ spaData, allTeams }: SpasPageClientProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { selectedDepartment } = useDashboardStore();
 
   const [teamFilter, setTeamFilter] = useState(
     () => searchParams?.get("team") ?? "all",
@@ -41,9 +43,10 @@ export function SpasPageClient({ spaData, allTeams }: SpasPageClientProps) {
     if (teamFilter !== "all") params.set("team", teamFilter); else params.delete("team");
     if (statusFilter !== "all") params.set("status", statusFilter); else params.delete("status");
     if (environmentFilter !== "all") params.set("env", environmentFilter); else params.delete("env");
+    if (selectedDepartment) params.set("department", selectedDepartment);
     
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  }, [teamFilter, statusFilter, environmentFilter, pathname, router, searchParams]);
+  }, [teamFilter, statusFilter, environmentFilter, selectedDepartment, pathname, router, searchParams]);
 
   const filteredData = useMemo(() => {
     return spaData

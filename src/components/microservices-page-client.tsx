@@ -11,6 +11,7 @@ import {Separator} from "@/components/ui/separator";
 import {X} from "lucide-react";
 import {StatusValue} from "@/components/ui/StatusCombobox";
 import {ServiceFiltersPopover} from "@/components/filters/ServiceFiltersPopover";
+import { useDashboardStore } from "@/stores/use-dashboard-store";
 
 type EnvKey = "dev" | "sit" | "uat" | "nft";
 type EnvFilter = EnvKey | "all";
@@ -29,6 +30,7 @@ export function MicroservicesPageClient({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { selectedDepartment } = useDashboardStore();
 
   const [teamFilter, setTeamFilter] = useState(
     () => searchParams?.get("team") ?? "all",
@@ -54,9 +56,10 @@ export function MicroservicesPageClient({
     if (environmentFilter !== "all") params.set("env", environmentFilter); else params.delete("env");
     if (otelFilter) params.set("otel", otelFilter); else params.delete("otel");
     if (mssdkFilter) params.set("mssdk", mssdkFilter); else params.delete("mssdk");
+    if (selectedDepartment) params.set("department", selectedDepartment);
 
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  }, [teamFilter, statusFilter, environmentFilter, otelFilter, mssdkFilter, pathname, router, searchParams]);
+  }, [teamFilter, statusFilter, environmentFilter, otelFilter, mssdkFilter, selectedDepartment, pathname, router, searchParams]);
 
   const otelVersionValues = useMemo(() => {
     const versions = new Set<string>();
