@@ -5,6 +5,7 @@ import { Spa } from "@/app/data/schema";
 import { DataTable } from "@/components/dashboard/data-table";
 import { columns as spaColumns } from "@/components/dashboard/spa-columns";
 import { TeamCombobox } from "@/components/team-combobox";
+import { EnvironmentDropdown } from "@/components/ui/EnvironmentDropdown";
 import {
   Select,
   SelectContent,
@@ -12,6 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+type EnvKey = "dev" | "sit" | "uat" | "nft";
+type EnvFilter = EnvKey | "all";
 
 interface SpasPageClientProps {
   spaData: Spa[];
@@ -40,6 +44,10 @@ export function SpasPageClient({ spaData, allTeams }: SpasPageClientProps) {
     "spa_statusFilter",
     "all",
   );
+  const [environmentFilter, setEnvironmentFilter] = usePersistentState<EnvFilter>(
+    "spa_environmentFilter",
+    "all",
+  );
 
   const filteredData = useMemo(() => {
     return spaData
@@ -53,8 +61,13 @@ export function SpasPageClient({ spaData, allTeams }: SpasPageClientProps) {
         (item) =>
           teamFilter === "all" ||
           item.subgroupName.toLowerCase() === teamFilter.toLowerCase(),
+      )
+      .filter(
+        (item) =>
+          environmentFilter === "all" ||
+          !!item.environments?.[environmentFilter as EnvKey],
       );
-  }, [spaData, teamFilter, statusFilter]);
+  }, [spaData, teamFilter, statusFilter, environmentFilter]);
 
   return (
     <div className="flex flex-col gap-4 w-full max-w-none">
@@ -77,6 +90,12 @@ export function SpasPageClient({ spaData, allTeams }: SpasPageClientProps) {
               <SelectItem value="not_migrated">Not Migrated</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+        <div>
+          <EnvironmentDropdown
+            value={environmentFilter}
+            onChange={(v) => setEnvironmentFilter(v as EnvFilter)}
+          />
         </div>
       </div>
       <div className="w-full">
