@@ -2,67 +2,12 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import {
-  Building2,
-  Briefcase,
-  Rocket,
-  Globe2,
-  Shield,
-  Cloud,
-  Cpu,
-  Database,
-  FlaskConical,
-  Layers,
-  Network,
-  Package2,
-  Puzzle,
-  Server,
-  Wrench,
-} from "lucide-react";
+import { Building2 } from "lucide-react";
 
 interface DepartmentSelectorProps {
   departments: string[];
   value: string | null;
   onChange: (dept: string) => Promise<void> | void;
-}
-
-function stringToIndex(str: string, mod: number) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
-  return Math.abs(hash) % mod;
-}
-
-function paletteFor(str: string) {
-  const palettes = [
-    { from: "from-emerald-500", to: "to-cyan-500" },
-    { from: "from-indigo-500", to: "to-fuchsia-500" },
-    { from: "from-amber-500", to: "to-rose-500" },
-    { from: "from-sky-500", to: "to-violet-500" },
-    { from: "from-lime-500", to: "to-teal-500" },
-  ] as const;
-  return palettes[stringToIndex(str || "seed", palettes.length)];
-}
-
-const ICONS = [
-  Building2,
-  Briefcase,
-  Rocket,
-  Globe2,
-  Shield,
-  Cloud,
-  Cpu,
-  Database,
-  FlaskConical,
-  Layers,
-  Network,
-  Package2,
-  Puzzle,
-  Server,
-  Wrench,
-] as const;
-
-function iconFor(str: string) {
-  return ICONS[stringToIndex(str || "seed", ICONS.length)];
 }
 
 export function DepartmentSelector({ departments, value, onChange }: DepartmentSelectorProps) {
@@ -71,8 +16,8 @@ export function DepartmentSelector({ departments, value, onChange }: DepartmentS
   const triggerRef = React.useRef<HTMLButtonElement | null>(null);
 
   const label = value ?? "Select";
-  const palette = paletteFor(label);
-  const TriggerIcon = iconFor(label);
+  const TriggerIcon = Building2;
+  const displayLabel = label.toUpperCase();
 
   const filtered = React.useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -102,19 +47,19 @@ export function DepartmentSelector({ departments, value, onChange }: DepartmentS
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "relative inline-flex h-10 w-[160px] cursor-pointer items-center justify-between gap-2 overflow-hidden rounded-xl border border-border",
-          "bg-white/10 px-2.5 text-sm backdrop-blur transition-colors hover:bg-white/20 dark:bg-white/5 dark:hover:bg-white/10"
+          "group relative inline-flex h-10 w-[120px] cursor-pointer items-center justify-between gap-2 overflow-hidden rounded-full border border-border/40",
+          "bg-white/10 px-3 text-sm backdrop-blur transition-colors hover:bg-white/20 dark:bg-white/5 dark:hover:bg-white/10 hover:border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
         )}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label="Select department"
       >
-        <span className={cn("absolute inset-0 -z-10 opacity-60 bg-gradient-to-r", palette.from, palette.to)} />
+        <span className="pointer-events-none absolute inset-0 rounded-full border shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] bg-primary/20 border-primary/35 dark:bg-primary/20 dark:border-primary/30 opacity-45 group-hover:opacity-65" />
         <span className="flex items-center gap-1.5 truncate">
           <span className="inline-flex h-5 w-5 items-center justify-center rounded-sm bg-background/50">
             <TriggerIcon className="h-3.5 w-3.5" />
           </span>
-          <span className="truncate font-medium leading-none">{label}</span>
+          <span className="truncate font-medium leading-none">{displayLabel}</span>
         </span>
         <svg className="h-4 w-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
@@ -140,7 +85,6 @@ export function DepartmentSelector({ departments, value, onChange }: DepartmentS
               <li className="px-3 py-2 text-sm text-muted-foreground">No results</li>
             )}
             {filtered.map((d) => {
-              const ItemIcon = iconFor(d);
               const isActive = value === d;
               return (
                 <li key={d}>
@@ -155,9 +99,9 @@ export function DepartmentSelector({ departments, value, onChange }: DepartmentS
                     aria-selected={isActive}
                   >
                     <span className="h-6 w-6 rounded-md bg-muted inline-flex items-center justify-center">
-                      <ItemIcon className="h-4 w-4" />
+                      <Building2 className="h-4 w-4" />
                     </span>
-                    <span className="truncate">{d}</span>
+                    <span className="truncate">{d.toUpperCase()}</span>
                     {isActive && (
                       <svg className="ml-auto h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                     )}

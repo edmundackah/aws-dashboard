@@ -11,9 +11,7 @@ import {
   Grid,
   LayoutDashboard,
   Command,
-  Download,
-  ChevronsUpDown,
-  Check,
+  Download
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
@@ -35,7 +33,6 @@ import {
   CommandShortcut,
 } from "./ui/command";
 import { LastUpdatedIndicator } from "@/components/last-updated";
-import { useMemo } from "react";
 import { DepartmentSelector } from "@/components/department-selector";
 
 const navItems = [
@@ -72,7 +69,7 @@ export function NavigationBar() {
 
   // Initialize department once on mount
   useEffect(() => {
-    const deptFromUrl = searchParams.get("department");
+    const deptFromUrl = searchParams?.get("department");
     const deptFromStorage = localStorage.getItem("selectedDepartment");
     const defaultDept = departments.length > 0 ? departments[0] : "";
 
@@ -90,16 +87,15 @@ export function NavigationBar() {
 
   // Sync state changes to URL
   useEffect(() => {
-    if (selectedDepartment) {
-      const params = new URLSearchParams(searchParams);
-      if (params.get("department") !== selectedDepartment) {
-        params.set("department", selectedDepartment);
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-      }
+    if (!selectedDepartment || !searchParams) return;
+    const params = new URLSearchParams(searchParams);
+    if (params.get("department") !== selectedDepartment) {
+      params.set("department", selectedDepartment);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
   }, [selectedDepartment, pathname, router, searchParams]);
 
-  const deptLabel = useMemo(() => selectedDepartment || "Select department", [selectedDepartment]);
+
   const [isMounted, setIsMounted] = useState(false);
   const [isMac, setIsMac] = useState(false);
   const navRef = useRef<HTMLDivElement | null>(null)

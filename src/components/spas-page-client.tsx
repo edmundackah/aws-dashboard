@@ -26,16 +26,17 @@ export function SpasPageClient({ spaData, allTeams }: SpasPageClientProps) {
   const searchParams = useSearchParams();
 
   const [teamFilter, setTeamFilter] = useState(
-    () => searchParams.get("team") ?? "all",
+    () => searchParams?.get("team") ?? "all",
   );
   const [statusFilter, setStatusFilter] = useState<StatusValue>(
-    () => (searchParams.get("status") as StatusValue) ?? "all",
+    () => (searchParams?.get("status") as StatusValue) ?? "all",
   );
   const [environmentFilter, setEnvironmentFilter] = useState<EnvFilter>(
-    () => (searchParams.get("env") as EnvFilter) ?? "all",
+    () => (searchParams?.get("env") as EnvFilter) ?? "all",
   );
   
   useEffect(() => {
+    if (!searchParams) return;
     const params = new URLSearchParams(searchParams);
     if (teamFilter !== "all") params.set("team", teamFilter); else params.delete("team");
     if (statusFilter !== "all") params.set("status", statusFilter); else params.delete("status");

@@ -2,15 +2,20 @@
 
 import {NavigationBar} from "@/components/navigation-bar";
 import {ScrollToTop} from "@/components/scroll-to-top";
-import {ReactNode} from "react";
+import {ReactNode, Suspense} from "react";
+import { LoadingScreen } from "@/components/loading-screen";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
-      <NavigationBar />
-      <main className="flex-1 flex flex-col p-4 pt-6">
-        {children}
-      </main>
+      <Suspense fallback={null}>
+        <NavigationBar />
+      </Suspense>
+      <Suspense fallback={<LoadingScreen />}>
+        <main className="flex-1 flex flex-col p-4 pt-6">
+          {children}
+        </main>
+      </Suspense>
       <ScrollToTop />
     </div>
   );

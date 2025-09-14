@@ -26,7 +26,7 @@ export function TeamsPageClient({
   
   const [environmentFilter, setEnvironmentFilter] = useState<EnvKey>(
     () => {
-      const env = searchParams.get("env");
+      const env = searchParams?.get("env");
       if (env === "dev" || env === "sit" || env === "uat" || env === "nft") {
         return env;
       }
@@ -35,6 +35,7 @@ export function TeamsPageClient({
   );
 
   useEffect(() => {
+    if (!searchParams) return;
     const params = new URLSearchParams(searchParams);
     if (environmentFilter !== "dev") params.set("env", environmentFilter); else params.delete("env");
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
