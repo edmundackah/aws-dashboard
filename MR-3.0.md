@@ -57,25 +57,36 @@ This release delivers multi-tenant support, a major filters UX overhaul, a redes
 - Standardised combobox widths (~240px) for a uniform look.
 - Department selector uses uppercase labels and always shows a Building icon.
 - Removed confetti on selection for a cleaner UX.
-- Introduced a new segmented Theme Toggle (Light/System/Dark) with animated pill, improved accessibility, and enhanced light-mode edge contrast.
+- Introduced a new segmented Theme Toggle (Light/Dark) with animated pill, improved accessibility, and enhanced light-mode edge contrast. The previous "System" option was removed for a simpler choice; when an existing user preference is "system", the effective OS theme is used to highlight the active segment.
 
-#### 7) Tables & Interactions
+#### 7) Burndown Chart Improvements
+- Burndown line animations now reliably re-trigger on each navigation to the page without flicker.
+- Animation is smoother with staggered timing and eased transitions.
+- Implemented targeted remount of the chart-only subtree to avoid card flicker.
+
+#### 8) Release Tutorial Overlay
+- Added a `TutorialOverlay` that highlights key changes in 3.0 (multi-tenancy, filters, burndown animations, theme toggle).
+- The overlay is dismissible ("Don’t show again") and respects an environment-based deadline to auto-disable after a date.
+  - Configure via `.env`: `NEXT_PUBLIC_TUTORIAL_DEADLINE=2025-12-31T23:59:59Z`
+  - If unset or invalid, the overlay remains enabled by default.
+
+#### 9) Tables & Interactions
 - `DataTable` pagination ellipsis shows `HoverCard` quick-jump interactions.
 
-#### 8) Data & Store
+#### 10) Data & Store
 - `use-dashboard-store` updated for multi-tenancy and cache handling.
 - `processDashboardData` continues to normalise API response with optional summary merge.
 
-#### 9) Type Safety & Build Stability
+#### 11) Type Safety & Build Stability
 - Fixed implicit `any` and indexing errors by introducing `EnvKey`/`EnvFilter`.
 - Correctly typed `StatusValue` handlers; removed explicit `any` casts.
 - Wrapped pages/components using `useSearchParams` in Suspense where needed; guarded access and added optional chaining to prevent SSR issues.
 
-#### 10) Framework Upgrade
+#### 12) Framework Upgrade
 - Upgraded to Next.js `15.5.3` via codemod.
 - Rebuilt successfully; static prerendering validated for app routes.
 
-#### 11) URL State Consistency
+#### 13) URL State Consistency
 - Department is preserved alongside page filters on SPAs, Microservices, and Teams so links remain tenant-specific across navigation.
 
 ---
@@ -83,11 +94,14 @@ This release delivers multi-tenant support, a major filters UX overhaul, a redes
 ### Breaking Changes
 - API endpoints are now prefixed with the active department: `/{department}/...`.
 - Teams page no longer supports an “All environments” option.
+- Theme toggle removed the "System" option; users can set OS theme at the system level.
 
 ### Configuration & Migration
 1) Add departments to `.env`:
    - `NEXT_PUBLIC_DEPARTMENTS=DEV,OPS,PLAT,SEC` (example)
-2) Verify public URLs and bookmarks:
+2) Optional: Add tutorial overlay deadline to `.env` (ISO 8601):
+   - `NEXT_PUBLIC_TUTORIAL_DEADLINE=2025-12-31T23:59:59Z`
+3) Verify public URLs and bookmarks:
    - Deep links may include `team`, `status`, `env`, `otel`, `mssdk`, and `department` query params.
 
 ### QA / Acceptance Checklist
@@ -105,6 +119,12 @@ This release delivers multi-tenant support, a major filters UX overhaul, a redes
 - Last Updated:
   - Dot visible in navbar; hover shows freshness, timestamp, legend.
   - Refresh animates and updates data.
+- Burndown page:
+  - Lines animate on every navigation without flicker; timing feels smooth.
+- Theme toggle:
+  - Only Light/Dark options appear; selection persists.
+- Tutorial overlay:
+  - Shows once (unless dismissed); respects `NEXT_PUBLIC_TUTORIAL_DEADLINE`.
 - Build & Types:
   - `npm run build` passes with no type or lint errors.
 
@@ -114,6 +134,6 @@ This release delivers multi-tenant support, a major filters UX overhaul, a redes
 
 ### Notes
 - This MR includes a significant UI/UX overhaul while preserving core workflows.
-- Follow-up ideas: saved filter presets, department-specific defaults, and analytics on filter usage.
+- Follow-up ideas: saved filter presets, department-specific defaults, analytics on filter usage, and step-by-step guided tours with deep links.
 
 

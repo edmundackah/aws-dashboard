@@ -373,6 +373,19 @@ export function NavigationBar() {
               </CommandShortcut>
             </CommandItem>
           </CommandGroup>
+          <CommandSeparator />
+          <CommandGroup heading="Help">
+            <CommandItem
+              onSelect={() => {
+                const ev = new Event("mr3:open-tutorial");
+                window.dispatchEvent(ev);
+                setOpen(false);
+              }}
+            >
+              <Command className="mr-2 h-4 w-4" />
+              View what’s new
+            </CommandItem>
+          </CommandGroup>
         </CommandList>
       </CommandDialog>
 
