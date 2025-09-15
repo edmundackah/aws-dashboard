@@ -15,11 +15,10 @@ const segments = [
 type ThemeKey = typeof segments[number]["key"];
 
 export function ThemeToggle() {
-  const { theme, setTheme, systemTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
 
-  const effectiveTheme: ThemeKey = (theme === "system" ? (systemTheme as ThemeKey) : (theme as ThemeKey)) || "system";
   const activeKey: ThemeKey = (theme as ThemeKey) || "system";
 
   if (!mounted) {

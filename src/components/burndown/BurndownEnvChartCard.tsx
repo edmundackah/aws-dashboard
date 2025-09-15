@@ -14,15 +14,18 @@ import type {EnvBurndownPoint, EnvironmentProgress} from "./types"
 type Props = {
   metrics: EnvironmentProgress
   data: EnvBurndownPoint[]
+  animationKey?: number
 }
 
-export function BurndownEnvChartCard({ metrics, data }: Props) {
+export function BurndownEnvChartCard({ metrics, data, animationKey = 0 }: Props) {
   const spaTargetTs = new Date(metrics.targetSpa).getTime()
   const msTargetTs = new Date(metrics.targetMs).getTime()
   const spaDateValid = metrics.targetSpa && !Number.isNaN(Date.parse(metrics.targetSpa))
   const msDateValid = metrics.targetMs && !Number.isNaN(Date.parse(metrics.targetMs))
   const spaDateLabel = spaDateValid ? new Date(metrics.targetSpa).toLocaleDateString() : null
   const msDateLabel = msDateValid ? new Date(metrics.targetMs).toLocaleDateString() : null
+  
+  
   const yMax = React.useMemo(() => {
     let maxTotal = 0
     for (const p of data) {
@@ -38,6 +41,7 @@ export function BurndownEnvChartCard({ metrics, data }: Props) {
     }
     return maxTotal
   }, [data])
+  
   return (
     <Card className={`bg-card border ${((metrics.spaStatus === 'completed' || metrics.spaStatus === 'completed_late') && (metrics.msStatus === 'completed' || metrics.msStatus === 'completed_late')) ? 'rainbow-glow' : ''} py-1.5 gap-1.5 h-full`}>
       <CardHeader className="py-0.5 px-2.5">
@@ -90,6 +94,7 @@ export function BurndownEnvChartCard({ metrics, data }: Props) {
       <CardContent className="px-3 flex-1">
         <ChartContainer config={{}} className="h-full w-full text-[12px] aspect-auto" >
           <LineChart
+            key={animationKey}
             accessibilityLayer
             data={data}
             margin={{ left: 24, right: 24, top: 10, bottom: 10 }}
@@ -164,6 +169,10 @@ export function BurndownEnvChartCard({ metrics, data }: Props) {
               dot={{ r: 3 }}
               connectNulls={true}
               name="SPAs Remaining (Actual)"
+              isAnimationActive={true}
+              animationBegin={0}
+              animationDuration={1200}
+              animationEasing="ease-out"
             />
             <Line
               type="monotone"
@@ -173,6 +182,10 @@ export function BurndownEnvChartCard({ metrics, data }: Props) {
               dot={{ r: 3 }}
               connectNulls={true}
               name="Microservices Remaining (Actual)"
+              isAnimationActive={true}
+              animationBegin={200}
+              animationDuration={1200}
+              animationEasing="ease-out"
             />
             <Line
               type="monotone"
@@ -183,6 +196,10 @@ export function BurndownEnvChartCard({ metrics, data }: Props) {
               dot={{ r: 2 }}
               connectNulls={true}
               name="SPAs Remaining (Planned)"
+              isAnimationActive={true}
+              animationBegin={400}
+              animationDuration={1000}
+              animationEasing="ease-out"
             />
             <Line
               type="monotone"
@@ -193,6 +210,10 @@ export function BurndownEnvChartCard({ metrics, data }: Props) {
               dot={{ r: 2 }}
               connectNulls={true}
               name="Microservices Remaining (Planned)"
+              isAnimationActive={true}
+              animationBegin={600}
+              animationDuration={1000}
+              animationEasing="ease-out"
             />
           </LineChart>
         </ChartContainer>
@@ -201,5 +222,4 @@ export function BurndownEnvChartCard({ metrics, data }: Props) {
     </Card>
   )
 }
-
 

@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
-import { useTheme } from "next-themes";
 import { motion } from "framer-motion";
 import { useDashboardStore } from "@/stores/use-dashboard-store";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -53,7 +52,6 @@ const navItems = [
 export function NavigationBar() {
   const [open, setOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const { theme, setTheme } = useTheme();
   const {
     data,
     fetchData,
@@ -170,9 +168,6 @@ export function NavigationBar() {
     setOpen(false);
   };
 
-  const toggleTheme = () => {
-    setTheme(theme === "light" ? "dark" : "light");
-  };
 
   const handleRefresh = async () => {
     await fetchData();

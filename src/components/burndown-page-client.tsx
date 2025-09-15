@@ -18,6 +18,11 @@ export function BurndownPageClient() {
   const [targets, setTargets] = React.useState< { [key: string]: { spa: string; ms: string } } | null >(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const mountRef = React.useRef(0);
+  
+  // Increment mount counter on every render to force animation
+  mountRef.current += 1;
+  const animationKey = mountRef.current;
 
   React.useEffect(() => {
     let isMounted = true;
@@ -142,7 +147,12 @@ export function BurndownPageClient() {
             }
             
             return (
-              <BurndownEnvChartCard key={metrics.env} metrics={metrics} data={alignedChartData} />
+              <BurndownEnvChartCard 
+                key={metrics.env} 
+                metrics={metrics} 
+                data={alignedChartData} 
+                animationKey={animationKey}
+              />
             );
           })}
         </div>
