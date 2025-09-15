@@ -3,27 +3,28 @@
 import * as React from "react";
 import { useTheme } from "next-themes";
 import { motion } from "framer-motion";
-import { Sun, Laptop2, Moon } from "lucide-react";
+import { Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const segments = [
   { key: "light", label: "Light", Icon: Sun },
-  { key: "system", label: "System", Icon: Laptop2 },
   { key: "dark", label: "Dark", Icon: Moon },
 ] as const;
 
 type ThemeKey = typeof segments[number]["key"];
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, systemTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
 
-  const activeKey: ThemeKey = (theme as ThemeKey) || "system";
+  const activeKey: ThemeKey = (theme === "system"
+    ? ((systemTheme as ThemeKey) || "light")
+    : ((theme as ThemeKey) || "light"));
 
   if (!mounted) {
     return (
-      <div className="inline-flex h-10 w-[280px] items-center rounded-full border border-transparent ring-1 ring-black/10 dark:ring-white/15 bg-white/30 dark:bg-white/5 px-1 text-xs backdrop-blur-sm" />
+      <div className="inline-flex h-10 w-[200px] items-center rounded-full border border-transparent ring-1 ring-black/10 dark:ring-white/15 bg-white/30 dark:bg-white/5 px-1 text-xs backdrop-blur-sm" />
     );
   }
 
@@ -32,7 +33,7 @@ export function ThemeToggle() {
       role="tablist"
       aria-label="Theme toggle"
       className={cn(
-        "inline-flex h-10 w-[280px] items-center rounded-full border border-transparent px-1 text-xs",
+        "inline-flex h-10 w-[200px] items-center rounded-full border border-transparent px-1 text-xs",
         "ring-1 ring-black/10 bg-white/30 backdrop-blur-sm",
         "dark:ring-white/15 dark:bg-white/5"
       )}

@@ -82,12 +82,6 @@ export function SettingsModal({ isOpen, onOpenChange }: SettingsModalProps) {
                   >
                     Dark
                   </Button>
-                  <Button
-                    variant={theme === "system" ? "default" : "outline"}
-                    onClick={() => setTheme("system")}
-                  >
-                    System
-                  </Button>
                 </div>
               </CardContent>
             </Card>
