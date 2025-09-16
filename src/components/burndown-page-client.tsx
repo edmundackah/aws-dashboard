@@ -12,7 +12,7 @@ import {normalizeBurndownData} from "@/components/burndown/data";
 import {calculateEnvironmentMetrics} from "@/components/burndown/logic";
 import type {BurndownResponse, EnvBurndownPoint} from "@/components/burndown/types";
 import {BurndownEnvChartCard} from "@/components/burndown/BurndownEnvChartCard";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 
 export function BurndownPageClient() {
   const [burndown, setBurndown] = React.useState< { [key: string]: EnvBurndownPoint[] } | null >(null);
@@ -111,7 +111,7 @@ export function BurndownPageClient() {
   }
 
   // Targets are optional (read from .env); proceed even if none found
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -121,7 +121,7 @@ export function BurndownPageClient() {
     },
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { y: 20, opacity: 0 },
     visible: {
       y: 0,
