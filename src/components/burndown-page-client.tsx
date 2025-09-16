@@ -12,6 +12,7 @@ import {normalizeBurndownData} from "@/components/burndown/data";
 import {calculateEnvironmentMetrics} from "@/components/burndown/logic";
 import type {BurndownResponse, EnvBurndownPoint} from "@/components/burndown/types";
 import {BurndownEnvChartCard} from "@/components/burndown/BurndownEnvChartCard";
+import { motion } from "framer-motion";
 
 export function BurndownPageClient() {
   const [burndown, setBurndown] = React.useState< { [key: string]: EnvBurndownPoint[] } | null >(null);
@@ -110,6 +111,29 @@ export function BurndownPageClient() {
   }
 
   // Targets are optional (read from .env); proceed even if none found
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 10,
+      },
+    },
+  };
+
 
   return (
       <div className="space-y-1">
@@ -118,7 +142,12 @@ export function BurndownPageClient() {
         </div>
 
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-2 items-stretch content-stretch min-h-[calc(100vh-7rem)] grid-rows-[repeat(2,minmax(0,1fr))]">
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-2 items-stretch content-stretch min-h-[calc(100vh-7rem)] grid-rows-[repeat(2,minmax(0,1fr))]"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
           {environmentMetrics.map((metrics) => {
             const chartData = burndown?.[metrics.env] || [];
             
@@ -147,15 +176,16 @@ export function BurndownPageClient() {
             }
             
             return (
-              <BurndownEnvChartCard 
-                key={metrics.env} 
-                metrics={metrics} 
-                data={alignedChartData} 
-                animationKey={animationKey}
-              />
+              <motion.div key={metrics.env} variants={itemVariants}>
+                <BurndownEnvChartCard 
+                  metrics={metrics} 
+                  data={alignedChartData} 
+                  animationKey={animationKey}
+                />
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
         <BurndownHelpFab />
       </div>
   );

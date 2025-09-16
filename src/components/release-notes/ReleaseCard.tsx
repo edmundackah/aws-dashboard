@@ -7,28 +7,24 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { ReleaseNote } from "./types";
+import { FancyDate } from "./FancyDate";
 
 interface ReleaseCardProps {
   release: ReleaseNote;
-  align: "left" | "right";
 }
 
-export function ReleaseCard({ release, align }: ReleaseCardProps) {
+export function ReleaseCard({ release }: ReleaseCardProps) {
   return (
-    <Card
-      className={`w-full ${
-        align === "left" ? "md:mr-auto" : "md:ml-auto"
-      } md:w-[calc(50%-2rem)]`}
-    >
+    <Card className="w-full">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <Badge variant="outline">v{release.version}</Badge>
-          <time className="text-sm text-muted-foreground">
-            {release.date}
-          </time>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-grow">
+            <Badge variant="outline">v{release.version}</Badge>
+            <CardTitle className="pt-2">{release.title}</CardTitle>
+            <CardDescription className="pt-1">{release.summary}</CardDescription>
+          </div>
+          <FancyDate date={release.date} />
         </div>
-        <CardTitle className="pt-2">{release.title}</CardTitle>
-        <CardDescription>{release.summary}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {release.sections.map((section) => (
