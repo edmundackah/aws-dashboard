@@ -85,7 +85,7 @@ export function TutorialOverlay() {
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <Card className="w-[min(92vw,760px)] shadow-2xl border-primary/20">
         <CardHeader>
-          <CardTitle className="text-xl">What’s new in 3.0</CardTitle>
+          <CardTitle className="text-xl">What’s new</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">

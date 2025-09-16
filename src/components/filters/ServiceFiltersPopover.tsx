@@ -69,7 +69,7 @@ export function ServiceFiltersPopover({
           <Filter className="mr-2 h-4 w-4" /> Filters
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[560px] p-4" align="start">
+      <PopoverContent className="w-[560px] p-4" align="start" sideOffset={8}>
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <div>
@@ -128,8 +128,8 @@ export function ServiceFiltersPopover({
             </div>
           </div>
 
-          {hasActiveFilters ? (
-            <div className="flex items-center justify-between pt-2">
+          <div className="flex items-center justify-end pt-2 space-x-2">
+            {hasActiveFilters && (
               <Button
                 variant="destructive-outline"
                 size="sm"
@@ -137,16 +137,15 @@ export function ServiceFiltersPopover({
                   onClearAll();
                   setOpen(false);
                 }}
+                className="mr-auto"
               >
                 Clear all
               </Button>
-              <Button size="sm" onClick={() => setOpen(false)}>Done</Button>
-            </div>
-          ) : (
-            <div className="flex items-center justify-end pt-2">
-              <Button size="sm" onClick={() => setOpen(false)}>Done</Button>
-            </div>
-          )}
+            )}
+            <Button size="sm" onClick={() => setOpen(false)}>
+              Done
+            </Button>
+          </div>
         </div>
       </PopoverContent>
     </Popover>

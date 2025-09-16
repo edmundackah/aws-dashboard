@@ -9,7 +9,8 @@ import {
   Grid,
   LayoutDashboard,
   Command,
-  Download
+  Download,
+  Book,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
@@ -375,6 +376,12 @@ export function NavigationBar() {
           </CommandGroup>
           <CommandSeparator />
           <CommandGroup heading="Help">
+            <CommandItem
+              onSelect={() => handleNavigation("/release-notes")}
+            >
+              <Book className="mr-2 h-4 w-4" />
+              Release Notes
+            </CommandItem>
             <CommandItem
               onSelect={() => {
                 const ev = new Event("mr3:open-tutorial");
