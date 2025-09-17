@@ -13,6 +13,8 @@ import {calculateEnvironmentMetrics} from "@/components/burndown/logic";
 import type {BurndownResponse, EnvBurndownPoint} from "@/components/burndown/types";
 import {BurndownEnvChartCard} from "@/components/burndown/BurndownEnvChartCard";
 import { motion, type Variants } from "framer-motion";
+import {useDashboardStore} from "@/stores/use-dashboard-store";
+import {applyDepartmentToUrl} from "@/lib/department-utils";
 
 export function BurndownPageClient() {
   const [burndown, setBurndown] = React.useState< { [key: string]: EnvBurndownPoint[] } | null >(null);
@@ -20,6 +22,7 @@ export function BurndownPageClient() {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const mountRef = React.useRef(0);
+  const { selectedDepartment } = useDashboardStore();
   
   // Increment mount counter on every render to force animation
   mountRef.current += 1;
@@ -33,11 +36,12 @@ export function BurndownPageClient() {
       try {
         setLoading(true);
         setError(null);
-        const url = process.env.NEXT_PUBLIC_BURNDOWN_API_URL;
-        if (!url || url.trim().length === 0) {
+        const baseUrl = process.env.NEXT_PUBLIC_BURNDOWN_API_URL;
+        if (!baseUrl || baseUrl.trim().length === 0) {
           throw new Error("Burndown API URL is not configured (NEXT_PUBLIC_BURNDOWN_API_URL).");
         }
-        const res = await fetch(url, { signal: controller.signal });
+        const url = applyDepartmentToUrl(baseUrl, selectedDepartment);
+        const res = await fetch(url!, { signal: controller.signal });
         if (!res.ok) throw new Error(`Failed to fetch burndown: ${res.status}`);
         const json: BurndownResponse = await res.json();
         if (!isMounted) return;
@@ -59,7 +63,7 @@ export function BurndownPageClient() {
       isMounted = false;
       controller.abort();
     };
-  }, []);
+  }, [selectedDepartment]);
 
   const environmentMetrics = React.useMemo(() => {
     if (!burndown || !targets) return [];
