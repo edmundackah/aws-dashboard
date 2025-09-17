@@ -47,16 +47,20 @@ const CellRenderer = ({
   const services =
     serviceType === "SPA" ? data?.spaData || [] : data?.msData || [];
 
-  // Base filter by team and status
-  let filteredServices = services.filter(
-    (s: Spa | Microservice) =>
-      s.subgroupName === teamName &&
-      (status === "Migrated" ? s.status === "MIGRATED" : s.status !== "MIGRATED"),
-  );
+  // Base filter by team
+  let filteredServices = services.filter((s: Spa | Microservice) => s.subgroupName === teamName);
 
-  // Apply environment filter only for migrated services; outstanding shows all
   if (status === "Migrated") {
-    filteredServices = filteredServices.filter((s: Spa | Microservice) => !!s.environments?.[envKey]);
+    // For migrated lists, show what is migrated in the selected env
+    filteredServices = filteredServices.filter(
+      (s: Spa | Microservice) => s.status === "MIGRATED" && !!s.environments?.[envKey],
+    );
+  } else {
+    // For outstanding lists, total should be constant: show items not migrated in the selected env.
+    // That is: include if NOT (status === MIGRATED AND env flag is true)
+    filteredServices = filteredServices.filter(
+      (s: Spa | Microservice) => !(s.status === "MIGRATED" && !!s.environments?.[envKey]),
+    );
   }
 
   return (

@@ -60,9 +60,13 @@ export function TeamsPageClient({
       const migratedSpaCount = teamSpasInEnv.filter((s) => s.status === "MIGRATED").length;
       const migratedMsCount = teamMsInEnv.filter((m) => m.status === "MIGRATED").length;
 
-      // Outstanding should count non-migrated services across all of the team's services
-      const outstandingSpaCount = teamSpasAll.filter((s) => s.status !== "MIGRATED").length;
-      const outstandingMsCount = teamMsAll.filter((m) => m.status !== "MIGRATED").length;
+      // Totals should be constant across environments, derived from summary + main overall
+      const totalSpa = (team.migratedSpaCount || 0) + (team.outstandingSpaCount || 0);
+      const totalMs = (team.migratedMsCount || 0) + (team.outstandingMsCount || 0);
+
+      // Outstanding in selected environment is total minus migrated in that env
+      const outstandingSpaCount = Math.max(0, totalSpa - migratedSpaCount);
+      const outstandingMsCount = Math.max(0, totalMs - migratedMsCount);
 
       return {
         ...team,
