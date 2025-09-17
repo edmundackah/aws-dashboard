@@ -1,4 +1,4 @@
-import { useDashboardStore } from "@/stores/use-dashboard-store";
+import {useDashboardStore} from "@/stores/use-dashboard-store";
 
 // Function to download CSV
 const downloadCSV = (csvContent: string, fileName: string) => {

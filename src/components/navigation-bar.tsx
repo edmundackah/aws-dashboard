@@ -5,20 +5,18 @@ import {
   Search,
   Settings,
   User,
-  SunDim,
-  MoonStar,
   Server,
   Grid,
   LayoutDashboard,
   Command,
   Download,
-  Clock,
+  Book,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
-import { useTheme } from "next-themes";
 import { motion } from "framer-motion";
-import { useDashboardStore, Page } from "@/stores/use-dashboard-store";
+import { useDashboardStore } from "@/stores/use-dashboard-store";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { exportData } from "@/lib/export-utils";
 import { toast } from "sonner";
 import { SettingsModal } from "@/components/settings-modal";
@@ -32,28 +30,70 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from "./ui/command";
+import { LastUpdatedIndicator } from "@/components/last-updated";
+import { DepartmentSelector } from "@/components/department-selector";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const navItems = [
   {
     name: "Overview",
-    page: "overview",
+    href: "/",
     icon: LayoutDashboard,
   },
-  { name: "SPAs", page: "spas", icon: Grid },
+  { name: "SPAs", href: "/spas", icon: Grid },
   {
     name: "Microservices",
-    page: "microservices",
+    href: "/microservices",
     icon: Server,
   },
-  { name: "Teams", page: "teams", icon: User },
-  { name: "Burndown", page: "burndown", icon: Clock },
+  { name: "Teams", href: "/teams", icon: User },
+  { name: "Burndown", href: "/burndown", icon: Command },
 ] as const;
 
 export function NavigationBar() {
   const [open, setOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const { theme, setTheme } = useTheme();
-  const { data, currentPage, setCurrentPage } = useDashboardStore();
+  const {
+    data,
+    fetchData,
+    departments,
+    selectedDepartment,
+    setDepartment,
+    initializeDepartment,
+  } = useDashboardStore();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Initialize department once on mount
+  useEffect(() => {
+    const deptFromUrl = searchParams?.get("department");
+    const deptFromStorage = localStorage.getItem("selectedDepartment");
+    const defaultDept = departments.length > 0 ? departments[0] : "";
+
+    let initialDept = defaultDept;
+    if (deptFromUrl && departments.includes(deptFromUrl)) {
+      initialDept = deptFromUrl;
+    } else if (deptFromStorage && departments.includes(deptFromStorage)) {
+      initialDept = deptFromStorage;
+    }
+    
+    initializeDepartment(initialDept);
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once
+
+  // Sync state changes to URL
+  useEffect(() => {
+    if (!selectedDepartment || !searchParams) return;
+    const params = new URLSearchParams(searchParams);
+    if (params.get("department") !== selectedDepartment) {
+      params.set("department", selectedDepartment);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }
+  }, [selectedDepartment, pathname, router, searchParams]);
+
+
   const [isMounted, setIsMounted] = useState(false);
   const [isMac, setIsMac] = useState(false);
   const navRef = useRef<HTMLDivElement | null>(null)
@@ -70,7 +110,8 @@ export function NavigationBar() {
 
   // Measure active tab for animated pill
   useLayoutEffect(() => {
-    const activeEl = itemRefs.current[currentPage]
+    const activeKey = navItems.find((n) => n.href === pathname)?.href ?? "/";
+    const activeEl = itemRefs.current[activeKey]
     const container = navRef.current
     if (activeEl && container) {
       const rect = activeEl.getBoundingClientRect()
@@ -78,10 +119,11 @@ export function NavigationBar() {
       const next = { left: rect.left - parentRect.left, width: rect.width }
       setPill(next)
     }
-  }, [currentPage])
+  }, [pathname])
 
   useLayoutEffect(() => {
-    const activeEl = dockItemRefs.current[currentPage]
+    const activeKey = navItems.find((n) => n.href === pathname)?.href ?? "/";
+    const activeEl = dockItemRefs.current[activeKey]
     const container = dockRef.current
     if (activeEl && container) {
       const rect = activeEl.getBoundingClientRect()
@@ -89,18 +131,7 @@ export function NavigationBar() {
       const next = { left: rect.left - parentRect.left, width: rect.width }
       setDockPill(next)
     }
-  }, [currentPage])
-
-  const formatTimestamp = (isoString: string) => {
-    return new Date(isoString).toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
-  };
+  }, [pathname])
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -118,8 +149,8 @@ export function NavigationBar() {
     return () => document.removeEventListener("keydown", down);
   }, []);
 
-  const handleNavigation = (page: Page) => {
-    setCurrentPage(page);
+  const handleNavigation = (href: string) => {
+    router.push(href);
     setOpen(false);
   };
 
@@ -138,8 +169,9 @@ export function NavigationBar() {
     setOpen(false);
   };
 
-  const toggleTheme = () => {
-    setTheme(theme === "light" ? "dark" : "light");
+
+  const handleRefresh = async () => {
+    await fetchData();
   };
 
   return (
@@ -155,7 +187,7 @@ export function NavigationBar() {
           <div className="relative flex h-16 items-center gap-6 px-4 sm:px-6 lg:px-8">
             {/* Logo */}
             <motion.a
-              onClick={() => handleNavigation("overview")}
+              onClick={() => handleNavigation("/")}
               className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-primary/90 to-primary/70 text-lg font-semibold text-primary-foreground cursor-pointer transition-all duration-300 hover:scale-105 shadow-[0_8px_24px_rgba(0,0,0,0.15)]"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -176,12 +208,12 @@ export function NavigationBar() {
                 />
               )}
               {navItems.map((item) => {
-                const isActive = currentPage === item.page
+                const isActive = pathname === item.href
                 return (
                   <motion.a
                     key={item.name}
-                    ref={(el) => { itemRefs.current[item.page] = el }}
-                    onClick={() => handleNavigation(item.page)}
+                    ref={(el) => { itemRefs.current[item.href] = el }}
+                    onClick={() => handleNavigation(item.href)}
                     className={cn(
                       "relative z-10 px-3.5 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer rounded-xl",
                       isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground",
@@ -229,58 +261,19 @@ export function NavigationBar() {
 
             {/* Right side actions */}
             <div className="flex items-center gap-3 ml-auto">
+              {/* Department Selector */}
+              {isMounted && departments.length > 0 && (
+                <DepartmentSelector
+                  departments={departments}
+                  value={selectedDepartment}
+                  onChange={setDepartment}
+                />
+              )}
               {/* Last Updated */}
               {isMounted && data?.lastUpdate && (
-                <motion.div 
-                  className="relative flex items-center gap-2 px-3 py-2 bg-white/10 dark:bg-white/5 rounded-xl border border-border/50 hover:bg-white/20 dark:hover:bg-white/10 hover:border-border transition-all duration-200 backdrop-blur"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <span className="pointer-events-none absolute inset-0 rounded-xl border bg-primary/15 border-primary/25 dark:bg-primary/20 dark:border-primary/30 opacity-70" />
-                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                  <div className="flex flex-col">
-                    <span className="text-xs text-muted-foreground font-medium">Last updated</span>
-                    <span className="text-xs text-foreground font-semibold">
-                      {formatTimestamp(data.lastUpdate)}
-                    </span>
-                  </div>
-                </motion.div>
+                <LastUpdatedIndicator lastUpdate={data.lastUpdate} onRefresh={handleRefresh} />
               )}
-
-              {/* Theme Toggle */}
-              {isMounted && (
-                <motion.div
-                  initial={false}
-                  animate={theme === "light" ? "light" : "dark"}
-                  variants={{
-                    light: { rotate: 0 },
-                    dark: { rotate: 180 },
-                  }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-10 w-10 p-0 rounded-xl hover:bg-white/10 dark:hover:bg-white/5 transition-all duration-200 border border-white/10"
-                    onClick={toggleTheme}
-                  >
-                    <SunDim className="h-4 w-4" />
-                    <MoonStar className="absolute h-4 w-4" />
-                    <span className="sr-only">Toggle theme</span>
-                  </Button>
-                </motion.div>
-              )}
-
-              {/* Settings */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-10 w-10 p-0 rounded-xl hover:bg-white/10 dark:hover:bg-white/5 transition-all duration-200 border border-white/10"
-                onClick={handleSettings}
-              >
-                <Settings className="h-4 w-4" />
-                <span className="sr-only">Settings</span>
-              </Button>
+              {isMounted && <ThemeToggle />}
             </div>
           </div>
         </div>
@@ -300,12 +293,12 @@ export function NavigationBar() {
           )}
           {navItems.map((item) => {
             const ActiveIcon = item.icon
-            const isActive = currentPage === item.page
+            const isActive = pathname === item.href
             return (
               <motion.button
                 key={item.name}
-                ref={(el) => { dockItemRefs.current[item.page] = el }}
-                onClick={() => handleNavigation(item.page)}
+                ref={(el) => { dockItemRefs.current[item.href] = el }}
+                onClick={() => handleNavigation(item.href)}
                 className={cn(
                   "relative mx-1 inline-flex h-10 w-10 items-center justify-center rounded-xl transition-colors z-10",
                   isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
@@ -329,7 +322,7 @@ export function NavigationBar() {
               <CommandItem
                 key={item.name}
                 value={item.name}
-                onSelect={() => handleNavigation(item.page)}
+                onSelect={() => handleNavigation(item.href)}
               >
                 <item.icon className="mr-2 h-4 w-4" />
                 {item.name}
@@ -379,6 +372,25 @@ export function NavigationBar() {
               <CommandShortcut>
                 <span>S</span>
               </CommandShortcut>
+            </CommandItem>
+          </CommandGroup>
+          <CommandSeparator />
+          <CommandGroup heading="Help">
+            <CommandItem
+              onSelect={() => handleNavigation("/release-notes")}
+            >
+              <Book className="mr-2 h-4 w-4" />
+              Release Notes
+            </CommandItem>
+            <CommandItem
+              onSelect={() => {
+                const ev = new Event("mr3:open-tutorial");
+                window.dispatchEvent(ev);
+                setOpen(false);
+              }}
+            >
+              <Command className="mr-2 h-4 w-4" />
+              View what’s new
             </CommandItem>
           </CommandGroup>
         </CommandList>

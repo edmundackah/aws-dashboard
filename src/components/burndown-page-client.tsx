@@ -1,25 +1,32 @@
 "use client";
 
 import * as React from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { HelpCircle } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ErrorDisplay } from "@/components/error-display";
-import { Skeleton } from "@/components/ui/skeleton";
-import { StatusExplainer } from "@/components/burndown/StatusExplainer";
-import { normalizeBurndownData } from "@/components/burndown/data";
-import { calculateEnvironmentMetrics } from "@/components/burndown/logic";
-import type { BurndownResponse } from "@/components/burndown/types";
-import { BurndownEnvChartCard } from "@/components/burndown/BurndownEnvChartCard";
-
-import type { EnvBurndownPoint } from "@/components/burndown/types";
+import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger} from "@/components/ui/dialog";
+import {Button} from "@/components/ui/button";
+import {HelpCircle} from "lucide-react";
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
+import {ErrorDisplay} from "@/components/error-display";
+import {Skeleton} from "@/components/ui/skeleton";
+import {StatusExplainer} from "@/components/burndown/StatusExplainer";
+import {normalizeBurndownData} from "@/components/burndown/data";
+import {calculateEnvironmentMetrics} from "@/components/burndown/logic";
+import type {BurndownResponse, EnvBurndownPoint} from "@/components/burndown/types";
+import {BurndownEnvChartCard} from "@/components/burndown/BurndownEnvChartCard";
+import { motion, type Variants } from "framer-motion";
+import {useDashboardStore} from "@/stores/use-dashboard-store";
+import {applyDepartmentToUrl} from "@/lib/department-utils";
 
 export function BurndownPageClient() {
   const [burndown, setBurndown] = React.useState< { [key: string]: EnvBurndownPoint[] } | null >(null);
   const [targets, setTargets] = React.useState< { [key: string]: { spa: string; ms: string } } | null >(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const mountRef = React.useRef(0);
+  const { selectedDepartment } = useDashboardStore();
+  
+  // Increment mount counter on every render to force animation
+  mountRef.current += 1;
+  const animationKey = mountRef.current;
 
   React.useEffect(() => {
     let isMounted = true;
@@ -29,11 +36,12 @@ export function BurndownPageClient() {
       try {
         setLoading(true);
         setError(null);
-        const url = process.env.NEXT_PUBLIC_BURNDOWN_API_URL;
-        if (!url || url.trim().length === 0) {
+        const baseUrl = process.env.NEXT_PUBLIC_BURNDOWN_API_URL;
+        if (!baseUrl || baseUrl.trim().length === 0) {
           throw new Error("Burndown API URL is not configured (NEXT_PUBLIC_BURNDOWN_API_URL).");
         }
-        const res = await fetch(url, { signal: controller.signal });
+        const url = applyDepartmentToUrl(baseUrl, selectedDepartment);
+        const res = await fetch(url!, { signal: controller.signal });
         if (!res.ok) throw new Error(`Failed to fetch burndown: ${res.status}`);
         const json: BurndownResponse = await res.json();
         if (!isMounted) return;
@@ -55,7 +63,7 @@ export function BurndownPageClient() {
       isMounted = false;
       controller.abort();
     };
-  }, []);
+  }, [selectedDepartment]);
 
   const environmentMetrics = React.useMemo(() => {
     if (!burndown || !targets) return [];
@@ -107,6 +115,29 @@ export function BurndownPageClient() {
   }
 
   // Targets are optional (read from .env); proceed even if none found
+  const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants: Variants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 10,
+      },
+    },
+  };
+
 
   return (
       <div className="space-y-1">
@@ -115,7 +146,12 @@ export function BurndownPageClient() {
         </div>
 
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-2 items-stretch content-stretch min-h-[calc(100vh-7rem)] grid-rows-[repeat(2,minmax(0,1fr))]">
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-2 items-stretch content-stretch min-h-[calc(100vh-7rem)] grid-rows-[repeat(2,minmax(0,1fr))]"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
           {environmentMetrics.map((metrics) => {
             const chartData = burndown?.[metrics.env] || [];
             
@@ -144,10 +180,16 @@ export function BurndownPageClient() {
             }
             
             return (
-              <BurndownEnvChartCard key={metrics.env} metrics={metrics} data={alignedChartData} />
+              <motion.div key={metrics.env} variants={itemVariants}>
+                <BurndownEnvChartCard 
+                  metrics={metrics} 
+                  data={alignedChartData} 
+                  animationKey={animationKey}
+                />
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
         <BurndownHelpFab />
       </div>
   );
@@ -171,22 +213,26 @@ function BurndownHelpFab() {
             <div className="grid gap-3">
               <div className="flex items-center gap-3">
                 <span className="inline-block size-2.5 rounded-full bg-blue-500 flex-shrink-0" />
-                <div><span className="font-medium text-primary">Completed</span> — zero remaining by the target date</div>
+                <div><span className="font-medium text-primary">Completed</span> — zero remaining achieved by the target date</div>
               </div>
               <div className="flex items-center gap-3">
                 <span className="inline-block size-2.5 rounded-full bg-green-500 flex-shrink-0" />
-                <div><span className="font-medium text-primary">On track</span> — trend indicates zero remaining by each service target (SPA/MS)</div>
+                <div><span className="font-medium text-primary">On track</span> — projected completion (based on burn rate) is before the target date</div>
               </div>
               <div className="flex items-center gap-3">
                 <span className="inline-block size-2.5 rounded-full bg-amber-500 flex-shrink-0" />
-                <div><span className="font-medium text-primary">At risk</span> — trend/burn rate suggests slipping or close to the target</div>
+                <div><span className="font-medium text-primary">At risk</span> — projected completion exceeds target date or low confidence in projections</div>
               </div>
               <div className="flex items-center gap-3">
                 <span className="inline-block size-2.5 rounded-full bg-red-500 flex-shrink-0" />
-                <div><span className="font-medium text-primary">Target missed</span> — the relevant target (SPA or MS) passed without reaching zero remaining</div>
+                <div>
+                  <div><span className="font-medium text-primary">Completed (Late)</span> — zero remaining achieved after the target date</div>
+                  <div><span className="font-medium text-primary">Target missed</span> — target date passed with items still remaining</div>
+                </div>
               </div>
               <div className="pt-2 text-sm text-primary/80 leading-6">
-                Planned vs actual: Dotted lines show planned remaining; solid lines show actual remaining. Two targets per environment: SPA and Microservices.
+                <div className="mb-1">Status is calculated using linear regression on historical data to project completion dates with confidence scores.</div>
+                <div>Dotted lines show planned remaining; solid lines show actual remaining. Two targets per environment: SPA and Microservices.</div>
               </div>
             </div>
           </div>

@@ -12,9 +12,10 @@ interface TeamComboboxProps {
   teams: string[];
   value: string;
   onChange: (value: string) => void;
+  className?: string;
 }
 
-export function TeamCombobox({ teams, value, onChange }: TeamComboboxProps) {
+export function TeamCombobox({ teams, value, onChange, className }: TeamComboboxProps) {
   const [open, setOpen] = React.useState(false)
 
   // Add "All Teams" to the beginning of the list for selection
@@ -27,7 +28,7 @@ export function TeamCombobox({ teams, value, onChange }: TeamComboboxProps) {
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full md:w-[250px] justify-between"
+          className={cn("justify-between w-[240px]", className)}
         >
           {value === "all"
             ? "Select a team..."
@@ -35,7 +36,7 @@ export function TeamCombobox({ teams, value, onChange }: TeamComboboxProps) {
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[250px] p-0">
+      <PopoverContent className="w-[240px] p-0">
         <Command>
           <CommandInput placeholder="Search team..." />
           <CommandList>

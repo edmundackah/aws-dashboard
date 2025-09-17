@@ -1,71 +1,105 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
-import { TeamStat } from "@/app/data/schema";
-import { DataTable } from "@/components/dashboard/data-table";
-import { columns as teamStatsColumns } from "@/components/dashboard/team-stats-columns";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import {useEffect, useMemo, useState} from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import {Microservice, Spa, TeamStat} from "@/app/data/schema";
+import {DataTable} from "@/components/dashboard/data-table";
+import {columns as teamStatsColumns, TeamRow} from "@/components/dashboard/team-stats-columns";
+import {EnvironmentCombobox} from "@/components/ui/EnvironmentCombobox";
+import { useDashboardStore } from "@/stores/use-dashboard-store";
+
+type EnvKey = "dev" | "sit" | "uat" | "nft";
 
 interface TeamsPageClientProps {
   teamsData: TeamStat[];
+  spaData: Spa[];
+  msData: Microservice[];
 }
 
-const usePersistentState = <T,>(key: string, defaultValue: T) => {
-  const [state, setState] = useState<T>(() => {
-    const storedValue = localStorage.getItem(key);
-    return storedValue ? JSON.parse(storedValue) : defaultValue;
-  });
-
-  useEffect(() => {
-    localStorage.setItem(key, JSON.stringify(state));
-  }, [key, state]);
-
-  return [state, setState] as const;
-};
-
-export function TeamsPageClient({ teamsData = [] }: TeamsPageClientProps) {
-  const [statusFilter, setStatusFilter] = usePersistentState(
-    "teams_statusFilter",
-    "all",
+export function TeamsPageClient({
+  teamsData = [],
+  spaData = [],
+  msData = [],
+}: TeamsPageClientProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { selectedDepartment } = useDashboardStore();
+  
+  const [environmentFilter, setEnvironmentFilter] = useState<EnvKey>(
+    () => {
+      const env = searchParams?.get("env");
+      if (env === "dev" || env === "sit" || env === "uat" || env === "nft") {
+        return env;
+      }
+      return "dev";
+    }
   );
 
-  const filteredData = useMemo(() => {
-    return (teamsData || []).filter((team) => {
-      if (statusFilter === "all") return true;
-      if (statusFilter === "migrated") {
-        return team.outstandingSpaCount === 0 && team.outstandingMsCount === 0;
-      }
-      if (statusFilter === "not_migrated") {
-        return team.migratedSpaCount === 0 && team.migratedMsCount === 0;
-      }
-      return true;
+  useEffect(() => {
+    if (!searchParams) return;
+    const params = new URLSearchParams(searchParams);
+    if (environmentFilter !== "dev") params.set("env", environmentFilter); else params.delete("env");
+    if (selectedDepartment) params.set("department", selectedDepartment);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [environmentFilter, selectedDepartment, pathname, router, searchParams]);
+
+  const rows = useMemo(() => {
+    // Recompute counts per team based on selected environment
+    return teamsData.map((team) => {
+      const envKey: EnvKey = environmentFilter;
+
+      // Use environment flags (from main API) only to compute migrated-in-env.
+      // Outstanding should represent all services belonging to the team, regardless of env.
+      const teamSpasAll = spaData.filter((spa) => spa.subgroupName === team.teamName);
+      const teamMsAll = msData.filter((ms) => ms.subgroupName === team.teamName);
+
+      const teamSpasInEnv = teamSpasAll.filter((spa) => !!spa.environments?.[envKey]);
+      const teamMsInEnv = teamMsAll.filter((ms) => !!ms.environments?.[envKey]);
+
+      const migratedSpaList = teamSpasInEnv.filter((s) => s.status === "MIGRATED");
+      const migratedMsList = teamMsInEnv.filter((m) => m.status === "MIGRATED");
+      const migratedSpaCount = migratedSpaList.length;
+      const migratedMsCount = migratedMsList.length;
+
+      // Outstanding in selected environment is total minus migrated in that env
+      const outstandingSpaList = teamSpasAll.filter(
+        (s) => !(s.status === "MIGRATED" && !!s.environments?.[envKey]),
+      );
+      const outstandingMsList = teamMsAll.filter(
+        (m) => !(m.status === "MIGRATED" && !!m.environments?.[envKey]),
+      );
+      const outstandingSpaCount = outstandingSpaList.length;
+      const outstandingMsCount = outstandingMsList.length;
+
+      return {
+        ...team,
+        migratedSpaCount,
+        outstandingSpaCount,
+        migratedMsCount,
+        outstandingMsCount,
+        // Provide exact lists used for popovers so they always match the counts
+        _migratedSpaList: migratedSpaList,
+        _outstandingSpaList: outstandingSpaList,
+        _migratedMsList: migratedMsList,
+        _outstandingMsList: outstandingMsList,
+      } satisfies TeamRow;
     });
-  }, [teamsData, statusFilter]);
+  }, [teamsData, spaData, msData, environmentFilter]);
 
   return (
     <div className="flex flex-col gap-4 w-full max-w-none">
       <div className="flex items-center gap-4 w-full">
         <div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-[180px] font-medium">
-              <SelectValue placeholder="Select status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Show All</SelectItem>
-              <SelectItem value="migrated">Completed</SelectItem>
-              <SelectItem value="not_migrated">Not Started</SelectItem>
-            </SelectContent>
-          </Select>
+          <EnvironmentCombobox
+            value={environmentFilter}
+            onChange={(v) => setEnvironmentFilter(v as EnvKey)}
+            includeAllOption={false}
+          />
         </div>
       </div>
       <div className="w-full">
-        <DataTable columns={teamStatsColumns} data={filteredData} tabId="teams" />
+        <DataTable columns={teamStatsColumns} data={rows} tabId="teams" />
       </div>
     </div>
   );

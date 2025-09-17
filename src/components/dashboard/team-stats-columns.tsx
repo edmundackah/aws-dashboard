@@ -1,17 +1,14 @@
 "use client";
 
-import { Column, ColumnDef } from "@tanstack/react-table";
-import { TeamStat, Spa, Microservice } from "@/app/data/schema";
-import { Button } from "@/components/ui/button";
-import { ArrowUpDown, User, Mail } from "lucide-react";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "../ui/hover-card";
-import { Separator } from "../ui/separator";
-import { ServicePopover } from "./service-popover";
-import { useDashboardStore } from "@/stores/use-dashboard-store";
+import {Column, ColumnDef} from "@tanstack/react-table";
+import {Microservice, Spa, TeamStat} from "@/app/data/schema";
+import {Button} from "@/components/ui/button";
+import {ArrowUpDown, Mail, User} from "lucide-react";
+import {HoverCard, HoverCardContent, HoverCardTrigger,} from "../ui/hover-card";
+import {Separator} from "../ui/separator";
+import {ServicePopover} from "./service-popover";
+import {useDashboardStore} from "@/stores/use-dashboard-store";
+import {useSearchParams} from "next/navigation";
 
 const SortableHeader = <TData,>({
   column,
@@ -30,28 +27,54 @@ const SortableHeader = <TData,>({
   </Button>
 );
 
+type EnvKey = "dev" | "sit" | "uat" | "nft";
+
+// Extend TeamStat for Teams page rows to include precomputed lists
+export type TeamRow = TeamStat & {
+  _migratedSpaList?: Spa[];
+  _outstandingSpaList?: Spa[];
+  _migratedMsList?: Microservice[];
+  _outstandingMsList?: Microservice[];
+};
+
 const CellRenderer = ({
   teamName,
   count,
   serviceType,
   status,
+  prefilteredServices,
 }: {
   teamName: string;
   count: number;
   serviceType: "SPA" | "Microservice";
   status: "Migrated" | "Outstanding";
+  prefilteredServices?: (Spa | Microservice)[];
 }) => {
   const { data } = useDashboardStore();
+  const searchParams = useSearchParams();
+  const envParam = searchParams?.get("env");
+  const envKey: EnvKey = envParam === "dev" || envParam === "sit" || envParam === "uat" || envParam === "nft" ? envParam : "dev";
   const services =
     serviceType === "SPA" ? data?.spaData || [] : data?.msData || [];
 
-  const filteredServices = services.filter(
-    (s: Spa | Microservice) =>
-      s.subgroupName === teamName &&
-      (status === "Migrated"
-        ? s.status === "MIGRATED"
-        : s.status !== "MIGRATED"),
-  );
+  // If caller provided exact list used to compute the count, prefer it to avoid mismatches
+  let filteredServices: (Spa | Microservice)[] | undefined = prefilteredServices;
+  if (!filteredServices) {
+    // Base filter by team
+    filteredServices = services.filter((s: Spa | Microservice) => s.subgroupName === teamName);
+
+    if (status === "Migrated") {
+      // For migrated lists, show what is migrated in the selected env
+      filteredServices = filteredServices.filter(
+        (s: Spa | Microservice) => s.status === "MIGRATED" && !!s.environments?.[envKey],
+      );
+    } else {
+      // For outstanding lists, total should be constant: show items not migrated in the selected env.
+      filteredServices = filteredServices.filter(
+        (s: Spa | Microservice) => !(s.status === "MIGRATED" && !!s.environments?.[envKey]),
+      );
+    }
+  }
 
   return (
     <ServicePopover
@@ -68,7 +91,7 @@ const CellRenderer = ({
   );
 };
 
-export const columns: ColumnDef<TeamStat>[] = [
+export const columns: ColumnDef<TeamRow>[] = [
   {
     accessorKey: "teamName",
     header: ({ column }) => (
@@ -146,6 +169,7 @@ export const columns: ColumnDef<TeamStat>[] = [
         count={row.original.migratedSpaCount}
         serviceType="SPA"
         status="Migrated"
+        prefilteredServices={row.original._migratedSpaList}
       />
     ),
   },
@@ -162,6 +186,7 @@ export const columns: ColumnDef<TeamStat>[] = [
         count={row.original.outstandingSpaCount}
         serviceType="SPA"
         status="Outstanding"
+        prefilteredServices={row.original._outstandingSpaList}
       />
     ),
   },
@@ -178,6 +203,7 @@ export const columns: ColumnDef<TeamStat>[] = [
         count={row.original.migratedMsCount}
         serviceType="Microservice"
         status="Migrated"
+        prefilteredServices={row.original._migratedMsList}
       />
     ),
   },
@@ -194,6 +220,7 @@ export const columns: ColumnDef<TeamStat>[] = [
         count={row.original.outstandingMsCount}
         serviceType="Microservice"
         status="Outstanding"
+        prefilteredServices={row.original._outstandingMsList}
       />
     ),
   },

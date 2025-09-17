@@ -1,4 +1,4 @@
-import { test, expect } from './test-fixtures';
+import {expect, test} from './test-fixtures';
 
 test.describe('Performance Tests', () => {
   test('should load main page within performance budget', async ({ page }) => {

@@ -1,12 +1,7 @@
-import { create } from "zustand";
-import {
-  MainDataApiResponse,
-  processDashboardData,
-  ServiceSummaryItem,
-} from "@/lib/data";
-import { Microservice, Spa, TeamStat } from "@/app/data/schema";
-
-export type Page = "overview" | "spas" | "microservices" | "teams" | "burndown";
+import {create} from "zustand";
+import {MainDataApiResponse, processDashboardData, ServiceSummaryItem,} from "@/lib/data";
+import {Microservice, Spa, TeamStat} from "@/app/data/schema";
+import {applyDepartmentToUrl} from "@/lib/department-utils";
 
 type EnvKey = "dev" | "sit" | "uat" | "nft"
 
@@ -25,13 +20,16 @@ interface DashboardState {
   loading: boolean;
   error: string | null;
   lastFetched: number | null;
-  currentPage: Page;
   rawMainData: MainDataApiResponse | null;
   burndownTargetOverrides: TargetOverrides;
-  setBurndownTarget: (env: EnvKey, kind: 'spa' | 'ms', value?: string) => void;
+  // Multi-tenant departments
+  departments: string[];
+  selectedDepartment: string | null;
+  initializeDepartment: (dept: string) => void;
+  setDepartment: (dept: string) => Promise<void>;
+
   fetchData: () => Promise<void>;
   clearData: () => void;
-  setCurrentPage: (page: Page) => void;
 }
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -41,7 +39,6 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   loading: true, // Start in a loading state
   error: null,
   lastFetched: null,
-  currentPage: "overview",
   rawMainData: null,
   burndownTargetOverrides: {
     dev: { spa: process.env.NEXT_PUBLIC_BURNDOWN_DEFAULT_SPA_DEV, ms: process.env.NEXT_PUBLIC_BURNDOWN_DEFAULT_MS_DEV },
@@ -50,18 +47,32 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     nft: { spa: process.env.NEXT_PUBLIC_BURNDOWN_DEFAULT_SPA_NFT, ms: process.env.NEXT_PUBLIC_BURNDOWN_DEFAULT_MS_NFT },
   },
 
-  setBurndownTarget: (env, kind, value) => {
-    set((state) => ({
-      burndownTargetOverrides: {
-        ...state.burndownTargetOverrides,
-        [env]: { ...state.burndownTargetOverrides[env], [kind]: value },
-      },
-    }))
+  // Departments
+  departments: (process.env.NEXT_PUBLIC_DEPARTMENTS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean),
+  selectedDepartment: null,
+  initializeDepartment: (dept) => {
+    set({ selectedDepartment: dept });
+    localStorage.setItem("selectedDepartment", dept);
+  },
+  setDepartment: async (dept) => {
+    const state = get();
+    if (state.selectedDepartment === dept) return;
+    set({ selectedDepartment: dept, lastFetched: null, data: null, rawMainData: null, loading: true });
+    localStorage.setItem("selectedDepartment", dept);
+    await state.fetchData();
   },
 
   fetchData: async () => {
     const state = get();
     const now = Date.now();
+    
+    if (!state.selectedDepartment) {
+      set({ loading: false });
+      return; // Don't fetch if no department is selected
+    }
 
     if (state.data && state.lastFetched && now - state.lastFetched < CACHE_DURATION) {
       set({ loading: false }); // If we have cached data, we're not loading.
@@ -72,9 +83,10 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
     try {
       // 1. Fetch initial data
-      const mainDataUrl = process.env.NEXT_PUBLIC_API_URL;
-      if (!mainDataUrl) throw new Error("Main API URL not defined.");
-      const mainDataRes = await fetch(mainDataUrl);
+      const baseMainUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!baseMainUrl) throw new Error("Main API URL not defined.");
+      const mainDataUrl = applyDepartmentToUrl(baseMainUrl, state.selectedDepartment);
+      const mainDataRes = await fetch(mainDataUrl!);
       const mainData: MainDataApiResponse = await mainDataRes.json();
 
       // Process and set initial data
@@ -87,9 +99,10 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       });
 
       // 2. Fetch summary data in the background
-      const summaryUrl = process.env.NEXT_PUBLIC_SUMMARY_API_URL;
-      if (!summaryUrl) return; // or throw, depending on desired behavior
-      const summaryRes = await fetch(summaryUrl);
+      const baseSummaryUrl = process.env.NEXT_PUBLIC_SUMMARY_API_URL;
+      if (!baseSummaryUrl) return; // or throw, depending on desired behavior
+      const summaryUrl = applyDepartmentToUrl(baseSummaryUrl, state.selectedDepartment);
+      const summaryRes = await fetch(summaryUrl!);
       const summaryData: ServiceSummaryItem[] = await summaryRes.json();
 
       // 3. Merge summary data and update state
@@ -113,9 +126,5 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       lastFetched: null,
       rawMainData: null,
     });
-  },
-
-  setCurrentPage: (page: Page) => {
-    set({ currentPage: page });
   },
 }));

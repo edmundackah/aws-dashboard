@@ -1,4 +1,4 @@
-import { Microservice, Spa, TeamStat } from "@/app/data/schema";
+import {Microservice, Spa, TeamStat} from "@/app/data/schema";
 
 export interface ServiceSummaryItem {
   projectName: string;

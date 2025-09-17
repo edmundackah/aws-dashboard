@@ -1,6 +1,6 @@
 "use client";
 
-import { BurndownPageClient } from "@/components/burndown-page-client";
+import {BurndownPageClient} from "@/components/burndown-page-client";
 
 export default function BurndownPage() {
   return (

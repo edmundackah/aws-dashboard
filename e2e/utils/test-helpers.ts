@@ -1,4 +1,4 @@
-import { Page, Locator, expect } from '@playwright/test';
+import {expect, Locator, Page} from '@playwright/test';
 
 /**
  * Common test utilities and helpers for AWS Dashboard E2E tests

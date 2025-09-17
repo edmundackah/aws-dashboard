@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "./ui/button";
-import { Rocket } from "lucide-react";
+import {Button} from "./ui/button";
+import {Rocket} from "lucide-react";
 import Link from "next/link";
 
 export function MigrationBanner() {

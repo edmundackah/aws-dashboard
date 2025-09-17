@@ -1,10 +1,10 @@
 "use client";
 
-import { TeamsPageClient } from "@/components/teams-page-client";
-import { useDashboardStore } from "@/stores/use-dashboard-store";
-import { useEffect } from "react";
-import { LoadingScreen } from "@/components/loading-screen";
-import { ErrorDisplay } from "@/components/error-display";
+import {TeamsPageClient} from "@/components/teams-page-client";
+import {useDashboardStore} from "@/stores/use-dashboard-store";
+import {useEffect} from "react";
+import {LoadingScreen} from "@/components/loading-screen";
+import {ErrorDisplay} from "@/components/error-display";
 
 export default function TeamsPage() {
   const { data, loading, error, fetchData } = useDashboardStore();
@@ -27,7 +27,11 @@ export default function TeamsPage() {
 
   return (
     <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
-      <TeamsPageClient teamsData={data.allTeamStats} />
+      <TeamsPageClient
+        teamsData={data.allTeamStats}
+        spaData={data.spaData}
+        msData={data.msData}
+      />
     </main>
   );
 }

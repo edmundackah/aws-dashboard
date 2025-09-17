@@ -9,19 +9,9 @@ import {
   SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import {
-  useState,
-  useEffect,
-} from "react";
+import {useEffect, useState,} from "react";
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/components/ui/table";
 
 import {
   Pagination,
@@ -33,13 +23,9 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from "@/components/ui/select";
+import {Button} from "@/components/ui/button";
+import {HoverCard, HoverCardContent, HoverCardTrigger} from "@/components/ui/hover-card";
 
 
 interface DataTableProps<TData, TValue> {
@@ -120,6 +106,8 @@ export function DataTable<TData, TValue>({
     table.setPageSize(pageSize);
   }, [pageSize, table]);
 
+  const paginationRange = getPaginationRange(table.getPageCount(), table.getState().pagination.pageIndex);
+
   return (
     <div className="flex flex-col w-full">
       <div className="rounded-md border bg-card w-full">
@@ -197,9 +185,53 @@ export function DataTable<TData, TValue>({
               />
             </PaginationItem>
 
-            {getPaginationRange(table.getPageCount(), table.getState().pagination.pageIndex).map((page, index) => {
+            {paginationRange.map((page, index, arr) => {
               if (typeof page === 'string') {
-                return <PaginationItem key={`ellipsis-${index}`}><PaginationEllipsis className="hover:cursor-not-allowed"/></PaginationItem>;
+                // Determine surrounding numeric pages
+                let prevNumeric: number | null = null;
+                let nextNumeric: number | null = null;
+                for (let i = index - 1; i >= 0; i--) {
+                  if (typeof arr[i] === 'number') { prevNumeric = arr[i] as number; break; }
+                }
+                for (let i = index + 1; i < arr.length; i++) {
+                  if (typeof arr[i] === 'number') { nextNumeric = arr[i] as number; break; }
+                }
+                const gapStart = prevNumeric !== null ? prevNumeric + 1 : 0;
+                const gapEnd = nextNumeric !== null ? nextNumeric - 1 : Math.max(0, table.getPageCount() - 2);
+                const midpoint = Math.floor((gapStart + gapEnd) / 2);
+                const candidates = Array.from(new Set([
+                  gapStart,
+                  gapStart + 1,
+                  midpoint,
+                  gapEnd - 1,
+                  gapEnd,
+                ])).filter((p) => p >= 0 && p < table.getPageCount() && p >= gapStart && p <= gapEnd).sort((a,b)=>a-b);
+
+                return (
+                  <PaginationItem key={`ellipsis-${index}`}>
+                    <HoverCard openDelay={150} closeDelay={150}>
+                      <HoverCardTrigger asChild>
+                        <div>
+                          <PaginationEllipsis className="cursor-pointer" />
+                        </div>
+                      </HoverCardTrigger>
+                      <HoverCardContent className="w-72" align="center">
+                        <div className="flex flex-col gap-2">
+                          <div className="text-xs text-muted-foreground">
+                            Pages {gapStart + 1} – {gapEnd + 1} hidden
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {candidates.map((p) => (
+                              <Button key={p} variant="outline" size="sm" onClick={() => table.setPageIndex(p)}>
+                                {p + 1}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      </HoverCardContent>
+                    </HoverCard>
+                  </PaginationItem>
+                );
               }
               return (
                 <PaginationItem key={page}>

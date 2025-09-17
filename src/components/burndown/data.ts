@@ -1,4 +1,4 @@
-import type { BurndownResponse, EnvBurndownPoint } from "./types"
+import type {BurndownResponse, EnvBurndownPoint} from "./types"
 
 export function normalizeBurndownData(data: BurndownResponse): { data: { [key: string]: EnvBurndownPoint[] }, targets: { [key: string]: { spa: string; ms: string } } } {
   const result: { [key: string]: EnvBurndownPoint[] } = {}
