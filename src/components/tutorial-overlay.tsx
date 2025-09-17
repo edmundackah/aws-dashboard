@@ -25,7 +25,7 @@ const features: Feature[] = [
     title: "Enhanced Burndown Predictions",
     body:
       "Burndown status now uses linear regression to calculate burn rates and project completion dates with confidence scores.",
-    example: "Shows burn rate (items/day), confidence level, and projected completion date.",
+    example: "Hover over the info icon (ℹ) in the card header to see detailed projections for SPAs and Microservices.",
   },
   {
     title: "Redesigned Last Updated",

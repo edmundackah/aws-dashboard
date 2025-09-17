@@ -7,7 +7,6 @@ import {AnimatedNumber} from "@/components/animated-number";
 import {useDashboardStore} from "@/stores/use-dashboard-store";
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {Trophy} from "lucide-react";
-import confetti from "canvas-confetti";
 import {Microservice, Spa, TeamStat} from "@/app/data/schema";
 
 interface DashboardPageClientProps {
@@ -58,16 +57,6 @@ export const DashboardPageClient = ({
     const n = raw ? Number(raw) : NaN;
     return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : 50;
   })();
-  const confettiMode = (process.env.NEXT_PUBLIC_CONFETTI_MODE as
-    | "off"
-    | "eco"
-    | "normal") || "eco";
-  const confettiCooldownMs = (() => {
-    const raw = process.env.NEXT_PUBLIC_CONFETTI_COOLDOWN_MS;
-    const n = raw ? Number(raw) : NaN;
-    return Number.isFinite(n) ? Math.max(0, n) : 30000; // 30s default
-  })();
-
 
   const inSelectedEnv = useCallback(
     (env?: {
@@ -148,55 +137,6 @@ export const DashboardPageClient = ({
       meetsThreshold,
     };
   }, [spaData, msData, thresholdPct]);
-
-  // Fire confetti when threshold met on every tab change
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    // Respect OS reduced motion
-    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return;
-    }
-
-    const spaPct = envCounts.spaTotal > 0 ? (envCounts.spaMigrated / envCounts.spaTotal) * 100 : 0;
-    const msPct = envCounts.msTotal > 0 ? (envCounts.msMigrated / envCounts.msTotal) * 100 : 0;
-    // Require BOTH SPA and MS to meet or exceed the threshold before triggering confetti
-    const meets = spaPct >= thresholdPct && msPct >= thresholdPct;
-    if (!meets) return;
-
-    // Tune for low-performance (Citrix, low cores) and configurable modes
-    const ua = navigator.userAgent?.toLowerCase?.() || "";
-    const isLikelyCitrix = ua.includes("citrix");
-    const navAny = navigator as Navigator & { hardwareConcurrency?: number };
-    const lowCores = navAny.hardwareConcurrency <= 2;
-    const mode: "off" | "eco" | "normal" = isLikelyCitrix || lowCores ? "eco" : confettiMode;
-    if (mode === "off") return;
-
-    // Cooldown to avoid repeated heavy effects when flipping tabs
-    const cdKey = `confetti_last_${selectedEnv}`;
-    const now = Date.now();
-    const last = Number(window.sessionStorage.getItem(cdKey) || 0);
-    if (confettiCooldownMs > 0 && now - last < confettiCooldownMs) {
-      return;
-    }
-
-    const duration = mode === "eco" ? 500 : 900;
-    const end = Date.now() + duration;
-    const colors = ["#ef4444","#f59e0b","#eab308","#22c55e","#06b6d4","#6366f1","#a855f7"];
-    if (mode === "eco") {
-      // Single light burst
-      confetti({ particleCount: 60, spread: 70, startVelocity: 30, origin: { y: 0.6 }, colors, scalar: 0.9 });
-    } else {
-      const burst = () => {
-        confetti({ particleCount: 4, angle: 60, spread: 75, origin: { x: 0 }, colors, scalar: 1 });
-        confetti({ particleCount: 4, angle: 120, spread: 75, origin: { x: 1 }, colors, scalar: 1 });
-        if (Date.now() < end) requestAnimationFrame(burst);
-      };
-      confetti({ particleCount: 120, spread: 80, startVelocity: 35, origin: { y: 0.6 }, colors, scalar: 1 });
-      requestAnimationFrame(burst);
-    }
-
-    window.sessionStorage.setItem(cdKey, String(now));
-  }, [selectedEnv, thresholdPct, envCounts.spaMigrated, envCounts.spaTotal, envCounts.msMigrated, envCounts.msTotal, confettiCooldownMs, confettiMode]);
 
   const displayTeamStats: TeamStat[] = useMemo(() => {
     const teamMap = new Map<string, TeamStat>();

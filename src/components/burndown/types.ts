@@ -61,6 +61,13 @@ export type EnvironmentProgress = {
   burnRate?: number
   projectedCompletion?: number | null
   confidence?: number
+  // Separate metrics for SPAs and Microservices
+  spaBurnRate?: number
+  spaProjectedCompletion?: number | null
+  spaConfidence?: number
+  msBurnRate?: number
+  msProjectedCompletion?: number | null
+  msConfidence?: number
 }
 
 

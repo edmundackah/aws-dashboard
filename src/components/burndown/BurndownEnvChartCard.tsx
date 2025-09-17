@@ -6,9 +6,10 @@ import {CartesianGrid, Line, LineChart, ReferenceLine, XAxis, YAxis} from "recha
 
 import {Badge} from "@/components/ui/badge"
 import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/components/ui/tooltip"
-import {Card, CardContent, CardFooter, CardHeader, CardTitle} from "@/components/ui/card"
+import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card"
 import {ChartContainer, ChartTooltip} from "@/components/ui/chart"
 import { Skeleton } from "@/components/ui/skeleton";
+import { Info } from "lucide-react";
 
 import type {EnvBurndownPoint, EnvironmentProgress} from "./types"
 import { motion } from "framer-motion";
@@ -57,20 +58,27 @@ export function BurndownEnvChartCard({ metrics, data, animationKey = 0 }: Props)
 
   return (
     <Card
-      className={`bg-card border ${
-        (metrics.spaStatus === "completed" ||
-          metrics.spaStatus === "completed_late") &&
-        (metrics.msStatus === "completed" ||
-          metrics.msStatus === "completed_late")
-          ? "rainbow-glow"
-          : ""
-      } py-1.5 gap-1.5 h-full`}
+      className={`bg-card border ${((metrics.spaStatus === 'completed' || metrics.spaStatus === 'completed_late') && (metrics.msStatus === 'completed' || metrics.msStatus === 'completed_late')) ? 'rainbow-glow' : ''} py-1.5 gap-1.5 h-full`}
     >
       <CardHeader className="py-0.5 px-2.5">
         <div className="flex items-center justify-between">
           <CardTitle className="capitalize text-sm">
             {metrics.env.toUpperCase()} Burndown
           </CardTitle>
+          {!isLoading && (metrics.spaBurnRate !== undefined || metrics.msBurnRate !== undefined) && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="cursor-help">
+                    <Info className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="max-w-sm p-0">
+                  <BurndownMetrics metrics={metrics} />
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
         {isLoading ? (
           <div className="flex flex-wrap gap-1 items-center text-[11px] pt-1">
@@ -296,11 +304,6 @@ export function BurndownEnvChartCard({ metrics, data, animationKey = 0 }: Props)
           </motion.div>
         )}
       </CardContent>
-      {!isLoading && metrics.burnRate !== undefined && (
-        <CardFooter className="px-3 py-2">
-          <BurndownMetrics metrics={metrics} />
-        </CardFooter>
-      )}
     </Card>
   )
 }

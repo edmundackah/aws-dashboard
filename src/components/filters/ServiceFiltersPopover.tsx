@@ -69,8 +69,8 @@ export function ServiceFiltersPopover({
           <Filter className="mr-2 h-4 w-4" /> Filters
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[560px] p-4" align="start" sideOffset={8}>
-        <div className="flex flex-col gap-4">
+      <PopoverContent className="w-auto p-4" align="start" sideOffset={8}>
+        <div className="flex flex-col gap-4" style={{ width: '520px' }}>
           <div className="flex items-center justify-between">
             <div>
               <div className="text-sm font-medium">{title}</div>
@@ -80,21 +80,21 @@ export function ServiceFiltersPopover({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
+          <div className="flex gap-4">
+            <div className="flex-1 space-y-2">
               <div className="text-xs font-medium text-muted-foreground">Team</div>
               <TeamCombobox
                 teams={teams}
                 value={teamFilter}
                 onChange={onTeamChange}
-                className="w-full"
+                className="w-[240px]"
               />
 
               <div className="text-xs font-medium text-muted-foreground mt-3">Show by migration completion</div>
               <StatusCombobox value={statusFilter} onChange={onStatusChange} />
             </div>
 
-            <div className="space-y-2">
+            <div className="flex-1 space-y-2">
               <div className="text-xs font-medium text-muted-foreground">Environment</div>
               <EnvironmentCombobox
                 value={environmentFilter}
@@ -128,23 +128,31 @@ export function ServiceFiltersPopover({
             </div>
           </div>
 
-          <div className="flex items-center justify-end pt-2 space-x-2">
-            {hasActiveFilters && (
-              <Button
-                variant="destructive-outline"
-                size="sm"
-                onClick={() => {
-                  onClearAll();
-                  setOpen(false);
-                }}
-                className="mr-auto"
-              >
-                Clear all
-              </Button>
-            )}
-            <Button size="sm" onClick={() => setOpen(false)}>
-              Done
-            </Button>
+          <div className="flex gap-4 pt-2">
+            <div className="flex-1">
+              {hasActiveFilters && (
+                <Button
+                  variant="destructive-outline"
+                  size="sm"
+                  onClick={() => {
+                    onClearAll();
+                    setOpen(false);
+                  }}
+                >
+                  Clear all
+                </Button>
+              )}
+            </div>
+            <div className="flex-1">
+              <div className="w-[240px] ml-auto flex justify-end">
+                <Button 
+                  size="sm" 
+                  onClick={() => setOpen(false)}
+                >
+                  Done
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </PopoverContent>

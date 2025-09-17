@@ -14,14 +14,35 @@ function calculateBurnRate(points: Array<{ts: number, remaining: number}>): {
   confidence: number,
   projectedCompletion: number | null
 } {
+  // Need at least 2 points for regression
   if (points.length < 2) {
     return { burnRate: 0, confidence: 0, projectedCompletion: null };
   }
 
-  // Calculate average time and remaining values
-  const n = points.length;
-  const sumX = points.reduce((sum, p) => sum + p.ts, 0);
-  const sumY = points.reduce((sum, p) => sum + p.remaining, 0);
+  // Validate data quality
+  const validPoints = points.filter(p => 
+    Number.isFinite(p.ts) && 
+    Number.isFinite(p.remaining) && 
+    p.remaining >= 0
+  );
+  
+  if (validPoints.length < 2) {
+    return { burnRate: 0, confidence: 0, projectedCompletion: null };
+  }
+  
+  // Sort by timestamp to ensure chronological order
+  validPoints.sort((a, b) => a.ts - b.ts);
+  
+  // Check for sufficient time span (at least 1 day)
+  const timeSpan = validPoints[validPoints.length - 1].ts - validPoints[0].ts;
+  if (timeSpan < DAY_MS) {
+    return { burnRate: 0, confidence: 0, projectedCompletion: null };
+  }
+
+  // Calculate average time and remaining values using validated points
+  const n = validPoints.length;
+  const sumX = validPoints.reduce((sum, p) => sum + p.ts, 0);
+  const sumY = validPoints.reduce((sum, p) => sum + p.remaining, 0);
   const avgX = sumX / n;
   const avgY = sumY / n;
 
@@ -30,7 +51,7 @@ function calculateBurnRate(points: Array<{ts: number, remaining: number}>): {
   let denominator = 0;
   let sumSquaredResiduals = 0;
   
-  for (const point of points) {
+  for (const point of validPoints) {
     const xDiff = point.ts - avgX;
     const yDiff = point.remaining - avgY;
     numerator += xDiff * yDiff;
@@ -46,7 +67,7 @@ function calculateBurnRate(points: Array<{ts: number, remaining: number}>): {
 
   // Calculate R-squared for confidence
   let totalSumSquares = 0;
-  for (const point of points) {
+  for (const point of validPoints) {
     const predicted = slope * point.ts + intercept;
     const residual = point.remaining - predicted;
     sumSquaredResiduals += residual * residual;
@@ -54,19 +75,28 @@ function calculateBurnRate(points: Array<{ts: number, remaining: number}>): {
     totalSumSquares += yDiff * yDiff;
   }
 
-  const rSquared = totalSumSquares === 0 ? 0 : 1 - (sumSquaredResiduals / totalSumSquares);
+  const rSquared = totalSumSquares === 0 ? 0 : Math.max(0, 1 - (sumSquaredResiduals / totalSumSquares));
   const confidence = Math.max(0, Math.min(1, rSquared));
 
   // Convert to daily burn rate (negative slope means improvement)
   const dailyBurnRate = -slope * DAY_MS;
   
-  // Project completion date
-  const currentRemaining = points[points.length - 1].remaining;
+  // Project completion date from the last data point
+  const lastPoint = validPoints[validPoints.length - 1];
+  const lastTimestamp = lastPoint.ts;
+  const currentRemaining = lastPoint.remaining;
   let projectedCompletion: number | null = null;
   
+  // Only project if we have positive burn rate and remaining work
   if (dailyBurnRate > 0 && currentRemaining > 0) {
     const daysToComplete = currentRemaining / dailyBurnRate;
-    projectedCompletion = Date.now() + (daysToComplete * DAY_MS);
+    projectedCompletion = lastTimestamp + (daysToComplete * DAY_MS);
+    
+    // Sanity check: don't project more than 2 years in the future
+    const maxProjection = Date.now() + (2 * 365 * DAY_MS);
+    if (projectedCompletion > maxProjection) {
+      projectedCompletion = null; // Invalid projection
+    }
   }
 
   return {
@@ -135,9 +165,15 @@ function determineProjectStatus(
     return 'at_risk'; // No velocity data or stalled
   }
   
-  // Add buffer based on confidence (lower confidence = more buffer needed)
-  const bufferDays = Math.max(7, Math.floor((1 - confidence) * 30));
-  const bufferedProjection = projectedCompletion + (bufferDays * DAY_MS);
+  // Add buffer based on confidence using a more sophisticated calculation
+  // Low confidence (0-0.3): 21-30 day buffer
+  // Medium confidence (0.3-0.7): 7-21 day buffer  
+  // High confidence (0.7-1.0): 3-7 day buffer
+  const bufferDays = confidence < 0.3 ? 30 - (confidence * 30) :
+                     confidence < 0.7 ? 21 - ((confidence - 0.3) * 35) :
+                     7 - ((confidence - 0.7) * 13.33);
+  const roundedBufferDays = Math.max(3, Math.round(bufferDays));
+  const bufferedProjection = projectedCompletion + (roundedBufferDays * DAY_MS);
   
   if (bufferedProjection <= targetDate) {
     return 'on_track';
@@ -206,15 +242,23 @@ export function calculateEnvironmentMetrics(
     const spaMetrics = calculateBurnRate(spaSeries);
     const msMetrics = calculateBurnRate(msSeries);
     
-    // Combined series for overall trend
+    // Combined series for overall trend - use available data intelligently
     const combinedSeries = points
       .filter(p => (p.spaActual != null || p.msActual != null) && (p.ts || p.date))
       .slice(-14)
-      .map(p => ({ 
-        ts: p.ts ?? new Date(p.date).getTime(), 
-        remaining: (p.spaActual ?? 0) + (p.msActual ?? 0) 
-      }))
-      .filter(p => Number.isFinite(p.ts) && Number.isFinite(p.remaining))
+      .map(p => {
+        const spaValue = p.spaActual ?? 0;
+        const msValue = p.msActual ?? 0;
+        // Only count if at least one service type has data
+        const remaining = (p.spaActual != null && p.msActual != null) ? 
+                         spaValue + msValue :
+                         (p.spaActual != null ? spaValue : msValue);
+        return {
+          ts: p.ts ?? new Date(p.date).getTime(),
+          remaining
+        };
+      })
+      .filter(p => Number.isFinite(p.ts) && Number.isFinite(p.remaining) && p.remaining >= 0)
       .sort((a, b) => a.ts - b.ts);
     
     const overallMetrics = calculateBurnRate(combinedSeries);
@@ -271,6 +315,13 @@ export function calculateEnvironmentMetrics(
       burnRate: overallMetrics.burnRate,
       projectedCompletion: overallMetrics.projectedCompletion,
       confidence: overallMetrics.confidence,
+      // Separate metrics for SPAs and Microservices
+      spaBurnRate: spaMetrics.burnRate,
+      spaProjectedCompletion: spaMetrics.projectedCompletion,
+      spaConfidence: spaMetrics.confidence,
+      msBurnRate: msMetrics.burnRate,
+      msProjectedCompletion: msMetrics.projectedCompletion,
+      msConfidence: msMetrics.confidence,
       axisEndTs: Math.max(
         Number.isFinite(targetSpaTsFinite) ? targetSpaTsFinite : 0,
         Number.isFinite(targetMsTsFinite) ? targetMsTsFinite : 0,
