@@ -3,18 +3,19 @@ import type { ReleaseNote } from "@/components/release-notes/types";
 export const releaseNotes: ReleaseNote[] = [
   {
     version: "3.0",
-    title: "Multi-tenancy, Filters UX Revamp, and Shareable URLs",
+    title: "Multi-tenancy, Enhanced Burndown Predictions, and Shareable URLs",
     date: "2024-09-15",
     summary:
-      "This release delivers multi-tenant support, a major filters UX revamp, a redesigned “Last updated” indicator, and URL-shareable state across the app. It also includes type safety improvements, build stability fixes, and an upgrade to Next.js 15.5.3.",
+      "This release delivers multi-tenant support, enhanced burndown predictions with statistical analysis, a major filters UX revamp, a redesigned 'Last updated' indicator, and URL-shareable state across the app. It also includes type safety improvements, build stability fixes, and an upgrade to Next.js 15.5.3.",
     sections: [
       {
         title: "Highlights",
         items: [
           "Multi-tenancy via Department selector (compact, modern UI)",
+          "Enhanced burndown predictions using linear regression and confidence scores",
           "Powerful filter popover for SPAs and Microservices with shareable URLs",
           "Teams page logic now recomputes per-team counts by selected environment",
-          "Redesigned “Last updated” indicator with hover details and refresh action",
+          "Redesigned 'Last updated' indicator with hover details and refresh action",
           "URL query params persist filters and department for easy link sharing",
           "Consistent light/dark styling and accessibility improvements",
           "Next.js upgraded to 15.5.3; build stability fixes",
@@ -26,10 +27,10 @@ export const releaseNotes: ReleaseNote[] = [
           "Multi-tenancy (Department Selector)",
           "Filters UX Revamp (SPAs & Microservices)",
           "Teams Page Behaviour",
-          "Redesigned “Last updated” Indicator",
+          "Redesigned 'Last updated' Indicator",
           "Shareable Views via URL",
           "UI Consistency & Polish",
-          "Burndown Chart Improvements",
+          "Enhanced Burndown Predictions with Linear Regression",
           "Release Tutorial Overlay",
           "Tables & Interactions",
           "Data & Store",

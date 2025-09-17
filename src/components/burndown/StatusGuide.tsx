@@ -18,23 +18,26 @@ export function StatusGuide() {
           <div className="grid gap-3">
             <div className="flex items-center gap-3">
               <span className="inline-block size-2.5 rounded-full bg-[hsl(var(--chart-purple))] dark:bg-[hsl(var(--chart-purple)/0.60)]" />
-              <div><span className="font-medium text-primary">Completed</span> — zero remaining by the target date</div>
+              <div><span className="font-medium text-primary">Completed</span> — zero remaining achieved by the target date</div>
             </div>
             <div className="flex items-center gap-3">
               <span className="inline-block size-2.5 rounded-full bg-[hsl(var(--chart-ms))] dark:bg-[hsl(var(--chart-ms)/0.55)]" />
-              <div><span className="font-medium text-primary">On track</span> — trend indicates zero remaining by each service target (SPA/MS)</div>
+              <div><span className="font-medium text-primary">On track</span> — projected completion (based on burn rate) is before the target date</div>
             </div>
             <div className="flex items-center gap-3">
               <span className="inline-block size-2.5 rounded-full bg-amber-400 dark:bg-amber-300/70" />
-              <div><span className="font-medium text-primary">At risk</span> — trend/burn rate suggests slipping or close to the target</div>
+              <div><span className="font-medium text-primary">At risk</span> — projected completion exceeds target date or low confidence in projections</div>
             </div>
             <div className="flex items-center gap-3">
               <span className="inline-block size-2.5 rounded-full bg-red-500 dark:bg-red-400/70" />
-              <div><span className="font-medium text-primary">Completed (Late)</span> — zero remaining achieved after the target date (still shown as green)</div>
-              <div><span className="font-medium text-primary">Target missed</span> — the relevant target (SPA or MS) passed without reaching zero remaining</div>
+              <div>
+                <div><span className="font-medium text-primary">Completed (Late)</span> — zero remaining achieved after the target date</div>
+                <div><span className="font-medium text-primary">Target missed</span> — target date passed with items still remaining</div>
+              </div>
             </div>
             <div className="pt-2 text-sm text-primary/80 leading-6">
-              Planned vs actual: Dotted lines show planned remaining; solid lines show actual remaining. Two targets per environment: SPA and Microservices.
+              <div className="mb-1">Status is calculated using linear regression on historical data to project completion dates with confidence scores.</div>
+              <div>Dotted lines show planned remaining; solid lines show actual remaining. Two targets per environment: SPA and Microservices.</div>
             </div>
           </div>
         </AccordionContent>

@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import type {EnvBurndownPoint, EnvironmentProgress} from "./types"
 import { motion } from "framer-motion";
+import { BurndownMetrics } from "./BurndownMetrics";
 
 type Props = {
   metrics: EnvironmentProgress
@@ -295,7 +296,11 @@ export function BurndownEnvChartCard({ metrics, data, animationKey = 0 }: Props)
           </motion.div>
         )}
       </CardContent>
-      <CardFooter className="hidden" />
+      {!isLoading && metrics.burnRate !== undefined && (
+        <CardFooter className="px-3 py-2">
+          <BurndownMetrics metrics={metrics} />
+        </CardFooter>
+      )}
     </Card>
   )
 }

@@ -57,6 +57,10 @@ export type EnvironmentProgress = {
   status: 'completed' | 'completed_late' | 'on_track' | 'at_risk' | 'missed'
   spaStatus: 'completed' | 'completed_late' | 'on_track' | 'at_risk' | 'missed'
   msStatus: 'completed' | 'completed_late' | 'on_track' | 'at_risk' | 'missed'
+  // New metrics for better predictions
+  burnRate?: number
+  projectedCompletion?: number | null
+  confidence?: number
 }
 
 

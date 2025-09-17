@@ -22,10 +22,10 @@ const features: Feature[] = [
     example: "Example URL: ?department=DEV&team=Payments&status=on_track&env=uat",
   },
   {
-    title: "Burndown Animations",
+    title: "Enhanced Burndown Predictions",
     body:
-      "Burndown charts re-animate on each navigation with smoother timing and no flicker.",
-    example: "Lines animate with staggered timings (0ms, 200ms, 400ms, 600ms).",
+      "Burndown status now uses linear regression to calculate burn rates and project completion dates with confidence scores.",
+    example: "Shows burn rate (items/day), confidence level, and projected completion date.",
   },
   {
     title: "Redesigned Last Updated",
