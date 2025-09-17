@@ -1,7 +1,7 @@
 "use client";
 
 import {useEffect, useMemo, useState} from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {Spa} from "@/app/data/schema";
 import {DataTable} from "@/components/dashboard/data-table";
 import {columns as spaColumns} from "@/components/dashboard/spa-columns";
@@ -22,8 +22,6 @@ interface SpasPageClientProps {
 }
 
 export function SpasPageClient({ spaData, allTeams }: SpasPageClientProps) {
-  const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const { selectedDepartment } = useDashboardStore();
 
@@ -37,16 +35,7 @@ export function SpasPageClient({ spaData, allTeams }: SpasPageClientProps) {
     () => (searchParams?.get("env") as EnvFilter) ?? "all",
   );
   
-  useEffect(() => {
-    if (!searchParams) return;
-    const params = new URLSearchParams(searchParams);
-    if (teamFilter !== "all") params.set("team", teamFilter); else params.delete("team");
-    if (statusFilter !== "all") params.set("status", statusFilter); else params.delete("status");
-    if (environmentFilter !== "all") params.set("env", environmentFilter); else params.delete("env");
-    if (selectedDepartment) params.set("department", selectedDepartment);
-    
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  }, [teamFilter, statusFilter, environmentFilter, selectedDepartment, pathname, router, searchParams]);
+  // No URL syncing; filters are local to this client and/or could be moved to store later
 
   const filteredData = useMemo(() => {
     return spaData

@@ -4,6 +4,7 @@ import {Microservice, Spa, TeamStat} from "@/app/data/schema";
 import {applyDepartmentToUrl} from "@/lib/department-utils";
 
 type EnvKey = "dev" | "sit" | "uat" | "nft"
+type PageKey = "overview" | "spas" | "microservices" | "teams" | "burndown" | "release-notes"
 
 type TargetOverrides = Record<EnvKey, { spa?: string; ms?: string }>
 
@@ -27,6 +28,14 @@ interface DashboardState {
   selectedDepartment: string | null;
   initializeDepartment: (dept: string) => void;
   setDepartment: (dept: string) => Promise<void>;
+
+  // Global environment selection (handled internally; no URL sync)
+  selectedEnv: EnvKey;
+  setSelectedEnv: (env: EnvKey) => void;
+
+  // Global page selection (handled internally; no URL changes)
+  selectedPage: PageKey;
+  setSelectedPage: (page: PageKey) => void;
 
   fetchData: () => Promise<void>;
   clearData: () => void;
@@ -63,6 +72,24 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     set({ selectedDepartment: dept, lastFetched: null, data: null, rawMainData: null, loading: true });
     localStorage.setItem("selectedDepartment", dept);
     await state.fetchData();
+  },
+
+  // Selected environment stored internally and persisted
+  selectedEnv: (typeof window !== "undefined" && (localStorage.getItem("dashboard.selectedEnv") as EnvKey)) || "dev",
+  setSelectedEnv: (env) => {
+    set({ selectedEnv: env });
+    if (typeof window !== "undefined") {
+      localStorage.setItem("dashboard.selectedEnv", env);
+    }
+  },
+
+  // Selected page stored internally and persisted
+  selectedPage: (typeof window !== "undefined" && (localStorage.getItem("dashboard.selectedPage") as PageKey)) || "overview",
+  setSelectedPage: (page) => {
+    set({ selectedPage: page });
+    if (typeof window !== "undefined") {
+      localStorage.setItem("dashboard.selectedPage", page);
+    }
   },
 
   fetchData: async () => {

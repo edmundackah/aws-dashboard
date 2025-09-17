@@ -8,7 +8,6 @@ import {HoverCard, HoverCardContent, HoverCardTrigger,} from "../ui/hover-card";
 import {Separator} from "../ui/separator";
 import {ServicePopover} from "./service-popover";
 import {useDashboardStore} from "@/stores/use-dashboard-store";
-import {useSearchParams} from "next/navigation";
 
 const SortableHeader = <TData,>({
   column,
@@ -50,10 +49,8 @@ const CellRenderer = ({
   status: "Migrated" | "Outstanding";
   prefilteredServices?: (Spa | Microservice)[];
 }) => {
-  const { data } = useDashboardStore();
-  const searchParams = useSearchParams();
-  const envParam = searchParams?.get("env");
-  const envKey: EnvKey = envParam === "dev" || envParam === "sit" || envParam === "uat" || envParam === "nft" ? envParam : "dev";
+  const { data, selectedEnv } = useDashboardStore();
+  const envKey: EnvKey = selectedEnv ?? "dev";
   const services =
     serviceType === "SPA" ? data?.spaData || [] : data?.msData || [];
 

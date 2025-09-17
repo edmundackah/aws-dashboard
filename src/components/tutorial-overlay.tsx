@@ -16,12 +16,6 @@ const features: Feature[] = [
     example: "Example URL: ?department=DEV",
   },
   {
-    title: "Shareable Filters",
-    body:
-      "SPAs and Microservices now sync filters to the URL for easy sharing.",
-    example: "Example URL: ?department=DEV&team=Payments&status=on_track&env=uat",
-  },
-  {
     title: "Enhanced Burndown Predictions",
     body:
       "Burndown status now uses linear regression to calculate burn rates and project completion dates with confidence scores.",

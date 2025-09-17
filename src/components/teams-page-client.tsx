@@ -1,7 +1,7 @@
 "use client";
 
 import {useEffect, useMemo, useState} from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {Microservice, Spa, TeamStat} from "@/app/data/schema";
 import {DataTable} from "@/components/dashboard/data-table";
 import {columns as teamStatsColumns, TeamRow} from "@/components/dashboard/team-stats-columns";
@@ -21,28 +21,14 @@ export function TeamsPageClient({
   spaData = [],
   msData = [],
 }: TeamsPageClientProps) {
-  const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { selectedDepartment } = useDashboardStore();
+  const { selectedDepartment, selectedEnv, setSelectedEnv } = useDashboardStore();
   
-  const [environmentFilter, setEnvironmentFilter] = useState<EnvKey>(
-    () => {
-      const env = searchParams?.get("env");
-      if (env === "dev" || env === "sit" || env === "uat" || env === "nft") {
-        return env;
-      }
-      return "dev";
-    }
-  );
+  const [environmentFilter, setEnvironmentFilter] = useState<EnvKey>(selectedEnv || "dev");
 
   useEffect(() => {
-    if (!searchParams) return;
-    const params = new URLSearchParams(searchParams);
-    if (environmentFilter !== "dev") params.set("env", environmentFilter); else params.delete("env");
-    if (selectedDepartment) params.set("department", selectedDepartment);
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  }, [environmentFilter, selectedDepartment, pathname, router, searchParams]);
+    setSelectedEnv(environmentFilter);
+  }, [environmentFilter, setSelectedEnv]);
 
   const rows = useMemo(() => {
     // Recompute counts per team based on selected environment

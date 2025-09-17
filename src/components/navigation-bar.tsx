@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useDashboardStore } from "@/stores/use-dashboard-store";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { exportData } from "@/lib/export-utils";
 import { toast } from "sonner";
 import { SettingsModal } from "@/components/settings-modal";
@@ -60,21 +60,18 @@ export function NavigationBar() {
     selectedDepartment,
     setDepartment,
     initializeDepartment,
+    selectedPage,
+    setSelectedPage,
   } = useDashboardStore();
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
 
-  // Initialize department once on mount
+  // Initialize department once on mount (from storage or default)
   useEffect(() => {
-    const deptFromUrl = searchParams?.get("department");
     const deptFromStorage = localStorage.getItem("selectedDepartment");
     const defaultDept = departments.length > 0 ? departments[0] : "";
 
     let initialDept = defaultDept;
-    if (deptFromUrl && departments.includes(deptFromUrl)) {
-      initialDept = deptFromUrl;
-    } else if (deptFromStorage && departments.includes(deptFromStorage)) {
+    if (deptFromStorage && departments.includes(deptFromStorage)) {
       initialDept = deptFromStorage;
     }
     
@@ -82,16 +79,6 @@ export function NavigationBar() {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run only once
-
-  // Sync state changes to URL
-  useEffect(() => {
-    if (!selectedDepartment || !searchParams) return;
-    const params = new URLSearchParams(searchParams);
-    if (params.get("department") !== selectedDepartment) {
-      params.set("department", selectedDepartment);
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-    }
-  }, [selectedDepartment, pathname, router, searchParams]);
 
 
   const [isMounted, setIsMounted] = useState(false);
@@ -110,7 +97,14 @@ export function NavigationBar() {
 
   // Measure active tab for animated pill
   useLayoutEffect(() => {
-    const activeKey = navItems.find((n) => n.href === pathname)?.href ?? "/";
+    const pageToHref: Record<string, string> = {
+      overview: "/",
+      spas: "/spas",
+      microservices: "/microservices",
+      teams: "/teams",
+      burndown: "/burndown",
+    };
+    const activeKey = pageToHref[selectedPage] ?? "/";
     const activeEl = itemRefs.current[activeKey]
     const container = navRef.current
     if (activeEl && container) {
@@ -119,10 +113,17 @@ export function NavigationBar() {
       const next = { left: rect.left - parentRect.left, width: rect.width }
       setPill(next)
     }
-  }, [pathname])
+  }, [selectedPage])
 
   useLayoutEffect(() => {
-    const activeKey = navItems.find((n) => n.href === pathname)?.href ?? "/";
+    const pageToHref: Record<string, string> = {
+      overview: "/",
+      spas: "/spas",
+      microservices: "/microservices",
+      teams: "/teams",
+      burndown: "/burndown",
+    };
+    const activeKey = pageToHref[selectedPage] ?? "/";
     const activeEl = dockItemRefs.current[activeKey]
     const container = dockRef.current
     if (activeEl && container) {
@@ -131,7 +132,7 @@ export function NavigationBar() {
       const next = { left: rect.left - parentRect.left, width: rect.width }
       setDockPill(next)
     }
-  }, [pathname])
+  }, [selectedPage])
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -150,7 +151,17 @@ export function NavigationBar() {
   }, []);
 
   const handleNavigation = (href: string) => {
-    router.push(href);
+    // Map route to store page key without changing URL
+    const pageMap: Record<string, "overview" | "spas" | "microservices" | "teams" | "burndown" | "release-notes"> = {
+      "/": "overview",
+      "/spas": "spas",
+      "/microservices": "microservices",
+      "/teams": "teams",
+      "/burndown": "burndown",
+      "/release-notes": "release-notes",
+    };
+    const key = pageMap[href] || "overview";
+    setSelectedPage(key);
     setOpen(false);
   };
 
@@ -208,7 +219,16 @@ export function NavigationBar() {
                 />
               )}
               {navItems.map((item) => {
-                const isActive = pathname === item.href
+                const pageToHref: Record<string, string> = {
+                  overview: "/",
+                  spas: "/spas",
+                  microservices: "/microservices",
+                  teams: "/teams",
+                  burndown: "/burndown",
+                  "release-notes": "/release-notes",
+                };
+                const activeHref = pageToHref[selectedPage] ?? "/";
+                const isActive = activeHref === item.href
                 return (
                   <motion.a
                     key={item.name}
@@ -293,7 +313,16 @@ export function NavigationBar() {
           )}
           {navItems.map((item) => {
             const ActiveIcon = item.icon
-            const isActive = pathname === item.href
+            const pageToHref: Record<string, string> = {
+              overview: "/",
+              spas: "/spas",
+              microservices: "/microservices",
+              teams: "/teams",
+              burndown: "/burndown",
+              "release-notes": "/release-notes",
+            };
+            const activeHref = pageToHref[selectedPage] ?? "/";
+            const isActive = activeHref === item.href
             return (
               <motion.button
                 key={item.name}
