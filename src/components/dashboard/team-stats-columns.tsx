@@ -8,6 +8,7 @@ import {HoverCard, HoverCardContent, HoverCardTrigger,} from "../ui/hover-card";
 import {Separator} from "../ui/separator";
 import {ServicePopover} from "./service-popover";
 import {useDashboardStore} from "@/stores/use-dashboard-store";
+import {useSearchParams} from "next/navigation";
 
 const SortableHeader = <TData,>({
   column,
@@ -26,6 +27,8 @@ const SortableHeader = <TData,>({
   </Button>
 );
 
+type EnvKey = "dev" | "sit" | "uat" | "nft";
+
 const CellRenderer = ({
   teamName,
   count,
@@ -38,16 +41,23 @@ const CellRenderer = ({
   status: "Migrated" | "Outstanding";
 }) => {
   const { data } = useDashboardStore();
+  const searchParams = useSearchParams();
+  const envParam = searchParams?.get("env");
+  const envKey: EnvKey = envParam === "dev" || envParam === "sit" || envParam === "uat" || envParam === "nft" ? envParam : "dev";
   const services =
     serviceType === "SPA" ? data?.spaData || [] : data?.msData || [];
 
-  const filteredServices = services.filter(
+  // Base filter by team and status
+  let filteredServices = services.filter(
     (s: Spa | Microservice) =>
       s.subgroupName === teamName &&
-      (status === "Migrated"
-        ? s.status === "MIGRATED"
-        : s.status !== "MIGRATED"),
+      (status === "Migrated" ? s.status === "MIGRATED" : s.status !== "MIGRATED"),
   );
+
+  // Apply environment filter only for migrated services; outstanding shows all
+  if (status === "Migrated") {
+    filteredServices = filteredServices.filter((s: Spa | Microservice) => !!s.environments?.[envKey]);
+  }
 
   return (
     <ServicePopover

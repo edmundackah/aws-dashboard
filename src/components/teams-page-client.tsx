@@ -49,20 +49,20 @@ export function TeamsPageClient({
     return teamsData.map((team) => {
       const envKey: EnvKey = environmentFilter;
 
-      const teamSpas = spaData.filter((spa) => {
-        if (spa.subgroupName !== team.teamName) return false;
-        return !!spa.environments?.[envKey];
-      });
+      // Use environment flags (from main API) only to compute migrated-in-env.
+      // Outstanding should represent all services belonging to the team, regardless of env.
+      const teamSpasAll = spaData.filter((spa) => spa.subgroupName === team.teamName);
+      const teamMsAll = msData.filter((ms) => ms.subgroupName === team.teamName);
 
-      const teamMs = msData.filter((ms) => {
-        if (ms.subgroupName !== team.teamName) return false;
-        return !!ms.environments?.[envKey];
-      });
+      const teamSpasInEnv = teamSpasAll.filter((spa) => !!spa.environments?.[envKey]);
+      const teamMsInEnv = teamMsAll.filter((ms) => !!ms.environments?.[envKey]);
 
-      const migratedSpaCount = teamSpas.filter((s) => s.status === "MIGRATED").length;
-      const outstandingSpaCount = teamSpas.filter((s) => s.status !== "MIGRATED").length;
-      const migratedMsCount = teamMs.filter((m) => m.status === "MIGRATED").length;
-      const outstandingMsCount = teamMs.filter((m) => m.status !== "MIGRATED").length;
+      const migratedSpaCount = teamSpasInEnv.filter((s) => s.status === "MIGRATED").length;
+      const migratedMsCount = teamMsInEnv.filter((m) => m.status === "MIGRATED").length;
+
+      // Outstanding should count non-migrated services across all of the team's services
+      const outstandingSpaCount = teamSpasAll.filter((s) => s.status !== "MIGRATED").length;
+      const outstandingMsCount = teamMsAll.filter((m) => m.status !== "MIGRATED").length;
 
       return {
         ...team,
