@@ -29,16 +29,26 @@ const SortableHeader = <TData,>({
 
 type EnvKey = "dev" | "sit" | "uat" | "nft";
 
+// Extend TeamStat for Teams page rows to include precomputed lists
+export type TeamRow = TeamStat & {
+  _migratedSpaList?: Spa[];
+  _outstandingSpaList?: Spa[];
+  _migratedMsList?: Microservice[];
+  _outstandingMsList?: Microservice[];
+};
+
 const CellRenderer = ({
   teamName,
   count,
   serviceType,
   status,
+  prefilteredServices,
 }: {
   teamName: string;
   count: number;
   serviceType: "SPA" | "Microservice";
   status: "Migrated" | "Outstanding";
+  prefilteredServices?: (Spa | Microservice)[];
 }) => {
   const { data } = useDashboardStore();
   const searchParams = useSearchParams();
@@ -47,20 +57,23 @@ const CellRenderer = ({
   const services =
     serviceType === "SPA" ? data?.spaData || [] : data?.msData || [];
 
-  // Base filter by team
-  let filteredServices = services.filter((s: Spa | Microservice) => s.subgroupName === teamName);
+  // If caller provided exact list used to compute the count, prefer it to avoid mismatches
+  let filteredServices: (Spa | Microservice)[] | undefined = prefilteredServices;
+  if (!filteredServices) {
+    // Base filter by team
+    filteredServices = services.filter((s: Spa | Microservice) => s.subgroupName === teamName);
 
-  if (status === "Migrated") {
-    // For migrated lists, show what is migrated in the selected env
-    filteredServices = filteredServices.filter(
-      (s: Spa | Microservice) => s.status === "MIGRATED" && !!s.environments?.[envKey],
-    );
-  } else {
-    // For outstanding lists, total should be constant: show items not migrated in the selected env.
-    // That is: include if NOT (status === MIGRATED AND env flag is true)
-    filteredServices = filteredServices.filter(
-      (s: Spa | Microservice) => !(s.status === "MIGRATED" && !!s.environments?.[envKey]),
-    );
+    if (status === "Migrated") {
+      // For migrated lists, show what is migrated in the selected env
+      filteredServices = filteredServices.filter(
+        (s: Spa | Microservice) => s.status === "MIGRATED" && !!s.environments?.[envKey],
+      );
+    } else {
+      // For outstanding lists, total should be constant: show items not migrated in the selected env.
+      filteredServices = filteredServices.filter(
+        (s: Spa | Microservice) => !(s.status === "MIGRATED" && !!s.environments?.[envKey]),
+      );
+    }
   }
 
   return (
@@ -78,7 +91,7 @@ const CellRenderer = ({
   );
 };
 
-export const columns: ColumnDef<TeamStat>[] = [
+export const columns: ColumnDef<TeamRow>[] = [
   {
     accessorKey: "teamName",
     header: ({ column }) => (
@@ -156,6 +169,7 @@ export const columns: ColumnDef<TeamStat>[] = [
         count={row.original.migratedSpaCount}
         serviceType="SPA"
         status="Migrated"
+        prefilteredServices={row.original._migratedSpaList}
       />
     ),
   },
@@ -172,6 +186,7 @@ export const columns: ColumnDef<TeamStat>[] = [
         count={row.original.outstandingSpaCount}
         serviceType="SPA"
         status="Outstanding"
+        prefilteredServices={row.original._outstandingSpaList}
       />
     ),
   },
@@ -188,6 +203,7 @@ export const columns: ColumnDef<TeamStat>[] = [
         count={row.original.migratedMsCount}
         serviceType="Microservice"
         status="Migrated"
+        prefilteredServices={row.original._migratedMsList}
       />
     ),
   },
@@ -204,6 +220,7 @@ export const columns: ColumnDef<TeamStat>[] = [
         count={row.original.outstandingMsCount}
         serviceType="Microservice"
         status="Outstanding"
+        prefilteredServices={row.original._outstandingMsList}
       />
     ),
   },

@@ -4,7 +4,7 @@ import {useEffect, useMemo, useState} from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {Microservice, Spa, TeamStat} from "@/app/data/schema";
 import {DataTable} from "@/components/dashboard/data-table";
-import {columns as teamStatsColumns} from "@/components/dashboard/team-stats-columns";
+import {columns as teamStatsColumns, TeamRow} from "@/components/dashboard/team-stats-columns";
 import {EnvironmentCombobox} from "@/components/ui/EnvironmentCombobox";
 import { useDashboardStore } from "@/stores/use-dashboard-store";
 
@@ -57,16 +57,20 @@ export function TeamsPageClient({
       const teamSpasInEnv = teamSpasAll.filter((spa) => !!spa.environments?.[envKey]);
       const teamMsInEnv = teamMsAll.filter((ms) => !!ms.environments?.[envKey]);
 
-      const migratedSpaCount = teamSpasInEnv.filter((s) => s.status === "MIGRATED").length;
-      const migratedMsCount = teamMsInEnv.filter((m) => m.status === "MIGRATED").length;
-
-      // Totals should be constant across environments, derived from summary + main overall
-      const totalSpa = (team.migratedSpaCount || 0) + (team.outstandingSpaCount || 0);
-      const totalMs = (team.migratedMsCount || 0) + (team.outstandingMsCount || 0);
+      const migratedSpaList = teamSpasInEnv.filter((s) => s.status === "MIGRATED");
+      const migratedMsList = teamMsInEnv.filter((m) => m.status === "MIGRATED");
+      const migratedSpaCount = migratedSpaList.length;
+      const migratedMsCount = migratedMsList.length;
 
       // Outstanding in selected environment is total minus migrated in that env
-      const outstandingSpaCount = Math.max(0, totalSpa - migratedSpaCount);
-      const outstandingMsCount = Math.max(0, totalMs - migratedMsCount);
+      const outstandingSpaList = teamSpasAll.filter(
+        (s) => !(s.status === "MIGRATED" && !!s.environments?.[envKey]),
+      );
+      const outstandingMsList = teamMsAll.filter(
+        (m) => !(m.status === "MIGRATED" && !!m.environments?.[envKey]),
+      );
+      const outstandingSpaCount = outstandingSpaList.length;
+      const outstandingMsCount = outstandingMsList.length;
 
       return {
         ...team,
@@ -74,7 +78,12 @@ export function TeamsPageClient({
         outstandingSpaCount,
         migratedMsCount,
         outstandingMsCount,
-      } satisfies TeamStat;
+        // Provide exact lists used for popovers so they always match the counts
+        _migratedSpaList: migratedSpaList,
+        _outstandingSpaList: outstandingSpaList,
+        _migratedMsList: migratedMsList,
+        _outstandingMsList: outstandingMsList,
+      } satisfies TeamRow;
     });
   }, [teamsData, spaData, msData, environmentFilter]);
 
