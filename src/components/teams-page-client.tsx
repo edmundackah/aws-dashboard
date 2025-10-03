@@ -1,7 +1,6 @@
 "use client";
 
 import {useEffect, useMemo, useState} from "react";
-import { useSearchParams } from "next/navigation";
 import {Microservice, Spa, TeamStat} from "@/app/data/schema";
 import {DataTable} from "@/components/dashboard/data-table";
 import {columns as teamStatsColumns, TeamRow} from "@/components/dashboard/team-stats-columns";
@@ -21,8 +20,7 @@ export function TeamsPageClient({
   spaData = [],
   msData = [],
 }: TeamsPageClientProps) {
-  const searchParams = useSearchParams();
-  const { selectedDepartment, selectedEnv, setSelectedEnv } = useDashboardStore();
+  const { selectedEnv, setSelectedEnv } = useDashboardStore();
   
   const [environmentFilter, setEnvironmentFilter] = useState<EnvKey>(selectedEnv || "dev");
 

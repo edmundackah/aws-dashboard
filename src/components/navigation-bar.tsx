@@ -16,7 +16,6 @@ import { cn } from "@/lib/utils";
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useDashboardStore } from "@/stores/use-dashboard-store";
-import { useRouter } from "next/navigation";
 import { exportData } from "@/lib/export-utils";
 import { toast } from "sonner";
 import { SettingsModal } from "@/components/settings-modal";
@@ -63,7 +62,6 @@ export function NavigationBar() {
     selectedPage,
     setSelectedPage,
   } = useDashboardStore();
-  const router = useRouter();
 
   const [isMounted, setIsMounted] = useState(false);
   const [isMac, setIsMac] = useState(false);

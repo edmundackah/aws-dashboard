@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect, useMemo, useState} from "react";
+import {useMemo, useState} from "react";
 import { useSearchParams } from "next/navigation";
 import {Microservice} from "@/app/data/schema";
 import {DataTable} from "@/components/dashboard/data-table";
@@ -11,7 +11,6 @@ import {Separator} from "@/components/ui/separator";
 import {X} from "lucide-react";
 import {StatusValue} from "@/components/ui/StatusCombobox";
 import {ServiceFiltersPopover} from "@/components/filters/ServiceFiltersPopover";
-import { useDashboardStore } from "@/stores/use-dashboard-store";
 
 type EnvKey = "dev" | "sit" | "uat" | "nft";
 type EnvFilter = EnvKey | "all";
@@ -28,7 +27,6 @@ export function MicroservicesPageClient({
   allTeams,
 }: MicroservicesPageClientProps) {
   const searchParams = useSearchParams();
-  const { selectedDepartment } = useDashboardStore();
 
   const [teamFilter, setTeamFilter] = useState(
     () => searchParams?.get("team") ?? "all",
