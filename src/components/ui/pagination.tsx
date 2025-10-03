@@ -35,25 +35,41 @@ function PaginationItem({ ...props }: React.ComponentProps<"li">) {
 
 type PaginationLinkProps = {
   isActive?: boolean
+  disabled?: boolean
 } & Pick<React.ComponentProps<typeof Button>, "size"> &
   React.ComponentProps<"a">
 
 function PaginationLink({
   className,
   isActive,
+  disabled,
   size = "icon",
+  onClick,
   ...props
 }: PaginationLinkProps) {
+
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (disabled) {
+      e.preventDefault();
+      return
+    }
+    onClick?.(e)
+  }
+
   return (
     <a
       aria-current={isActive ? "page" : undefined}
+      aria-disabled={disabled}
       data-slot="pagination-link"
       data-active={isActive}
+      data-disabled={disabled}
+      onClick={handleClick}
       className={cn(
         buttonVariants({
           variant: isActive ? "outline" : "ghost",
           size,
         }),
+        disabled && "opacity-50 hover:cursor-not-allowed",
         className
       )}
       {...props}
@@ -63,12 +79,14 @@ function PaginationLink({
 
 function PaginationPrevious({
   className,
+  disabled,
   ...props
 }: React.ComponentProps<typeof PaginationLink>) {
   return (
     <PaginationLink
       aria-label="Go to previous page"
       size="default"
+      disabled={disabled}
       className={cn("gap-1 px-2.5 sm:pl-2.5", className)}
       {...props}
     >
@@ -80,12 +98,14 @@ function PaginationPrevious({
 
 function PaginationNext({
   className,
+  disabled,
   ...props
 }: React.ComponentProps<typeof PaginationLink>) {
   return (
     <PaginationLink
       aria-label="Go to next page"
       size="default"
+      disabled={disabled}
       className={cn("gap-1 px-2.5 sm:pr-2.5", className)}
       {...props}
     >
@@ -103,7 +123,7 @@ function PaginationEllipsis({
     <span
       aria-hidden
       data-slot="pagination-ellipsis"
-      className={cn("flex size-9 items-center justify-center", className)}
+      className={cn("flex size-9 items-center justify-center hover:cursor-not-allowed", className)}
       {...props}
     >
       <MoreHorizontalIcon className="size-4" />

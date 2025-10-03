@@ -82,7 +82,7 @@ export function DataTable<TData, TValue>({
                                            tabId = "default",
                                          }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [pageSize, setPageSize] = usePersistentState(`${tabId}_pageSize`,15);
+  const [pageSize, setPageSize] = usePersistentState(`${tabId}_pageSize`, 15);
 
   const table = useReactTable({
     data,
@@ -181,7 +181,7 @@ export function DataTable<TData, TValue>({
             <PaginationItem>
               <PaginationPrevious
                 onClick={() => table.previousPage()}
-                className={!table.getCanPreviousPage() ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                disabled={!table.getCanPreviousPage()}
               />
             </PaginationItem>
 
@@ -212,13 +212,13 @@ export function DataTable<TData, TValue>({
                     <HoverCard openDelay={150} closeDelay={150}>
                       <HoverCardTrigger asChild>
                         <div>
-                          <PaginationEllipsis className="cursor-pointer" />
+                          <PaginationEllipsis className="hover:cursor-not-allowed" />
                         </div>
                       </HoverCardTrigger>
                       <HoverCardContent className="w-72" align="center">
                         <div className="flex flex-col gap-2">
                           <div className="text-xs text-muted-foreground">
-                            Pages {gapStart + 1} – {gapEnd + 1} hidden
+                            Pages {gapStart + 1} - {gapEnd + 1} hidden
                           </div>
                           <div className="flex flex-wrap gap-2">
                             {candidates.map((p) => (
@@ -248,15 +248,14 @@ export function DataTable<TData, TValue>({
             <PaginationItem>
               <PaginationNext
                 onClick={() => table.nextPage()}
-                className={!table.getCanNextPage() ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                disabled={!table.getCanNextPage()}
               />
             </PaginationItem>
           </PaginationContent>
         </Pagination>
 
         <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-          Page {table.getState().pagination.pageIndex + 1} of{" "}
-          {table.getPageCount()}
+          {`Page {table.getState().pagination.pageIndex + 1} of ${table.getPageCount()}`}
         </div>
       </div>
     </div>
