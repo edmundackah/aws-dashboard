@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Loader2, FileJson, AlertCircle, Lock, Unlock } from 'lucide-react'
+import { Loader2, FileJson, AlertCircle, Lock, Unlock, Upload } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import SwaggerInfo from './swagger-info'
 import SwaggerEndpoint from './swagger-endpoint'
@@ -12,6 +12,7 @@ import AuthModal, { AuthCredential } from './auth-modal'
 import { SwaggerSpec, OpenAPISpec, Operation, Schema, isSwagger2, isOpenAPI3, isReference, resolveReference } from '@/lib/swagger-types'
 import SwaggerSchema from './swagger-schema'
 import CodeBlock from '@/components/ui/code-block'
+import { cn } from '@/lib/utils'
 
 interface SwaggerViewerProps {
   initialUrl?: string
@@ -27,6 +28,7 @@ export default function SwaggerViewer({ initialUrl }: SwaggerViewerProps) {
   const [authCredentials, setAuthCredentials] = useState<Record<string, AuthCredential>>({})
   const [selectedServer, setSelectedServer] = useState<string | null>(null)
   const [modelViewMode, setModelViewMode] = useState<Record<string, 'schema' | 'example'>>({})
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   
   const toggleModelView = (modelName: string) => {
     setModelViewMode(prev => ({
@@ -85,40 +87,44 @@ export default function SwaggerViewer({ initialUrl }: SwaggerViewerProps) {
     return JSON.stringify(null, null, 2)
   }
 
-  const loadSwaggerSpec = async () => {
+  const loadSwaggerSpec = async (data?: any) => {
     setLoading(true)
     setError(null)
     
     try {
-      const response = await fetch(url)
-      if (!response.ok) {
-        throw new Error(`Failed to fetch: ${response.statusText}`)
+      let specData = data
+      
+      // If no data provided, fetch from URL
+      if (!specData) {
+        const response = await fetch(url)
+        if (!response.ok) {
+          throw new Error(`Failed to fetch: ${response.statusText}`)
+        }
+        specData = await response.json()
       }
       
-      const data = await response.json()
-      
       // Validate it's a valid Swagger/OpenAPI spec
-      if (!isSwagger2(data) && !isOpenAPI3(data)) {
+      if (!isSwagger2(specData) && !isOpenAPI3(specData)) {
         throw new Error('Invalid Swagger/OpenAPI specification')
       }
       
-      setSpec(data)
+      setSpec(specData)
       
       // Set default server
-      if (isSwagger2(data)) {
+      if (isSwagger2(specData)) {
         // For Swagger 2.0, construct the base URL
-        const scheme = data.schemes?.[0] || 'https'
-        const host = data.host || 'localhost'
-        const basePath = data.basePath || ''
+        const scheme = specData.schemes?.[0] || 'https'
+        const host = specData.host || 'localhost'
+        const basePath = specData.basePath || ''
         setSelectedServer(`${scheme}://${host}${basePath}`)
       } else {
         // For OpenAPI 3.x, use the first server
-        setSelectedServer(data.servers?.[0]?.url || 'https://api.example.com')
+        setSelectedServer(specData.servers?.[0]?.url || 'https://api.example.com')
       }
       
       // Select first tag by default
-      if (data.tags && data.tags.length > 0) {
-        setSelectedTag(data.tags[0].name)
+      if (specData.tags && specData.tags.length > 0) {
+        setSelectedTag(specData.tags[0].name)
       } else {
         setSelectedTag(null)
       }
@@ -127,6 +133,30 @@ export default function SwaggerViewer({ initialUrl }: SwaggerViewerProps) {
       setSpec(null)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleFileUpload = async (file: File) => {
+    setSelectedFile(file)
+    setLoading(true)
+    setError(null)
+    
+    try {
+      const text = await file.text()
+      const data = JSON.parse(text)
+      
+      await loadSwaggerSpec(data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to parse file')
+      setSpec(null)
+      setLoading(false)
+    }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      handleFileUpload(file)
     }
   }
 
@@ -192,9 +222,10 @@ export default function SwaggerViewer({ initialUrl }: SwaggerViewerProps) {
 
   return (
     <div className="h-full flex flex-col">
-      {/* URL Input */}
+      {/* URL Input and File Upload */}
       <div className="border-b border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-950">
-        <div className="space-y-2">
+        <div className="space-y-4">
+          {/* URL Input */}
           <form onSubmit={handleLoadSpec} className="flex gap-2">
             <div className="flex-1 relative">
               <FileJson className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -213,10 +244,52 @@ export default function SwaggerViewer({ initialUrl }: SwaggerViewerProps) {
                   Loading...
                 </>
               ) : (
-                'Load Specification'
+                'Load from URL'
               )}
             </Button>
           </form>
+
+          {/* File Upload */}
+          <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <input
+                type="file"
+                id="swagger-file"
+                accept=".json"
+                onChange={handleFileChange}
+                disabled={loading}
+                className="sr-only"
+              />
+              <label
+                htmlFor="swagger-file"
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 text-sm border rounded-md cursor-pointer transition-colors max-w-md",
+                  loading
+                    ? "border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 cursor-not-allowed opacity-60"
+                    : "border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900 hover:border-primary"
+                )}
+              >
+                <Upload className="h-4 w-4 text-gray-500" />
+                <span className="text-gray-700 dark:text-gray-300">
+                  {selectedFile ? selectedFile.name : 'Choose JSON file...'}
+                </span>
+              </label>
+            </div>
+            {selectedFile && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSelectedFile(null)
+                  const fileInput = document.getElementById('swagger-file') as HTMLInputElement
+                  if (fileInput) fileInput.value = ''
+                }}
+                disabled={loading}
+              >
+                Clear
+              </Button>
+            )}
+          </div>
           
           {/* Base URL selector and Authorize button */}
           {spec && (
