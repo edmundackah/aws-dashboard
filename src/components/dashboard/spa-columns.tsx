@@ -27,27 +27,32 @@ const BooleanCell = ({ value }: { value: boolean }) => (
 );
 
 function HomepageCell({ href }: { href?: string }) {
-  if (!href || href === "#") {
-    return <span className="text-muted-foreground text-xs italic">No homepage</span>;
-  }
-
-  let hostname: string | null = null;
-  let normalizedUrl = href;
-  try {
-    const url = href.startsWith("http") ? new URL(href) : new URL(`https://${href}`);
-    hostname = url.hostname;
-    normalizedUrl = url.toString();
-  } catch {}
-
-  const displayLabel = hostname || href.replace(/^https?:\/\//, "");
-  const favicon = hostname ? `https://www.google.com/s2/favicons?domain=${hostname}&sz=64` : undefined;
-
+  // Hooks must be called unconditionally
   const [open, setOpen] = useState(false);
   const [requested, setRequested] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
 
+  const hasHomepage = !!href && href !== "#";
+
+  let hostname: string | null = null;
+  let normalizedUrl = "";
+  let displayLabel = "";
+  let favicon: string | undefined = undefined;
+  if (hasHomepage) {
+    try {
+      const url = href!.startsWith("http") ? new URL(href!) : new URL(`https://${href}`);
+      hostname = url.hostname;
+      normalizedUrl = url.toString();
+    } catch {
+      normalizedUrl = href!;
+    }
+    displayLabel = (hostname || normalizedUrl.replace(/^https?:\/\//, ""));
+    favicon = hostname ? `https://www.google.com/s2/favicons?domain=${hostname}&sz=64` : undefined;
+  }
+
   useEffect(() => {
+    if (!hasHomepage) return;
     let timeout: number | undefined;
     if (open) {
       setRequested(true);
@@ -63,9 +68,10 @@ function HomepageCell({ href }: { href?: string }) {
     return () => {
       if (timeout) window.clearTimeout(timeout);
     };
-  }, [open, loaded]);
+  }, [open, loaded, hasHomepage]);
 
   const copyUrl = async () => {
+    if (!hasHomepage) return;
     try {
       await navigator.clipboard.writeText(normalizedUrl);
       toast.success("Homepage URL copied");
@@ -73,6 +79,10 @@ function HomepageCell({ href }: { href?: string }) {
       toast.error("Failed to copy URL");
     }
   };
+
+  if (!hasHomepage) {
+    return <span className="text-muted-foreground text-xs italic">No homepage</span>;
+  }
 
   return (
     <HoverCard openDelay={150} closeDelay={100} onOpenChange={setOpen}>
