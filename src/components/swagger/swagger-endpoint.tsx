@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronDown, ChevronRight, Play, Copy, Check, Upload, Lock, Unlock, AlertCircle, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronRight, Play, Copy, Check, Upload, Lock, Unlock, AlertCircle, Trash2, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -1043,7 +1043,10 @@ export default function SwaggerEndpoint({ path, method, operation, spec, authCre
   }
 
   return (
-    <div className="bg-white dark:bg-gray-950 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
+    <div className={cn(
+      "bg-white dark:bg-gray-950 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden",
+      operation.deprecated && "opacity-75"
+    )}>
       {/* Header */}
       <button
         onClick={() => setExpanded(!expanded)}
@@ -1054,7 +1057,10 @@ export default function SwaggerEndpoint({ path, method, operation, spec, authCre
           <span className={cn('text-xs font-medium px-2 py-1 rounded uppercase', methodColors[method as keyof typeof methodColors])}>
             {method}
           </span>
-          <code className="text-sm font-mono">{path}</code>
+          <code className={cn(
+            "text-sm font-mono",
+            operation.deprecated && "text-gray-400 dark:text-gray-600 line-through"
+          )}>{path}</code>
           {hasAuth && (
             <div className={cn(
               "flex items-center gap-1 px-2 py-0.5 rounded text-xs",
@@ -1070,6 +1076,12 @@ export default function SwaggerEndpoint({ path, method, operation, spec, authCre
               ))}
             </div>
           )}
+          {operation.deprecated && (
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+              <AlertTriangle className="h-3 w-3" />
+              <span>Deprecated</span>
+            </div>
+          )}
         </div>
         {operation.summary && (
           <span className="text-sm text-gray-600 dark:text-gray-400">{operation.summary}</span>
@@ -1083,6 +1095,22 @@ export default function SwaggerEndpoint({ path, method, operation, spec, authCre
           {operation.description && (
             <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-800">
               <p className="text-sm text-gray-600 dark:text-gray-400">{operation.description}</p>
+            </div>
+          )}
+
+          {/* Deprecated Warning */}
+          {operation.deprecated && (
+            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+              <div className="flex items-start gap-2 p-3 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+                <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
+                <div className="text-sm">
+                  <p className="font-medium text-yellow-800 dark:text-yellow-200">This endpoint is deprecated</p>
+                  <p className="text-yellow-700 dark:text-yellow-300 mt-1">
+                    This API endpoint is no longer maintained and may be removed in future versions. 
+                    Please use alternative endpoints if available.
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 
