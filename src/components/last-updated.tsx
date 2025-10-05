@@ -14,11 +14,12 @@ interface LastUpdatedIndicatorProps {
 }
 
 export function LastUpdatedIndicator({ lastUpdate, onRefresh }: LastUpdatedIndicatorProps) {
-  const [now, setNow] = useState<number>(() => Date.now());
+  const [now, setNow] = useState<number>(0);
   const [refreshing, setRefreshing] = useState(false);
   const [spinOnClick, setSpinOnClick] = useState(false);
 
   useEffect(() => {
+    setNow(Date.now());
     const id = window.setInterval(() => setNow(Date.now()), 30_000);
     return () => window.clearInterval(id);
   }, []);
@@ -36,7 +37,8 @@ export function LastUpdatedIndicator({ lastUpdate, onRefresh }: LastUpdatedIndic
 
   const formatRelative = (isoString: string) => {
     const updated = new Date(isoString).getTime();
-    const diff = Math.max(0, now - updated);
+    const baseNow = now || updated; // avoid negative/NaN during SSR
+    const diff = Math.max(0, baseNow - updated);
     const sec = Math.floor(diff / 1000);
     if (sec < 10) return "just now";
     if (sec < 60) return `${sec}s ago`;
