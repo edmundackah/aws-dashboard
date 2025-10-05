@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { ChevronRight, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
 import {
   Schema,
   SwaggerSpec,
@@ -27,6 +28,44 @@ export default function SwaggerSchema({
   required = false
 }: SwaggerSchemaProps) {
   const [expanded, setExpanded] = useState(depth < 2)
+
+  // Safely render HTML descriptions
+  const renderDescription = (description: string) => {
+    // Convert common HTML tags to proper formatting
+    let formatted = description
+      .replace(/<br\s*\/?>/gi, '\n') // Convert <br> to newlines
+      .replace(/<li>/gi, '• ') // Convert <li> to bullet points
+      .replace(/<\/li>/gi, '\n') // Close list items
+      .replace(/<ul>/gi, '') // Remove <ul> tags
+      .replace(/<\/ul>/gi, '') // Remove </ul> tags
+      .replace(/<strong>/gi, '**') // Convert <strong> to markdown
+      .replace(/<\/strong>/gi, '**') // Close strong tags
+      .replace(/<em>/gi, '*') // Convert <em> to markdown
+      .replace(/<\/em>/gi, '*') // Close em tags
+      .replace(/<p>/gi, '') // Remove <p> tags
+      .replace(/<\/p>/gi, '\n\n') // Convert </p> to double newlines
+      .replace(/<[^>]*>/g, '') // Remove any remaining HTML tags
+    
+    // Split by newlines and render each line
+    const lines = formatted.split('\n').filter(line => line.trim())
+    
+    return (
+      <div className="text-xs text-gray-500 space-y-1">
+        {lines.map((line, index) => (
+          <div key={index} className="whitespace-pre-wrap">
+            {line.includes('**') ? (
+              <span dangerouslySetInnerHTML={{ 
+                __html: line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                           .replace(/\*(.*?)\*/g, '<em>$1</em>')
+              }} />
+            ) : (
+              line
+            )}
+          </div>
+        ))}
+      </div>
+    )
+  }
 
   if (!schema) return null
 
@@ -85,7 +124,9 @@ export default function SwaggerSchema({
         )}
         
         {resolvedSchema.description && (
-          <span className="text-xs text-gray-500">- {resolvedSchema.description}</span>
+          <div className="mt-1">
+            {renderDescription(resolvedSchema.description)}
+          </div>
         )}
       </div>
 
@@ -121,11 +162,19 @@ export default function SwaggerSchema({
 
       {/* Enum values */}
       {resolvedSchema.enum && (
-        <div className="mt-1 ml-6">
-          <span className="text-xs text-gray-500">Enum: </span>
-          <span className="text-xs font-mono">
-            [{resolvedSchema.enum.map(v => JSON.stringify(v)).join(', ')}]
-          </span>
+        <div className="mt-2 ml-6">
+          <div className="text-xs text-gray-500 mb-1">Enum values:</div>
+          <div className="flex flex-wrap gap-1">
+            {resolvedSchema.enum.map((value, index) => (
+              <Badge 
+                key={index} 
+                variant="outline" 
+                className="text-xs font-mono bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"
+              >
+                {typeof value === 'string' ? value : JSON.stringify(value)}
+              </Badge>
+            ))}
+          </div>
         </div>
       )}
 

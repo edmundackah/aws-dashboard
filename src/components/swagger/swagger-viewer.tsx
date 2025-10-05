@@ -37,6 +37,41 @@ export default function SwaggerViewer({ initialUrl }: SwaggerViewerProps) {
     }))
   }
   
+  const generateArrayItemExample = (itemSchema: Schema): unknown => {
+    if (itemSchema.example !== undefined) {
+      return itemSchema.example
+    }
+    if (itemSchema.default !== undefined) {
+      return itemSchema.default
+    }
+    
+    switch (itemSchema.type) {
+      case 'string':
+        return itemSchema.enum ? itemSchema.enum[0] : 'string'
+      case 'integer':
+      case 'number':
+        return 0
+      case 'boolean':
+        return true
+      case 'array':
+        return []
+      case 'object':
+        if (itemSchema.properties) {
+          const obj: Record<string, unknown> = {}
+          Object.entries(itemSchema.properties).forEach(([key, prop]) => {
+            const propSchema = isReference(prop) 
+              ? resolveReference(prop.$ref, spec!) as Schema
+              : prop as Schema
+            obj[key] = generateArrayItemExample(propSchema)
+          })
+          return obj
+        }
+        return {}
+      default:
+        return null
+    }
+  }
+
   const generateModelExample = (schema: Schema): string => {
     if (schema.example !== undefined) {
       return JSON.stringify(schema.example, null, 2)
@@ -67,7 +102,21 @@ export default function SwaggerViewer({ initialUrl }: SwaggerViewerProps) {
               example[key] = true
               break
             case 'array':
-              example[key] = []
+              // Generate meaningful array examples
+              if (propSchema.items) {
+                const itemSchema = isReference(propSchema.items)
+                  ? resolveReference(propSchema.items.$ref, spec!) as Schema
+                  : propSchema.items as Schema
+                
+                // Generate 2-3 example items for arrays
+                const examples = []
+                for (let i = 0; i < Math.min(3, propSchema.maxItems || 3); i++) {
+                  examples.push(generateArrayItemExample(itemSchema))
+                }
+                example[key] = examples
+              } else {
+                example[key] = []
+              }
               break
             case 'object':
               example[key] = {}
@@ -81,6 +130,19 @@ export default function SwaggerViewer({ initialUrl }: SwaggerViewerProps) {
     }
     
     if (schema.type === 'array') {
+      // Generate meaningful array examples
+      if (schema.items) {
+        const itemSchema = isReference(schema.items)
+          ? resolveReference(schema.items.$ref, spec!) as Schema
+          : schema.items as Schema
+        
+        // Generate 2-3 example items for arrays
+        const examples = []
+        for (let i = 0; i < Math.min(3, schema.maxItems || 3); i++) {
+          examples.push(generateArrayItemExample(itemSchema))
+        }
+        return JSON.stringify(examples, null, 2)
+      }
       return '[]'
     }
     

@@ -71,6 +71,7 @@ export default function SwaggerEndpoint({ path, method, operation, spec, authCre
     duration?: number
     error?: string
     contentType?: string
+    isCorsError?: boolean
   } | null>(null)
   const [loading, setLoading] = useState(false)
   const [curlCommand, setCurlCommand] = useState<string>('')
@@ -165,59 +166,67 @@ export default function SwaggerEndpoint({ path, method, operation, spec, authCre
     }
   }
   
+  // Helper function to generate a single example value
+  const generateExampleValue = (propSchema: Schema): unknown => {
+    if (propSchema.example !== undefined) {
+      return propSchema.example
+    }
+    if (propSchema.default !== undefined) {
+      return propSchema.default
+    }
+    
+    switch (propSchema.type) {
+      case 'string':
+        return propSchema.enum ? propSchema.enum[0] : 'string'
+      case 'integer':
+      case 'number':
+        return 0
+      case 'boolean':
+        return true
+      case 'array':
+        // Generate multiple array items for better examples
+        if (propSchema.items) {
+          const itemSchema = isReference(propSchema.items)
+            ? resolveReference(propSchema.items.$ref, spec) as Schema
+            : propSchema.items as Schema
+          
+          // Generate 2-3 example items for arrays
+          const examples = []
+          for (let i = 0; i < Math.min(3, propSchema.maxItems || 3); i++) {
+            examples.push(generateExampleValue(itemSchema))
+          }
+          return examples
+        }
+        return []
+      case 'object':
+        // Recursively generate object properties
+        if (propSchema.properties) {
+          const obj: Record<string, unknown> = {}
+          Object.entries(propSchema.properties).forEach(([k, v]) => {
+            const vSchema = isReference(v)
+              ? resolveReference(v.$ref, spec) as Schema
+              : v as Schema
+            obj[k] = generateExampleValue(vSchema)
+          })
+          return obj
+        }
+        return {}
+      default:
+        return null
+    }
+  }
+
   const generateExample = (schema: unknown, contentType?: string): string => {
     const resolvedSchema = isReference(schema) 
       ? resolveReference((schema as { $ref: string }).$ref, spec) as Schema
       : schema as Schema
     
     if (resolvedSchema.example !== undefined) {
+      // Enhance existing examples that contain empty arrays
+      const enhancedExample = enhanceExampleWithArrays(resolvedSchema.example, resolvedSchema)
       return contentType?.includes('xml') 
-        ? convertToXml(resolvedSchema.example)
-        : JSON.stringify(resolvedSchema.example, null, 2)
-    }
-    
-    // Helper function to generate a single example value
-    const generateExampleValue = (propSchema: Schema): unknown => {
-      if (propSchema.example !== undefined) {
-        return propSchema.example
-      }
-      if (propSchema.default !== undefined) {
-        return propSchema.default
-      }
-      
-      switch (propSchema.type) {
-        case 'string':
-          return propSchema.enum ? propSchema.enum[0] : 'string'
-        case 'integer':
-        case 'number':
-          return 0
-        case 'boolean':
-          return true
-        case 'array':
-          // Recursively generate array items
-          if (propSchema.items) {
-            const itemSchema = isReference(propSchema.items)
-              ? resolveReference(propSchema.items.$ref, spec) as Schema
-              : propSchema.items as Schema
-            return [generateExampleValue(itemSchema)]
-          }
-          return []
-        case 'object':
-          // Recursively generate object properties
-          if (propSchema.properties) {
-            const obj: Record<string, unknown> = {}
-            Object.entries(propSchema.properties).forEach(([k, v]) => {
-              const vSchema = isReference(v)
-                ? resolveReference(v.$ref, spec) as Schema
-                : v as Schema
-              obj[k] = generateExampleValue(vSchema)
-            })
-            return obj
-          }
-          return {}
-        default:
-          return null
-      }
+        ? convertToXml(enhancedExample)
+        : JSON.stringify(enhancedExample, null, 2)
     }
     
     // Generate example based on type
@@ -283,6 +292,58 @@ export default function SwaggerEndpoint({ path, method, operation, spec, authCre
         return contentType?.includes('xml') 
           ? '<?xml version="1.0" encoding="UTF-8"?>\n<root></root>'
           : JSON.stringify({}, null, 2)
+  }
+
+  // Enhance existing examples by populating empty arrays with meaningful data
+  const enhanceExampleWithArrays = (example: unknown, schema: Schema): unknown => {
+    if (Array.isArray(example)) {
+      // If the example is an empty array, generate meaningful items
+      if (example.length === 0 && schema.items) {
+        const itemSchema = isReference(schema.items)
+          ? resolveReference(schema.items.$ref, spec) as Schema
+          : schema.items as Schema
+        
+        const enhancedItems = []
+        for (let i = 0; i < Math.min(3, schema.maxItems || 3); i++) {
+          enhancedItems.push(generateExampleValue(itemSchema))
+        }
+        return enhancedItems
+      }
+      // If array has items, enhance each item recursively
+      return example.map(item => enhanceExampleWithArrays(item, schema))
+    }
+    
+    if (example && typeof example === 'object' && schema.properties) {
+      const enhanced: Record<string, unknown> = {}
+      Object.entries(example).forEach(([key, value]) => {
+        const propSchema = schema.properties?.[key]
+        if (propSchema) {
+          const resolvedPropSchema = isReference(propSchema)
+            ? resolveReference(propSchema.$ref, spec) as Schema
+            : propSchema as Schema
+          
+          // If the value is an empty array, enhance it
+          if (Array.isArray(value) && value.length === 0 && resolvedPropSchema.items) {
+            const itemSchema = isReference(resolvedPropSchema.items)
+              ? resolveReference(resolvedPropSchema.items.$ref, spec) as Schema
+              : resolvedPropSchema.items as Schema
+            
+            const enhancedItems = []
+            for (let i = 0; i < Math.min(3, resolvedPropSchema.maxItems || 3); i++) {
+              enhancedItems.push(generateExampleValue(itemSchema))
+            }
+            enhanced[key] = enhancedItems
+          } else {
+            enhanced[key] = enhanceExampleWithArrays(value, resolvedPropSchema)
+          }
+        } else {
+          enhanced[key] = value
+        }
+      })
+      return enhanced
+    }
+    
+    return example
   }
 
   // Convert JSON object to XML with proper structure matching Swagger website
@@ -993,8 +1054,26 @@ export default function SwaggerEndpoint({ path, method, operation, spec, authCre
         contentType: responseContentType || undefined,
       })
     } catch (error) {
+      let errorMessage = 'Request failed'
+      let isCorsError = false
+      
+      if (error instanceof Error) {
+        errorMessage = error.message
+        
+        // Detect CORS errors
+        if (error.message.includes('CORS') || 
+            error.message.includes('Access-Control-Allow-Origin') ||
+            error.message.includes('blocked by CORS policy') ||
+            error.message.includes('ERR_FAILED') ||
+            error.message.includes('Failed to fetch')) {
+          isCorsError = true
+          errorMessage = `CORS Error: The API server doesn't allow requests from this origin (${window.location.origin}). This is a browser security restriction.`
+        }
+      }
+      
       setResponse({
-        error: error instanceof Error ? error.message : 'Request failed',
+        error: errorMessage,
+        isCorsError,
       })
     } finally {
       setLoading(false)
@@ -1159,15 +1238,14 @@ export default function SwaggerEndpoint({ path, method, operation, spec, authCre
             const bodyParam = getBodyParameter()
             const hasBody = bodySchemaData || bodyParam
             
-            // Show parameters section if there are params OR a request body
-            if (!hasParams && !hasBody) return null
+            // Only show parameters section if there are actual parameters
+            if (!hasParams) return null
             
             return (
               <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-800">
-                <h4 className="font-medium mb-3">{hasParams ? 'Parameters' : 'Request Body'}</h4>
-                {hasParams && (
-              <div className="space-y-3">
-                {allParameters.filter(p => p.in !== 'body').map((param, index) => (
+                <h4 className="font-medium mb-3">Parameters</h4>
+                <div className="space-y-3">
+                  {allParameters.filter(p => p.in !== 'body').map((param, index) => (
                   <div key={`${param.name}-${index}`} className="space-y-1">
                     <div className="flex items-center gap-2">
                       <label className="text-sm font-medium">
@@ -1300,8 +1378,7 @@ export default function SwaggerEndpoint({ path, method, operation, spec, authCre
                     )}
                   </div>
                 ))}
-              </div>
-                )}
+                </div>
               </div>
             )
           })()}
@@ -1694,6 +1771,24 @@ export default function SwaggerEndpoint({ path, method, operation, spec, authCre
                 {response.error ? (
                   <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3">
                     <p className="text-sm text-red-700 dark:text-red-300">Error: {response.error}</p>
+                    
+                    {response.isCorsError && (
+                      <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+                        <h6 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">
+                          CORS Error Solutions:
+                        </h6>
+                        <ul className="text-xs text-yellow-700 dark:text-yellow-300 space-y-1">
+                          <li>• <strong>Browser Extension:</strong> Install a CORS extension (e.g., "CORS Unblock")</li>
+                          <li>• <strong>Browser Flags:</strong> Launch Chrome with <code className="bg-yellow-100 dark:bg-yellow-800 px-1 rounded">--disable-web-security --user-data-dir=/tmp/chrome_dev</code></li>
+                          <li>• <strong>Proxy Server:</strong> Use a CORS proxy service</li>
+                          <li>• <strong>API Server:</strong> Ask the API provider to add CORS headers</li>
+                          <li>• <strong>cURL:</strong> Use the generated cURL command in terminal</li>
+                        </ul>
+                        <div className="mt-2 text-xs text-yellow-600 dark:text-yellow-400">
+                          <strong>Note:</strong> CORS is a browser security feature. The API server needs to explicitly allow your origin.
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <>
