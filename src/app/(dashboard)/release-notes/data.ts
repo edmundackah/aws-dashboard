@@ -2,6 +2,46 @@ import type { ReleaseNote } from "@/components/release-notes/types";
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "3.1",
+    title: "Lean UI, live SPA previews, and hydration fixes",
+    date: "2025-10-05",
+    summary:
+      "This release streamlines the interface by removing the tutorial overlay and legacy sidebar components, introduces a richer SPA homepage experience with live preview on hover, and applies hydration mismatch fixes for a smoother, more reliable client render.",
+    sections: [
+      {
+        title: "Highlights",
+        items: [
+          "Removed tutorial overlay for a cleaner, distraction-free dashboard",
+          "Retired unused sidebar components to simplify the codebase",
+          "SPA table: homepage now shows favicon, tidy domain, and a live preview hover (best-effort)",
+          "Hydration improvements: eliminate non-deterministic render values and defer time-based state to effects",
+        ],
+      },
+      {
+        title: "Enhancements",
+        items: [
+          "SPA homepage hover shows a sandboxed live preview when the site permits embedding; gracefully falls back when blocked by CSP/X-Frame-Options",
+          "Quick actions added: Open in new tab and Copy URL",
+          "Homepage label now displays a concise domain with favicon for faster recognition",
+        ],
+      },
+      {
+        title: "Removals",
+        items: [
+          "Tutorial overlay removed",
+          "Unused sidebar components removed",
+        ],
+      },
+      {
+        title: "Fixes",
+        items: [
+          "Addressed hydration mismatch risks by making skeleton widths deterministic on first render and initialising time values after mount",
+          "Further client-only safeguards: localStorage/window access moved into effects or guarded initialisers",
+        ],
+      },
+    ],
+  },
+  {
     version: "3.0",
     title: "Multi-tenancy, Enhanced Burndown Predictions, and Shareable URLs",
     date: "2024-09-15",
