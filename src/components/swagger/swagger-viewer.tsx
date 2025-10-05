@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Loader2, FileJson, AlertCircle, Lock, Unlock } from 'lucide-react'
@@ -10,7 +11,7 @@ import SwaggerEndpoint from './swagger-endpoint'
 import AuthModal, { AuthCredential } from './auth-modal'
 import { SwaggerSpec, OpenAPISpec, Operation, Schema, isSwagger2, isOpenAPI3, isReference, resolveReference } from '@/lib/swagger-types'
 import SwaggerSchema from './swagger-schema'
-import CodeBlock from './json-code-block'
+import CodeBlock from '@/components/ui/code-block'
 
 interface SwaggerViewerProps {
   initialUrl?: string
@@ -232,17 +233,18 @@ export default function SwaggerViewer({ initialUrl }: SwaggerViewerProps) {
                   
                   if (servers.length > 1) {
                     return (
-                      <select
-                        value={selectedServer || ''}
-                        onChange={(e) => setSelectedServer(e.target.value)}
-                        className="text-sm border border-gray-300 dark:border-gray-700 rounded-md px-3 py-1.5 bg-white dark:bg-gray-950 font-mono flex-1"
-                      >
-                        {servers.map((server, index) => (
-                          <option key={index} value={server.url}>
-                            {server.url}{server.description ? ` (${server.description})` : ''}
-                          </option>
-                        ))}
-                      </select>
+                      <Select value={selectedServer || ''} onValueChange={setSelectedServer}>
+                        <SelectTrigger className="flex-1 font-mono">
+                          <SelectValue placeholder="Select server..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {servers.map((server, index) => (
+                            <SelectItem key={index} value={server.url}>
+                              {server.url}{server.description ? ` (${server.description})` : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     )
                   } else {
                     // Single server, show as read-only text

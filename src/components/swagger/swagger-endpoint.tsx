@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { ChevronDown, ChevronRight, Play, Copy, Check, Upload, Lock, Unlock, AlertCircle, Trash2, AlertTriangle } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -20,7 +21,7 @@ import {
   isReference
 } from '@/lib/swagger-types'
 import SwaggerSchema from './swagger-schema'
-import CodeBlock from './json-code-block'
+import CodeBlock from '@/components/ui/code-block'
 import { toast } from 'sonner'
 import type { AuthCredential } from './auth-modal'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -34,6 +35,16 @@ interface SwaggerEndpointProps {
   selectedServer?: string | null
 }
 
+const methodVariants = {
+  get: 'default',
+  post: 'secondary', 
+  put: 'outline',
+  delete: 'destructive',
+  patch: 'secondary',
+  options: 'outline',
+  head: 'outline',
+} as const
+
 const methodColors = {
   get: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
   post: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300',
@@ -42,7 +53,7 @@ const methodColors = {
   patch: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300',
   options: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
   head: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
-}
+} as const
 
 export default function SwaggerEndpoint({ path, method, operation, spec, authCredentials = {}, selectedServer }: SwaggerEndpointProps) {
   const [expanded, setExpanded] = useState(false)
@@ -1054,16 +1065,16 @@ export default function SwaggerEndpoint({ path, method, operation, spec, authCre
       >
         <div className="flex items-center gap-3">
           {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          <span className={cn('text-xs font-medium px-2 py-1 rounded uppercase', methodColors[method as keyof typeof methodColors])}>
+          <Badge className={cn('uppercase', methodColors[method as keyof typeof methodColors])}>
             {method}
-          </span>
+          </Badge>
           <code className={cn(
             "text-sm font-mono",
             operation.deprecated && "text-gray-400 dark:text-gray-600 line-through"
           )}>{path}</code>
           {hasAuth && (
-            <div className={cn(
-              "flex items-center gap-1 px-2 py-0.5 rounded text-xs",
+            <Badge className={cn(
+              "flex items-center gap-1",
               isAuthenticated
                 ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
                 : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300"
@@ -1074,13 +1085,13 @@ export default function SwaggerEndpoint({ path, method, operation, spec, authCre
                   {Object.keys(req).join(', ')}
                 </span>
               ))}
-            </div>
+            </Badge>
           )}
           {operation.deprecated && (
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+            <Badge variant="secondary" className="flex items-center gap-1">
               <AlertTriangle className="h-3 w-3" />
               <span>Deprecated</span>
-            </div>
+            </Badge>
           )}
         </div>
         {operation.summary && (
@@ -1163,15 +1174,15 @@ export default function SwaggerEndpoint({ path, method, operation, spec, authCre
                         {param.name}
                         {param.required && <span className="text-red-500">*</span>}
                       </label>
-                      <span className="text-xs bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">
+                      <Badge variant="outline" className="text-xs">
                         {param.in}
-                      </span>
+                      </Badge>
                       {param.type && (
                         param.type === 'file' ? (
-                          <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded flex items-center gap-1">
+                          <Badge className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 flex items-center gap-1">
                             <Upload className="h-3 w-3" />
                             file
-                          </span>
+                          </Badge>
                         ) : param.type === 'array' ? (
                           <span className="text-xs text-gray-500">{param.items?.type || 'string'}[]</span>
                         ) : (
@@ -1200,7 +1211,7 @@ export default function SwaggerEndpoint({ path, method, operation, spec, authCre
                           <label
                             htmlFor={`file-${param.name}`}
                             className={cn(
-                              "flex items-center gap-2 px-3 py-2 text-sm border rounded-md cursor-pointer transition-colors",
+                              "flex items-center gap-2 px-3 py-2 text-sm border rounded-md cursor-pointer transition-colors max-w-md",
                               tryItOut 
                                 ? "border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900 hover:border-primary"
                                 : "border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 cursor-not-allowed opacity-60"
@@ -1277,6 +1288,7 @@ export default function SwaggerEndpoint({ path, method, operation, spec, authCre
                             : String(paramValues[param.name] || '')}
                           onChange={(e) => handleParamChange(param.name, e.target.value)}
                           disabled={!tryItOut}
+                          className="max-w-md"
                         />
                         {param.example !== undefined && (
                           <div className="text-xs text-gray-500 mt-1">
@@ -1317,9 +1329,9 @@ export default function SwaggerEndpoint({ path, method, operation, spec, authCre
                   Request Body
                   {isRequired && <span className="text-red-500 ml-1">*</span>}
                   {isMultipart && (
-                    <span className="ml-2 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded">
+                    <Badge className="ml-2 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
                       multipart/form-data
-                    </span>
+                    </Badge>
                   )}
                 </h4>
 
@@ -1423,10 +1435,10 @@ export default function SwaggerEndpoint({ path, method, operation, spec, authCre
                                     {schema.required?.includes(propName) && <span className="text-red-500">*</span>}
                                   </label>
                                   {isFileUpload && (
-                                    <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                    <Badge className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 flex items-center gap-1">
                                       <Upload className="h-3 w-3" />
                                       file
-                                    </span>
+                                    </Badge>
                                   )}
                                   <span className="text-xs text-gray-500">{prop.type}</span>
                                 </div>
@@ -1449,7 +1461,7 @@ export default function SwaggerEndpoint({ path, method, operation, spec, authCre
                                       />
                                       <label
                                         htmlFor={`multipart-file-${propName}`}
-                                        className="flex items-center gap-2 px-3 py-2 text-sm border rounded-md cursor-pointer transition-colors border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900 hover:border-primary"
+                                        className="flex items-center gap-2 px-3 py-2 text-sm border rounded-md cursor-pointer transition-colors border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900 hover:border-primary max-w-md"
                                       >
                                         <Upload className="h-4 w-4 text-gray-500" />
                                         <span className="text-gray-700 dark:text-gray-300">
@@ -1485,6 +1497,7 @@ export default function SwaggerEndpoint({ path, method, operation, spec, authCre
                                       ? (paramValues[`body.${propName}`] as File).name 
                                       : String(paramValues[`body.${propName}`] || '')}
                                     onChange={(e) => handleParamChange(`body.${propName}`, e.target.value)}
+                                    className="max-w-md"
                                   />
                                 )}
                               </div>
@@ -1537,9 +1550,9 @@ export default function SwaggerEndpoint({ path, method, operation, spec, authCre
                                 <div key={schemeName} className="space-y-2">
                                   <div className="flex items-center gap-2">
                                     <span className="text-sm font-medium">{schemeName}</span>
-                                    <span className="text-xs bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">
+                                    <Badge variant="outline" className="text-xs">
                                       {scheme.type}
-                                    </span>
+                                    </Badge>
                                   </div>
                                   
                                   {scheme.type === 'apiKey' && (
@@ -1548,7 +1561,7 @@ export default function SwaggerEndpoint({ path, method, operation, spec, authCre
                                       placeholder={`Enter ${scheme.name || 'API Key'}`}
                                       value={localAuth[schemeName]?.value || ''}
                                       onChange={(e) => handleLocalAuthChange(schemeName, 'value', e.target.value)}
-                                      className="text-sm"
+                                      className="text-sm max-w-md"
                                     />
                                   )}
                                   
@@ -1559,14 +1572,14 @@ export default function SwaggerEndpoint({ path, method, operation, spec, authCre
                                         placeholder="Username"
                                         value={localAuth[schemeName]?.username || ''}
                                         onChange={(e) => handleLocalAuthChange(schemeName, 'username', e.target.value)}
-                                        className="text-sm"
+                                        className="text-sm max-w-md"
                                       />
                                       <Input
                                         type="password"
                                         placeholder="Password"
                                         value={localAuth[schemeName]?.password || ''}
                                         onChange={(e) => handleLocalAuthChange(schemeName, 'password', e.target.value)}
-                                        className="text-sm"
+                                        className="text-sm max-w-md"
                                       />
                                     </div>
                                   )}
@@ -1577,7 +1590,7 @@ export default function SwaggerEndpoint({ path, method, operation, spec, authCre
                                       placeholder="Enter Bearer Token"
                                       value={localAuth[schemeName]?.token || ''}
                                       onChange={(e) => handleLocalAuthChange(schemeName, 'token', e.target.value)}
-                                      className="text-sm"
+                                      className="text-sm max-w-md"
                                     />
                                   )}
                                   
@@ -1587,7 +1600,7 @@ export default function SwaggerEndpoint({ path, method, operation, spec, authCre
                                       placeholder="Enter Access Token"
                                       value={localAuth[schemeName]?.token || ''}
                                       onChange={(e) => handleLocalAuthChange(schemeName, 'token', e.target.value)}
-                                      className="text-sm"
+                                      className="text-sm max-w-md"
                                     />
                                   )}
                                 </div>
@@ -1685,16 +1698,18 @@ export default function SwaggerEndpoint({ path, method, operation, spec, authCre
                 ) : (
                   <>
                     <div className="flex items-center gap-2">
-                      <span className={cn(
-                        'text-sm font-medium px-2 py-1 rounded',
-                        response.status && response.status >= 200 && response.status < 300
-                          ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                          : response.status && response.status >= 400
-                          ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
-                          : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
-                      )}>
+                      <Badge 
+                        className={cn(
+                          'text-sm',
+                          response.status && response.status >= 200 && response.status < 300
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                            : response.status && response.status >= 400
+                            ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                            : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
+                        )}
+                      >
                         {response.status} {response.statusText}
-                      </span>
+                      </Badge>
                       <span className="text-xs text-gray-500">
                         {response.duration}ms
                       </span>
@@ -1838,18 +1853,20 @@ export default function SwaggerEndpoint({ path, method, operation, spec, authCre
                 
                 return (
                   <div key={status} className="flex items-start gap-3">
-                    <span className={cn(
-                      'text-sm font-medium px-2 py-0.5 rounded',
-                      status.startsWith('2')
-                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                        : status.startsWith('4')
-                        ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
-                        : status.startsWith('5')
-                        ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
-                    )}>
-                      {status}
-                    </span>
+                 <Badge 
+                   className={cn(
+                     'text-sm',
+                     status.startsWith('2')
+                       ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                       : status.startsWith('4')
+                       ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                       : status.startsWith('5')
+                       ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                       : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                   )}
+                 >
+                   {status}
+                 </Badge>
                     <div className="flex-1">
                       <p className="text-sm text-gray-600 dark:text-gray-400">
                         {resolvedResponse.description}
