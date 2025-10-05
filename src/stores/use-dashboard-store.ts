@@ -4,7 +4,6 @@ import {Microservice, Spa, TeamStat} from "@/app/data/schema";
 import {applyDepartmentToUrl} from "@/lib/department-utils";
 
 type EnvKey = "dev" | "sit" | "uat" | "nft"
-type PageKey = "overview" | "spas" | "microservices" | "teams" | "burndown" | "release-notes"
 
 type TargetOverrides = Record<EnvKey, { spa?: string; ms?: string }>
 
@@ -33,9 +32,7 @@ interface DashboardState {
   selectedEnv: EnvKey;
   setSelectedEnv: (env: EnvKey) => void;
 
-  // Global page selection (handled internally; no URL changes)
-  selectedPage: PageKey;
-  setSelectedPage: (page: PageKey) => void;
+  // Global page selection removed in favour of Next.js routing
 
   fetchData: () => Promise<void>;
   clearData: () => void;
@@ -84,13 +81,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   },
 
   // Selected page stored internally and persisted
-  selectedPage: (typeof window !== "undefined" && (localStorage.getItem("dashboard.selectedPage") as PageKey)) || "overview",
-  setSelectedPage: (page) => {
-    set({ selectedPage: page });
-    if (typeof window !== "undefined") {
-      localStorage.setItem("dashboard.selectedPage", page);
-    }
-  },
+  
 
   fetchData: async () => {
     const state = get();

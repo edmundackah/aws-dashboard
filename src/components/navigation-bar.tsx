@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { useDashboardStore } from "@/stores/use-dashboard-store";
 import { exportData } from "@/lib/export-utils";
@@ -59,9 +60,9 @@ export function NavigationBar() {
     selectedDepartment,
     setDepartment,
     initializeDepartment,
-    selectedPage,
-    setSelectedPage,
   } = useDashboardStore();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const [isMounted, setIsMounted] = useState(false);
   const [isMac, setIsMac] = useState(false);
@@ -95,15 +96,8 @@ export function NavigationBar() {
 
   // Measure active tab for animated pill
   useLayoutEffect(() => {
-    const pageToHref: Record<string, string> = {
-      overview: "/",
-      spas: "/spas",
-      microservices: "/microservices",
-      teams: "/teams",
-      burndown: "/burndown",
-    };
-    const activeKey = pageToHref[selectedPage] ?? "/";
-    const activeEl = itemRefs.current[activeKey]
+    const key = pathname || "/"
+    const activeEl = itemRefs.current[key]
     const container = navRef.current
     if (activeEl && container) {
       const rect = activeEl.getBoundingClientRect()
@@ -111,20 +105,13 @@ export function NavigationBar() {
       const next = { left: rect.left - parentRect.left, width: rect.width }
       setPill(next)
     }
-  }, [selectedPage])
+  }, [pathname])
 
   useLayoutEffect(() => {
     if (!isMounted) return;
 
-    const pageToHref: Record<string, string> = {
-      overview: "/",
-      spas: "/spas",
-      microservices: "/microservices",
-      teams: "/teams",
-      burndown: "/burndown",
-    };
-    const activeKey = pageToHref[selectedPage] ?? "/";
-    const activeEl = dockItemRefs.current[activeKey]
+    const key = pathname || "/"
+    const activeEl = dockItemRefs.current[key]
     const container = dockRef.current
     if (activeEl && container) {
       const rect = activeEl.getBoundingClientRect()
@@ -132,7 +119,7 @@ export function NavigationBar() {
       const next = { left: rect.left - parentRect.left, width: rect.width }
       setDockPill(next)
     }
-  }, [selectedPage, isMounted])
+  }, [pathname, isMounted])
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -151,17 +138,7 @@ export function NavigationBar() {
   }, []);
 
   const handleNavigation = (href: string) => {
-    // Map route to store page key without changing URL
-    const pageMap: Record<string, "overview" | "spas" | "microservices" | "teams" | "burndown" | "release-notes"> = {
-      "/": "overview",
-      "/spas": "spas",
-      "/microservices": "microservices",
-      "/teams": "teams",
-      "/burndown": "burndown",
-      "/release-notes": "release-notes",
-    };
-    const key = pageMap[href] || "overview";
-    setSelectedPage(key);
+    router.push(href);
     setOpen(false);
   };
 
@@ -219,16 +196,7 @@ export function NavigationBar() {
                 />
               )}
               {navItems.map((item) => {
-                const pageToHref: Record<string, string> = {
-                  overview: "/",
-                  spas: "/spas",
-                  microservices: "/microservices",
-                  teams: "/teams",
-                  burndown: "/burndown",
-                  "release-notes": "/release-notes",
-                };
-                const activeHref = pageToHref[selectedPage] ?? "/";
-                const isActive = isMounted && activeHref === item.href
+                const isActive = isMounted && pathname === item.href
                 return (
                   <motion.a
                     key={item.name}
@@ -313,16 +281,7 @@ export function NavigationBar() {
           )}
           {navItems.map((item) => {
             const ActiveIcon = item.icon
-            const pageToHref: Record<string, string> = {
-              overview: "/",
-              spas: "/spas",
-              microservices: "/microservices",
-              teams: "/teams",
-              burndown: "/burndown",
-              "release-notes": "/release-notes",
-            };
-            const activeHref = pageToHref[selectedPage] ?? "/";
-            const isActive = isMounted && activeHref === item.href
+            const isActive = isMounted && pathname === item.href
             return (
               <motion.button
                 key={item.name}
