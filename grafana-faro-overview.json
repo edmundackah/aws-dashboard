@@ -1,0 +1,155 @@
+{
+  "uid": "faro-overview",
+  "title": "Faro Overview",
+  "tags": ["faro", "overview", "web", "kowalski-like"],
+  "timezone": "",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "app_name",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+        "definition": "label_values(faro_http_requests_total, app_name)",
+        "query": { "query": "label_values(faro_http_requests_total, app_name)", "refId": "VarApp" },
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true
+      },
+      {
+        "name": "env",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+        "definition": "label_values(faro_http_requests_total, app_environment)",
+        "query": { "query": "label_values(faro_http_requests_total, app_environment)", "refId": "VarEnv" },
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Requests / s",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(faro_http_requests_total{app_name=~\"$app_name\", app_environment=~\"$env\"}[5m]))",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" }
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Error rate %",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 0 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * (sum(rate(faro_http_errors_total{app_name=~\"$app_name\", app_environment=~\"$env\"}[5m])) / clamp_min(sum(rate(faro_http_requests_total{app_name=~\"$app_name\", app_environment=~\"$env\"}[5m])), 1e-9))",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" }
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Network errors / s",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 0 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(faro_http_network_errors_total{app_name=~\"$app_name\", app_environment=~\"$env\"}[5m]))",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" }
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "TTFB p95 (ms)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum without(app_name,app_namespace,app_environment,route_template,page_id,http_method,status_code) (rate(faro_http_ttfb_milliseconds_bucket{app_name=~\"$app_name\", app_environment=~\"$env\"}[5m])))",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" }
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "HTTP duration p95 (ms)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum without(app_name,app_namespace,app_environment,route_template,page_id,http_method,status_code) (rate(faro_http_duration_milliseconds_bucket{app_name=~\"$app_name\", app_environment=~\"$env\"}[5m])))",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" }
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Page load p95 (ms)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum without(app_name,app_namespace,app_environment,route_template,page_id,http_method,status_code) (rate(faro_navigation_pageload_milliseconds_bucket{app_name=~\"$app_name\", app_environment=~\"$env\"}[5m])))",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" }
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Web Vitals: LCP p95 (ms)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum without(app_name,app_namespace,app_environment) (rate(faro_web_vitals_lcp_milliseconds_bucket{app_name=~\"$app_name\", app_environment=~\"$env\"}[5m])))",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" }
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Sessions events / s",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 22 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(faro_session_events_total{app_name=~\"$app_name\", app_environment=~\"$env\"}[5m]))",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" }
+        }
+      ]
+    },
+    {
+      "type": "logs",
+      "title": "Recent 4xx/5xx logs",
+      "gridPos": { "h": 10, "w": 16, "x": 8, "y": 22 },
+      "options": { "showLabels": true, "showTime": true },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{app_name=~\"$app_name\", app_environment=~\"$env\", status_code=~\"4..|5..\"}",
+          "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" }
+        }
+      ]
+    }
+  ]
+}
+
+
+
+
+
+
+
+
+
+

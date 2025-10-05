@@ -11,6 +11,7 @@ import {
   Command,
   Download,
   Book,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
@@ -47,6 +48,7 @@ const navItems = [
   },
   { name: "Teams", href: "/teams", icon: User },
   { name: "Burndown", href: "/burndown", icon: Command },
+  { name: "API Docs", href: "/api-docs", icon: FileText },
 ] as const;
 
 export function NavigationBar() {
@@ -101,6 +103,7 @@ export function NavigationBar() {
       microservices: "/microservices",
       teams: "/teams",
       burndown: "/burndown",
+      "api-docs": "/api-docs",
     };
     const activeKey = pageToHref[selectedPage] ?? "/";
     const activeEl = itemRefs.current[activeKey]
@@ -122,6 +125,7 @@ export function NavigationBar() {
       microservices: "/microservices",
       teams: "/teams",
       burndown: "/burndown",
+      "api-docs": "/api-docs",
     };
     const activeKey = pageToHref[selectedPage] ?? "/";
     const activeEl = dockItemRefs.current[activeKey]
@@ -152,13 +156,14 @@ export function NavigationBar() {
 
   const handleNavigation = (href: string) => {
     // Map route to store page key without changing URL
-    const pageMap: Record<string, "overview" | "spas" | "microservices" | "teams" | "burndown" | "release-notes"> = {
+    const pageMap: Record<string, "overview" | "spas" | "microservices" | "teams" | "burndown" | "release-notes" | "api-docs"> = {
       "/": "overview",
       "/spas": "spas",
       "/microservices": "microservices",
       "/teams": "teams",
       "/burndown": "burndown",
       "/release-notes": "release-notes",
+      "/api-docs": "api-docs",
     };
     const key = pageMap[href] || "overview";
     setSelectedPage(key);

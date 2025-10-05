@@ -10,6 +10,7 @@ import { MicroservicesPageClient } from "@/components/microservices-page-client"
 import { TeamsPageClient } from "@/components/teams-page-client";
 import { BurndownPageClient } from "@/components/burndown-page-client";
 import ReleaseNotesPage from "@/app/(dashboard)/release-notes/page";
+import ApiDocsPageClient from "@/components/api-docs/api-docs-page-client";
 
 export function DashboardContentSwitcher() {
   const { data, loading, error, fetchData, selectedPage } = useDashboardStore();
@@ -67,6 +68,8 @@ export function DashboardContentSwitcher() {
       return <BurndownPageClient />;
     case "release-notes":
       return <ReleaseNotesPage />;
+    case "api-docs":
+      return <ApiDocsPageClient />;
     default:
       return <ErrorDisplay message="Unknown page." />;
   }

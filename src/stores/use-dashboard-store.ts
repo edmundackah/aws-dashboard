@@ -4,7 +4,7 @@ import {Microservice, Spa, TeamStat} from "@/app/data/schema";
 import {applyDepartmentToUrl} from "@/lib/department-utils";
 
 type EnvKey = "dev" | "sit" | "uat" | "nft"
-type PageKey = "overview" | "spas" | "microservices" | "teams" | "burndown" | "release-notes"
+type PageKey = "overview" | "spas" | "microservices" | "teams" | "burndown" | "release-notes" | "api-docs"
 
 type TargetOverrides = Record<EnvKey, { spa?: string; ms?: string }>
 

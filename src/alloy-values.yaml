@@ -1,0 +1,587 @@
+# alloy-values.yaml - for grafana/alloy chart (Helm) with metrics, logs, traces, and Faro
+# helm install alloy grafana/alloy --version 1.2.1 -n alloy --create-namespace -f alloy-values.yaml
+
+controller:
+  type: deployment
+  replicas: 1
+  autoscaling:
+    enabled: false
+    horizontal:
+      enabled: false
+      minReplicas: 2
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 80
+
+alloy:
+  extraPorts:
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+      containerPort: 4318
+      protocol: TCP
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+      containerPort: 4317
+      protocol: TCP
+    - name: faro
+      port: 12347
+      targetPort: 12347
+      containerPort: 12347
+      protocol: TCP
+
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  configMap:
+    create: true
+    content: |
+      logging {
+        level  = "debug"
+        format = "logfmt"
+      }
+
+      livedebugging {
+        enabled = true
+      }
+
+      // --- Discover everything ---
+      discovery.kubernetes "all_services" { role = "service" }
+      discovery.kubernetes "all_pods"     { role = "pod" }
+
+      // --- Relabel: PostgreSQL ---
+      discovery.relabel "postgresql_services" {
+        targets = discovery.kubernetes.all_services.targets
+        rule {
+          source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_service_name"]
+          regex         = "vault;(postgres-postgresql-primary-metrics|postgres-postgresql-read-metrics)"
+          action        = "keep"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_service_port_name"]
+          regex         = "http-metrics"
+          action        = "keep"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_service_name"]
+          regex         = "postgres-postgresql-(primary|read)-metrics"
+          replacement   = "$1"
+          target_label  = "pg_cluster_role"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_service_label_app_kubernetes_io_instance"]
+          target_label  = "pg_cluster_instance"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_service_label_app_kubernetes_io_instance"]
+          target_label  = "release"
+        }
+        rule {
+          source_labels = ["__address__"]
+          target_label  = "instance"
+        }
+      }
+
+      // --- Relabel: MinIO ---
+      discovery.relabel "minio_pods" {
+        targets = discovery.kubernetes.all_pods.targets
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          regex         = "minio"
+          action        = "keep"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_scrape"]
+          regex         = "true"
+          action        = "keep"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_path"]
+          target_label  = "__metrics_path__"
+          action        = "replace"
+          regex         = "(.+)"
+        }
+        rule {
+          source_labels = ["__address__", "__meta_kubernetes_pod_annotation_prometheus_io_port"]
+          regex         = "([^:]+)(?::\\d+)?;(\\d+)"
+          replacement   = "$1:$2"
+          target_label  = "__address__"
+          action        = "replace"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_name"]
+          target_label  = "minio_pod"
+        }
+      }
+
+      // --- Relabel: Loki Services ---
+      discovery.relabel "loki_services" {
+        targets = discovery.kubernetes.all_services.targets
+        rule {
+          source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_service_name"]
+          regex         = "obsmon;(loki-read|loki-write|loki-backend)"
+          action        = "keep"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_service_port_name"]
+          regex         = "http|http-metrics"
+          action        = "keep"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_service_name"]
+          regex         = "loki-(read|write|backend)"
+          replacement   = "$1"
+          target_label  = "loki_component"
+        }
+      }
+
+      // --- Filter Pods for Logs ---
+      discovery.relabel "pods_for_logs" {
+        targets = discovery.kubernetes.all_pods.targets
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          regex         = "(obsmon|vault|minio)"
+          action        = "keep"
+        }
+      }
+
+      // --- OTLP Receiver ---
+      otelcol.receiver.otlp "default" {
+        http { endpoint = "0.0.0.0:4318" }
+        grpc { endpoint = "0.0.0.0:4317" }
+        output {
+          logs    = [otelcol.exporter.loki.default.input]
+          traces  = [otelcol.processor.batch.default.input]
+          metrics = [otelcol.exporter.prometheus.default.input]
+        }
+      }
+
+      // --- Trace Processor ---
+      otelcol.processor.batch "default" {
+        output {
+          logs   = [otelcol.exporter.loki.default.input]
+          traces = [otelcol.exporter.otlp.tempo.input]
+        }
+      }
+
+      // --- This component acts as the bridge between OTel metrics and Prometheus remote write
+      otelcol.exporter.prometheus "default" {
+        forward_to = [prometheus.remote_write.default.receiver]
+      }
+
+      // --- OTLP Exporter to Tempo ---
+      otelcol.exporter.otlp "tempo" {
+        client {
+          endpoint = "tempo-distributor.tempo.svc.cluster.local:4317"
+          tls { insecure = true }
+        }
+      }
+
+      // --- Loki Exporter ---
+      otelcol.exporter.loki "default" {
+        forward_to = [loki.write.default.receiver]
+      }
+
+      // --- Loki Write ---
+      loki.write "default" {
+        endpoint { url = "http://loki-write.loki.svc.cluster.local:3100/loki/api/v1/push" }
+      }
+
+      // --- Metric Pipelines ---
+      prometheus.remote_write "default" {
+        endpoint { url = "http://prometheus-server.obsmon.svc.cluster.local:80/api/v1/write" }
+      }
+
+      prometheus.scrape "postgresql" {
+        targets    = discovery.relabel.postgresql_services.output
+        forward_to = [prometheus.remote_write.default.receiver]
+      }
+
+      prometheus.scrape "minio" {
+        targets    = discovery.relabel.minio_pods.output
+        forward_to = [prometheus.remote_write.default.receiver]
+      }
+
+      prometheus.scrape "loki" {
+        targets    = discovery.relabel.loki_services.output
+        forward_to = [prometheus.remote_write.default.receiver]
+      }
+
+      // --- Log Pipeline ---
+      loki.source.kubernetes "logs" {
+        targets    = discovery.relabel.pods_for_logs.output
+        forward_to = [loki.write.default.receiver]
+      }
+
+      // Faro receiver → process → Loki, and mint Prom metrics
+      faro.receiver "default" {
+        server {
+          listen_address       = "0.0.0.0"
+          cors_allowed_origins = ["http://localhost:3002", "http://localhost:3000"]
+        }
+        output {
+          logs   = [loki.process.faro_metrics.receiver]
+          traces = [otelcol.exporter.otlp.tempo.input]
+        }
+      }
+
+      loki.process "faro_metrics" {
+        // Parse Faro logfmt; "" on RHS = "same key".
+        stage.logfmt {
+          mapping = {
+            app_name                  = "",
+            app_namespace             = "",
+            app_version               = "",
+            app_environment           = "",
+            session_id                = "",
+            page_id                   = "",
+            page_attr_id              = "",
+            page_url                  = "",
+            event_name                = "",
+            event_domain              = "",
+            kind                      = "",
+            browser_name              = "",
+            browser_version           = "",
+            browser_os                = "",
+            browser_language          = "",
+            event_data_responseStatus = "",
+            event_data_ttfb           = "",
+            event_data_duration       = "",
+            event_data_requestTime    = "",
+            event_data_fetchTime      = "",
+            event_data_pageLoadTime   = "",
+            event_data_domProcessingTime = "",
+            event_data_domContentLoadHandlerTime = "",
+            event_data_documentParsingTime = "",
+            event_data_onLoadTime     = "",
+            event_data_name           = "",
+            event_data_protocol       = "",
+            url_template              = "event_data_url.template",
+            http_method               = "event_data_http.method",
+            http_status_code          = "event_data_http.status_code",
+            http_status_text          = "event_data_http.status_text",
+            http_host                 = "event_data_http.host",
+            http_scheme               = "event_data_http.scheme",
+            http_url                  = "event_data_http.url",
+            lcp                       = "",
+            fid                       = "",
+            ttfb                      = "",
+            context_rating            = "",
+            fcp                       = "",
+            cls                       = "",
+            inp                       = "",
+          }
+        }
+
+        // Full status_code from either field
+        stage.regex {
+          source     = "event_data_responseStatus"
+          expression = "^(?P<status_code>\\d{1,3})$"
+        }
+        stage.regex {
+          source     = "http_status_code"
+          expression = "^(?P<status_code>\\d{1,3})$"
+        }
+        // Class (first digit) for 4xx/5xx counters, etc.
+        stage.regex {
+          source     = "status_code"
+          expression = "^(?P<status_digit>\\d)"
+        }
+
+        // Derive page_path (strip ?query and #hash)
+        stage.regex {
+          source     = "page_url"
+          expression = "^(?P<page_path>[^?#]+)"
+        }
+
+        // Promote low-card labels (kept on ALL regular metrics)
+        stage.labels {
+          values = {
+            app_name        = "app_name",
+            app_namespace   = "app_namespace",
+            app_environment = "app_environment",
+            event_name      = "event_name",
+            event_domain    = "event_domain",
+            browser_name    = "browser_name",
+            http_method     = "http_method",
+            status_code     = "status_code",
+            route_template  = "url_template",
+            page_id         = "page_id",
+          }
+        }
+        stage.label_keep {
+          values = ["app_name","app_namespace","app_environment","event_name","event_domain","browser_name","http_method","status_code","route_template","page_id"]
+        }
+
+        // ── Session tracking (add high-card labels temporarily)
+        stage.labels {
+          values = {
+            session_id = "session_id",
+            page_path  = "page_path",
+            browser_version = "browser_version",
+            app_version     = "app_version",
+          }
+        }
+
+        // Count every line per session
+        stage.metrics {
+          metric.counter {
+            name              = "faro_session_events_total"
+            description       = "All Faro events per session"
+            match_all         = true
+            action            = "inc"
+            max_idle_duration = "4h"
+          }
+        }
+
+        // Pageviews per session (navigation events)
+        stage.metrics {
+          metric.counter {
+            name              = "faro_session_pageviews_total"
+            description       = "Page loads per session"
+            source            = "event_name"
+            value             = "faro.performance.navigation"
+            action            = "inc"
+            max_idle_duration = "4h"
+          }
+        }
+
+        // Errors per session: network(0), 4xx, 5xx
+        stage.metrics {
+          metric.counter {
+            name              = "faro_session_errors_total"
+            description       = "Network errors (status_code=0) per session"
+            source            = "status_code"
+            value             = "0"
+            action            = "inc"
+            max_idle_duration = "4h"
+          }
+          metric.counter {
+            name              = "faro_session_errors_total"
+            description       = "4xx errors per session"
+            source            = "status_digit"
+            value             = "4"
+            action            = "inc"
+            max_idle_duration = "4h"
+          }
+          metric.counter {
+            name              = "faro_session_errors_total"
+            description       = "5xx errors per session"
+            source            = "status_digit"
+            value             = "5"
+            action            = "inc"
+            max_idle_duration = "4h"
+          }
+        }
+
+        // Sessions with network errors (status_code=0) per session
+        stage.metrics {
+          metric.counter {
+            name              = "faro_session_network_errors_total"
+            description       = "Network errors per session (status_code=0)"
+            source            = "status_code"
+            value             = "0"
+            action            = "inc"
+            max_idle_duration = "4h"
+          }
+        }
+
+        // Drop high-cardinality labels so remaining metrics stay tidy
+        stage.label_drop { values = ["session_id","page_path"] }
+
+        // ---- Metrics from logs (exposed at /metrics) ----
+
+        // 0) Baseline: count EVERY Faro line
+        stage.metrics {
+          metric.counter {
+            name              = "faro_log_lines_total"
+            description       = "All Faro log lines seen by loki.process"
+            match_all         = true
+            action            = "inc"
+            max_idle_duration = "12h"
+          }
+        }
+
+        // 1) Event counts (split by event type)
+        stage.metrics {
+          metric.counter {
+            name              = "faro_events_total"
+            description       = "All browser events (kind=event)"
+            source            = "kind"
+            value             = "event"
+            action            = "inc"
+            max_idle_duration = "12h"
+          }
+          metric.counter {
+            name              = "faro_http_requests_total"
+            description       = "resource"
+            source            = "event_name"
+            value             = "faro.performance.resource"
+            action            = "inc"
+            max_idle_duration = "12h"
+          }
+          metric.counter {
+            name              = "faro_http_requests_total"
+            description       = "fetch"
+            source            = "event_name"
+            value             = "faro.tracing.fetch"
+            action            = "inc"
+            max_idle_duration = "12h"
+          }
+          metric.counter {
+            name              = "faro_http_requests_total"
+            description       = "navigation"
+            source            = "event_name"
+            value             = "faro.performance.navigation"
+            action            = "inc"
+            max_idle_duration = "12h"
+          }
+          // Sessions started — treat navigation as a session start signal
+          metric.counter {
+            name              = "faro_sessions_started_total"
+            description       = "Session start events (navigation)"
+            source            = "event_name"
+            value             = "faro.performance.navigation"
+            action            = "inc"
+            max_idle_duration = "4h"
+          }
+        }
+
+        // 2) Error counters (incl. network error status_code=0)
+        stage.metrics {
+          metric.counter {
+            name              = "faro_http_errors_total"
+            description       = "4xx"
+            source            = "status_digit"
+            value             = "4"
+            action            = "inc"
+            max_idle_duration = "12h"
+          }
+          metric.counter {
+            name              = "faro_http_errors_total"
+            description       = "5xx"
+            source            = "status_digit"
+            value             = "5"
+            action            = "inc"
+            max_idle_duration = "12h"
+          }
+          metric.counter {
+            name              = "faro_http_network_errors_total"
+            description       = "status_code=0"
+            source            = "status_code"
+            value             = "0"
+            action            = "inc"
+            max_idle_duration = "12h"
+          }
+        }
+
+        // 3) HTTP timings (ms)
+        stage.metrics {
+          metric.histogram {
+            name              = "faro_http_duration_milliseconds"
+            description       = "event_data_duration (ms)"
+            source            = "event_data_duration"
+            buckets           = [10,25,50,100,200,400,800,1600,3200,6400]
+            max_idle_duration = "12h"
+          }
+          metric.histogram {
+            name              = "faro_http_ttfb_milliseconds"
+            description       = "event_data_ttfb (ms)"
+            source            = "event_data_ttfb"
+            buckets           = [5,10,25,50,100,200,400,800,1600,3200]
+            max_idle_duration = "12h"
+          }
+        }
+
+        // 4) Navigation timings (ms)
+        stage.metrics {
+          metric.histogram {
+            name              = "faro_navigation_pageload_milliseconds"
+            description       = "event_data_pageLoadTime (ms)"
+            source            = "event_data_pageLoadTime"
+            buckets           = [100,200,400,800,1600,2400,3200,4800,8000]
+            max_idle_duration = "12h"
+          }
+          metric.histogram {
+            name              = "faro_navigation_dom_processing_milliseconds"
+            description       = "event_data_domProcessingTime (ms)"
+            source            = "event_data_domProcessingTime"
+            buckets           = [10,25,50,100,200,400,800,1600]
+            max_idle_duration = "12h"
+          }
+        }
+
+        // 5) Web-Vitals (ms) + rating counts
+        stage.metrics {
+          metric.histogram {
+            name              = "faro_web_vitals_fcp_milliseconds"
+            source            = "fcp"
+            buckets           = [400,800,1200,1600,2400,3000,4000,5000]
+            max_idle_duration = "12h"
+          }
+          metric.histogram {
+            name              = "faro_web_vitals_cls"
+            source            = "cls"
+            buckets           = [0.01,0.05,0.1,0.2,0.3,0.5]
+            max_idle_duration = "12h"
+          }
+          metric.histogram {
+            name              = "faro_web_vitals_inp_milliseconds"
+            source            = "inp"
+            buckets           = [50,100,200,300,400,500,800,1200,2000]
+            max_idle_duration = "12h"
+          }
+          metric.histogram {
+            name              = "faro_web_vitals_lcp_milliseconds"
+            source            = "lcp"
+            buckets           = [400,800,1200,1600,2400,3000,4000,5000]
+            max_idle_duration = "12h"
+          }
+          metric.histogram {
+            name              = "faro_web_vitals_fid_milliseconds"
+            source            = "fid"
+            buckets           = [1,5,10,25,50,100,200]
+            max_idle_duration = "12h"
+          }
+          metric.histogram {
+            name              = "faro_web_vitals_ttfb_milliseconds"
+            source            = "ttfb"
+            buckets           = [100,300,600,1000,2000,3000]
+            max_idle_duration = "12h"
+          }
+          metric.counter {
+            name              = "faro_web_vitals_rating_total"
+            source            = "context_rating"
+            value             = "good"
+            action            = "inc"
+            max_idle_duration = "12h"
+          }
+          metric.counter {
+            name              = "faro_web_vitals_rating_total"
+            source            = "context_rating"
+            value             = "needs-improvement"
+            action            = "inc"
+            max_idle_duration = "12h"
+          }
+          metric.counter {
+            name              = "faro_web_vitals_rating_total"
+            source            = "context_rating"
+            value             = "poor"
+            action            = "inc"
+            max_idle_duration = "12h"
+          }
+        }
+
+        // Forward original logs to Loki.
+        forward_to = [loki.write.default.receiver]
+      }
+      // Scrape Alloy's /metrics and remote_write to Prometheus.
+      prometheus.scrape "alloy_faro_metrics" {
+        targets = [{ "__address__" = "127.0.0.1:12345" }]
+        forward_to = [prometheus.remote_write.default.receiver]
+      }
