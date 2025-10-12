@@ -184,7 +184,7 @@ export const DashboardPageClient = ({
     return Array.from(teamMap.values());
   }, [inSelectedEnv, spaData, msData, teamsData]);
   return (
-    <div className="flex-1 space-y-4 p-8 pt-6">
+    <div className="flex-1 space-y-4 p-0">
       {allEnvStats.meetsThreshold ? (
         <div className="rounded-lg p-4 flex items-center justify-between border border-emerald-500/30 dark:border-emerald-400/25 bg-emerald-500/10 dark:bg-emerald-400/10 backdrop-blur">
           <div className="flex items-center gap-4">
