@@ -54,7 +54,7 @@ export function ThemeToggle() {
               tabIndex={selected ? 0 : -1}
               onClick={() => setTheme(seg.key)}
               className={cn(
-                "relative z-10 flex flex-1 items-center justify-center gap-2 rounded-full px-3 py-2 transition-colors",
+                "relative z-10 flex flex-1 items-center justify-center gap-2 rounded-full px-3 py-2 transition-colors hover:cursor-pointer",
                 selected ? "text-foreground" : "text-muted-foreground hover:text-foreground"
               )}
             >

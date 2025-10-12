@@ -16,7 +16,6 @@ import { cn } from "@/lib/utils";
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useDashboardStore } from "@/stores/use-dashboard-store";
-import { useRouter } from "next/navigation";
 import { exportData } from "@/lib/export-utils";
 import { toast } from "sonner";
 import { SettingsModal } from "@/components/settings-modal";
@@ -63,23 +62,6 @@ export function NavigationBar() {
     selectedPage,
     setSelectedPage,
   } = useDashboardStore();
-  const router = useRouter();
-
-  // Initialize department once on mount (from storage or default)
-  useEffect(() => {
-    const deptFromStorage = localStorage.getItem("selectedDepartment");
-    const defaultDept = departments.length > 0 ? departments[0] : "";
-
-    let initialDept = defaultDept;
-    if (deptFromStorage && departments.includes(deptFromStorage)) {
-      initialDept = deptFromStorage;
-    }
-    
-    initializeDepartment(initialDept);
-    fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run only once
-
 
   const [isMounted, setIsMounted] = useState(false);
   const [isMac, setIsMac] = useState(false);
@@ -94,6 +76,22 @@ export function NavigationBar() {
     setIsMounted(true);
     setIsMac(navigator.platform.toUpperCase().indexOf("MAC") >= 0);
   }, []);
+
+  // initialise department once on mount
+  useEffect(() => {
+    if (!isMounted) return;
+
+    const deptStorage = localStorage.getItem("selectedDepartment");
+    const defaultDept = departments.length > 0 ? departments[0] : "";
+
+    let initialDept = defaultDept;
+    if (deptStorage && departments.includes(deptStorage)) {
+      initialDept = deptStorage;
+    }
+
+     initializeDepartment(initialDept);
+     fetchData();
+  }, [isMounted, departments, initializeDepartment, fetchData]);
 
   // Measure active tab for animated pill
   useLayoutEffect(() => {
@@ -116,6 +114,8 @@ export function NavigationBar() {
   }, [selectedPage])
 
   useLayoutEffect(() => {
+    if (!isMounted) return;
+
     const pageToHref: Record<string, string> = {
       overview: "/",
       spas: "/spas",
@@ -132,7 +132,7 @@ export function NavigationBar() {
       const next = { left: rect.left - parentRect.left, width: rect.width }
       setDockPill(next)
     }
-  }, [selectedPage])
+  }, [selectedPage, isMounted])
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -228,7 +228,7 @@ export function NavigationBar() {
                   "release-notes": "/release-notes",
                 };
                 const activeHref = pageToHref[selectedPage] ?? "/";
-                const isActive = activeHref === item.href
+                const isActive = isMounted && activeHref === item.href
                 return (
                   <motion.a
                     key={item.name}
@@ -322,7 +322,7 @@ export function NavigationBar() {
               "release-notes": "/release-notes",
             };
             const activeHref = pageToHref[selectedPage] ?? "/";
-            const isActive = activeHref === item.href
+            const isActive = isMounted && activeHref === item.href
             return (
               <motion.button
                 key={item.name}
@@ -410,16 +410,6 @@ export function NavigationBar() {
             >
               <Book className="mr-2 h-4 w-4" />
               Release Notes
-            </CommandItem>
-            <CommandItem
-              onSelect={() => {
-                const ev = new Event("mr3:open-tutorial");
-                window.dispatchEvent(ev);
-                setOpen(false);
-              }}
-            >
-              <Command className="mr-2 h-4 w-4" />
-              View what’s new
             </CommandItem>
           </CommandGroup>
         </CommandList>

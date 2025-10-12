@@ -69,7 +69,7 @@ export function ServiceFiltersPopover({
           <Filter className="mr-2 h-4 w-4" /> Filters
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-4" align="start" sideOffset={8}>
+      <PopoverContent className="w-auto p-" align="start" sideOffset={8}>
         <div className="flex flex-col gap-4" style={{ width: '520px' }}>
           <div className="flex items-center justify-between">
             <div>
@@ -128,7 +128,7 @@ export function ServiceFiltersPopover({
             </div>
           </div>
 
-          <div className="flex gap-4 pt-2">
+          <div className="flex pt-2">
             <div className="flex-1">
               {hasActiveFilters && (
                 <Button
@@ -143,15 +143,13 @@ export function ServiceFiltersPopover({
                 </Button>
               )}
             </div>
-            <div className="flex-1">
-              <div className="w-[240px] ml-auto flex justify-end">
-                <Button 
-                  size="sm" 
-                  onClick={() => setOpen(false)}
-                >
-                  Done
-                </Button>
-              </div>
+            <div className="flex-1 flex justify-end mr-3">
+              <Button
+                size="sm"
+                onClick={() => setOpen(false)}
+              >
+                Done
+              </Button>
             </div>
           </div>
         </div>
