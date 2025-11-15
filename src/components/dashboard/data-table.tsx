@@ -136,6 +136,7 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  className="hover:bg-[hsl(var(--chart-purple)/0.16)] dark:hover:bg-[hsl(var(--chart-purple)/0.28)] hover:ring-1 hover:ring-[hsl(var(--chart-purple)/0.35)] dark:hover:ring-[hsl(var(--chart-purple)/0.45)]"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="p-2">

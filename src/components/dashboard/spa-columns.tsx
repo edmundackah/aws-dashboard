@@ -9,7 +9,6 @@ import {StatusBadge} from "@/components/status-badge";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
 
 const SortableHeader = <TData,>({ column, children }: { column: Column<TData, unknown>; children: React.ReactNode }) => (
   <Button
@@ -39,6 +38,7 @@ function HomepageCell({ href }: { href?: string }) {
   let normalizedUrl = "";
   let displayLabel = "";
   let favicon: string | undefined = undefined;
+  let initials: string | undefined = undefined;
   if (hasHomepage) {
     try {
       const url = href!.startsWith("http") ? new URL(href!) : new URL(`https://${href}`);
@@ -49,6 +49,9 @@ function HomepageCell({ href }: { href?: string }) {
     }
     displayLabel = (hostname || normalizedUrl.replace(/^https?:\/\//, ""));
     favicon = hostname ? `https://www.google.com/s2/favicons?domain=${hostname}&sz=64` : undefined;
+    const baseHost = (hostname || "").replace(/^www\./, "");
+    const firstPart = baseHost.split(".")[0] || "";
+    initials = firstPart.slice(0, 2).toUpperCase() || undefined;
   }
 
   useEffect(() => {
@@ -87,18 +90,29 @@ function HomepageCell({ href }: { href?: string }) {
   return (
     <HoverCard openDelay={150} closeDelay={100} onOpenChange={setOpen}>
       <HoverCardTrigger asChild>
-        <button type="button" className="inline-flex items-center gap-2 px-2 py-1.5 rounded-md border bg-background hover:bg-muted/50 transition text-sm">
-          {favicon && (
+        <button
+          type="button"
+          aria-label={`Homepage: ${displayLabel}`}
+          className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-md border border-border/60 bg-popover/60 text-foreground hover:bg-popover/80 hover:shadow-sm ring-1 ring-transparent hover:ring-ring/40 transition text-sm"
+        >
+          {favicon ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={favicon} alt="favicon" className="h-4 w-4 rounded" loading="lazy" />
+            <img src={favicon} alt="favicon" className="h-4 w-4 rounded-sm" loading="lazy" />
+          ) : (
+            <span
+              aria-hidden
+              className="h-4 w-4 rounded-sm bg-muted/80 text-[10px] leading-4 text-foreground/70 grid place-items-center"
+            >
+              {initials}
+            </span>
           )}
           <span className="truncate max-w-[200px] text-left">{displayLabel}</span>
-          <ExternalLink className="h-3.5 w-3.5 opacity-70" />
+          <ExternalLink className="h-3.5 w-3.5 opacity-70 shrink-0" />
         </button>
       </HoverCardTrigger>
-      <HoverCardContent className="w-96">
-        <div className="space-y-3">
-          <div className="flex items-start gap-3">
+      <HoverCardContent className="w-[420px] p-0 overflow-hidden">
+        <div className="space-y-3 p-4">
+          <div className="flex items-start gap-3 pb-1">
             {favicon && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={favicon} alt="favicon" className="h-6 w-6 rounded mt-0.5" />
@@ -110,13 +124,13 @@ function HomepageCell({ href }: { href?: string }) {
           </div>
 
           {/* Live preview (best-effort; may be blocked by site's CSP/X-Frame-Options) */}
-          <div className="relative w-full overflow-hidden rounded-md border bg-muted aspect-video">
+          <div className="relative w-full overflow-hidden rounded-md border bg-muted aspect-video ring-1 ring-ring/30">
+            <div className="absolute top-2 left-2 z-10 rounded-xs bg-background/70 px-1.5 py-0.5 text-[10px] text-muted-foreground ring-1 ring-border/60">
+              Preview
+            </div>
             {!requested || (!loaded && !failed) ? (
-              <div className="absolute inset-0 p-3">
-                <div className={cn("h-full w-full rounded-md", "bg-gradient-to-br from-muted/60 to-muted/40")}></div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Skeleton className="h-6 w-24" />
-                </div>
+              <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-muted/60 to-muted/40">
+                <Skeleton className="h-5 w-24" />
               </div>
             ) : null}
             {requested && !failed && (
@@ -137,8 +151,8 @@ function HomepageCell({ href }: { href?: string }) {
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button size="sm" asChild>
+          <div className="flex items-center gap-2 pt-1">
+            <Button size="sm" variant="secondary" asChild>
               <a href={normalizedUrl} target="_blank" rel="noopener noreferrer">Open</a>
             </Button>
             <Button size="sm" variant="outline" onClick={copyUrl}>
