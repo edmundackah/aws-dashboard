@@ -152,7 +152,7 @@ function HomepageCell({ href }: { href?: string }) {
           </div>
 
           <div className="flex items-center gap-2 pt-1">
-            <Button size="sm" variant="secondary" asChild>
+            <Button size="sm" variant="outline" asChild>
               <a href={normalizedUrl} target="_blank" rel="noopener noreferrer">Open</a>
             </Button>
             <Button size="sm" variant="outline" onClick={copyUrl}>
