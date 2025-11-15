@@ -54,7 +54,7 @@ function ChartContainer({
         data-slot="chart"
         data-chart={chartId}
         className={cn(
-          "[&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/40 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border/60 [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted/40 flex aspect-video justify-center text-xs [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-hidden [&_.recharts-sector]:outline-hidden [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-surface]:outline-hidden [&_.recharts-tooltip-wrapper]:!opacity-100 [&_.recharts-tooltip-wrapper]:![backdrop-filter:none] [&_.recharts-tooltip-wrapper>div]:!bg-background [&_.recharts-tooltip-wrapper>div]:!text-foreground [&_.recharts-tooltip-wrapper>div]:!opacity-100 [&_.recharts-tooltip-wrapper>div]:!shadow-md",
+          "[&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/40 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border/60 [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted/40 flex aspect-video justify-center text-xs [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-hidden [&_.recharts-sector]:outline-hidden [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-surface]:outline-hidden [&_.recharts-tooltip-wrapper]:!opacity-100 [&_.recharts-tooltip-wrapper]:!backdrop-blur-sm [&_.recharts-tooltip-wrapper>div]:!bg-popover/95 dark:[&_.recharts-tooltip-wrapper>div]:!bg-popover/90 [&_.recharts-tooltip-wrapper>div]:!text-popover-foreground [&_.recharts-tooltip-wrapper>div]:!opacity-100 [&_.recharts-tooltip-wrapper>div]:!shadow-xl [&_.recharts-tooltip-wrapper>div]:!ring-1 [&_.recharts-tooltip-wrapper>div]:!ring-ring/40 dark:[&_.recharts-tooltip-wrapper>div]:!ring-ring/50 [&_.recharts-tooltip-wrapper>div]:!border-border/60",
           className
         )}
         {...props}
@@ -172,10 +172,9 @@ function ChartTooltipContent({
   return (
     <div
       className={cn(
-        "border-border/50 bg-background grid min-w-[8rem] items-start gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs shadow-xl",
+        "bg-popover/95 dark:bg-popover/90 grid min-w-[8rem] items-start gap-1.5 rounded-lg border border-border/60 ring-1 ring-ring/40 dark:ring-ring/50 px-2.5 py-1.5 text-xs shadow-xl backdrop-blur-sm",
         className
       )}
-      style={{ backgroundColor: "hsl(var(--background))", color: "hsl(var(--foreground))", opacity: 1, backdropFilter: "none" }}
     >
       {!nestLabel ? tooltipLabel : null}
       <div className="grid gap-1.5">

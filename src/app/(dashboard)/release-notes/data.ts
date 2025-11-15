@@ -2,6 +2,39 @@ import type { ReleaseNote } from "@/components/release-notes/types";
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "3.2",
+    title: "Accessible dark mode, clearer tooltips, and SPA homepage overhaul",
+    date: "2025-11-15",
+    summary:
+      "This release refines dark mode for accessibility, clarifies chart/tooltips to avoid blending with cards, upgrades the SPA table homepage experience, and improves table hover visibility. It also fixes destructive button text color in light mode.",
+    sections: [
+      {
+        title: "Highlights",
+        items: [
+          "Accessible dark palette: clearer separation between background, card, and popover; stronger borders and focus rings",
+          "Chart/tooltips use tokenized semi‑transparent surfaces with blur; improved separation with neutral rings",
+          "SPA table homepage cell rebuilt with favicon or initials, improved hover preview, and quick actions",
+          "Distinct table row hover highlight for easier data tracking",
+        ],
+      },
+      {
+        title: "Enhancements",
+        items: [
+          "Tooltips: removed hard‑coded black in dark mode; use `bg-popover` with blur for readability",
+          "Recharts tooltip styling aligned with theme tokens and neutral outlines",
+          "Homepage hovercard: preview badge, refined skeleton state, clearer actions (Open, Copy)",
+        ],
+      },
+      {
+        title: "Fixes",
+        items: [
+          "Destructive buttons: ensure white text on red in light mode via `--destructive-foreground` and token mapping",
+          "Eliminated colored outlines that distracted in dark mode; standardized to neutral `ring` tokens",
+        ],
+      },
+    ],
+  },
+  {
     version: "3.1",
     title: "Lean UI, live SPA previews, and hydration fixes",
     date: "2025-10-05",
